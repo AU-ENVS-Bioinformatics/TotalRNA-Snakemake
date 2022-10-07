@@ -2,3 +2,15 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+configfile: "config/config.yaml"
+# Define variables from configuration file
+DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
+RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
+
+# Define global wildcards for input data after renaming
+regex_raw_illumina_files = (
+    f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_{{read}}.fastq.gz"
+)
+sample, read = glob_wildcards(regex_raw_illumina_files)
+# Include rules
+include: "rules/rename.smk"

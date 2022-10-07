@@ -1,0 +1,9 @@
+DEFAULT_SOURCE_FILEPATH: "reads/"
+DEFAULT_DEST_FILEPATH: "results/"
+RENAMED_READS_FILEPATH: "renamed_raw_reads/"
+TRIMMED_READS_FILEPATH: "trimmed/"
+
+trim_galore:
+  - "--trim-n" #Removes Ns from either side of the read.
+  - "--illumina" #Illumina adapter
+  # Don't run with --paired neither -j
