@@ -6,11 +6,25 @@ configfile: "config/config.yaml"
 # Define variables from configuration file
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
-
+TRIMMED_READS_FILEPATH = config.get("TRIMMED_READS_FILEPATH","trimmed/")
+# Define available threads
+AVAILABLE_THREADS = int(workflow.cores * 0.75)
 # Define global wildcards for input data after renaming
 regex_raw_illumina_files = (
     f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_{{read}}.fastq.gz"
 )
 sample, read = glob_wildcards(regex_raw_illumina_files)
+# Define rule all
+rule all:
+    input: 
+        expand(
+            f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R1_val_1.fq.gz",
+            sample=sample,
+        ),
+        expand(
+            f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R2_val_2.fq.gz",
+            sample=sample,
+        )
 # Include rules
 include: "rules/rename.smk"
+include: "rules/trim_galore.smk"
