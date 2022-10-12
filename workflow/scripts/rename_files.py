@@ -18,11 +18,11 @@ for file in os.listdir(input_dir):
     match = re.match(regular_expression, file)
     if match:
         original = input_dir + match.string
-        print(original)
+        print(original, file=sys.stderr)
         target = output_dir + match.group(1) + "_" + match.group(2) + ".fastq.gz"
-        print(target)
+        print(target, file=sys.stderr)
         if os.path.exists(target):
-            print('The previous file was already there.')
+            print('The previous file was already there.', file=sys.stderr)
         else:
             copy_file (original, target)
   
