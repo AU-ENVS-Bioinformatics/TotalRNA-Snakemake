@@ -2,8 +2,16 @@ DEFAULT_SOURCE_FILEPATH: "reads/"
 DEFAULT_DEST_FILEPATH: "results/"
 RENAMED_READS_FILEPATH: "renamed_raw_reads/"
 TRIMMED_READS_FILEPATH: "trimmed/"
+SORTMERNA_FILEPATH: "sortmerna/"
+RRNA_FILEPATH: "rrna/"
 
 trim_galore:
   - "--trim-n" #Removes Ns from either side of the read.
   - "--illumina" #Illumina adapter
   # Don't run with --paired neither -j
+
+sortmerna:
+  - "--fastx" #Output aligned reads into FASTA/FASTQ file
+  - "--paired_in" #Flags the paired-end reads as Aligned, when either of them is Aligned.
+  - "--out2" #Output paired reads into separate files.
+  - "-m 10240" #"Indexing: the amount of memory (in Mbytes) for building the index"
