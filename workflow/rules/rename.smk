@@ -2,7 +2,7 @@ rule rename:
     output:
         expand(
             f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_{{read}}.fastq.gz",
-            zip,
+            zip,    
             sample=sample,
             read=read,
         ),

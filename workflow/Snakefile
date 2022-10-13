@@ -3,10 +3,11 @@
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
 configfile: "config/config.yaml"
+configfile: "config/private-config.yaml"
 # Define variables from configuration file
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
-TRIMMED_READS_FILEPATH = config.get("TRIMMED_READS_FILEPATH","trimmed/")
+RRNA_FILEPATH = config.get("RRNA_FILEPATH","rrna/")
 # Define available threads
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
 # Define global wildcards for input data after renaming
@@ -18,13 +19,10 @@ sample, read = glob_wildcards(regex_raw_illumina_files)
 rule all:
     input: 
         expand(
-            f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R1_val_1.fq.gz",
-            sample=sample,
+            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_{{dir}}.fq.gz",
+            sample=sample, dir = ["fwd", "rev"]
         ),
-        expand(
-            f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R2_val_2.fq.gz",
-            sample=sample,
-        )
 # Include rules
 include: "rules/rename.smk"
 include: "rules/trim_galore.smk"
+include: "rules/sortmerna.smk"
