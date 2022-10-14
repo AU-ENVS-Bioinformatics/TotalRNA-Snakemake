@@ -19,10 +19,15 @@ sample, read = glob_wildcards(regex_raw_illumina_files)
 rule all:
     input: 
         expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_{{dir}}.fq.gz",
-            sample=sample, dir = ["fwd", "rev"]
+            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_{{direction}}.fq.gz",
+            sample=sample, direction = ["fwd", "rev"]
         ),
+        expand(
+            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}all.{{direction}}.fq.gz",
+            direction = ["1", "2"]
+        )
 # Include rules
 include: "rules/rename.smk"
 include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
+include: "rules/metarib.smk"
