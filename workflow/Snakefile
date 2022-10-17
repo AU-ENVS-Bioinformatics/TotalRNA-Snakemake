@@ -8,6 +8,8 @@ configfile: "config/private-config.yaml"
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
 RRNA_FILEPATH = config.get("RRNA_FILEPATH","rrna/")
+METARIB_FILEPATH = config.get("METARIB_FILEPATH", "metarib/")
+
 # Define available threads
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
 # Define global wildcards for input data after renaming
@@ -18,10 +20,7 @@ sample, read = glob_wildcards(regex_raw_illumina_files)
 # Define rule all
 rule all:
     input: 
-        expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_{{direction}}.fq.gz",
-            sample=sample, direction = ["fwd", "rev"]
-        ),
+        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
         expand(
             f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}all.{{direction}}.fq.gz",
             direction = ["1", "2"]

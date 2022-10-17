@@ -1,10 +1,6 @@
 SORTMERNA_REF_DATABASE: "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta"
 PRIVATE_METARIB: 
-  # EMIRGE path 
-  - EM_PATH : "/software/anaconda3/envs/mg_py2/bin/emirge_amplicon.py"
   # EMIRGE references 
-  - EM_REF : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta"
+  - EM_REF : ""
   # EMIRGE reference index
-  - EM_BT : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed"
-  # BBTOOLS path   
-  - BB_PATH: "/software/bbmap"
+  - EM_BT : ""
