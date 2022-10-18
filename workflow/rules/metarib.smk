@@ -86,7 +86,7 @@ rule MetaRib:
         samples = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/samples.list.txt",
         R1_samples= expand(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq", sample = sample)
     output: 
-        directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}Iterarions")
+        directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib")
     params: 
         outdir = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}Iteration/"
     log:

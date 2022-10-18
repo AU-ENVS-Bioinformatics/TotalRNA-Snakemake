@@ -21,7 +21,7 @@ unique_samples = set(sample)
 # Define rule all
 rule all:
     input: 
-        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}Iterarions",
+        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib",
         expand(
             f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
             direction = ["1", "2"]
