@@ -4,3 +4,4 @@ channels:
 dependencies:
   - bbmap=39.00=h5c4e2a8_0
   - emirge=0.61.1=py27h30f897e_7
+  - pandas

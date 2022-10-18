@@ -4,8 +4,7 @@ RENAMED_READS_FILEPATH: "renamed_raw_reads/"
 TRIMMED_READS_FILEPATH: "trimmed/"
 SORTMERNA_FILEPATH: "sortmerna/"
 RRNA_FILEPATH: "rrna/"
-METARIB_FILEPATH: "metarib/"
-
+METARIB_FILEPATH: "MetaRib/"
 trim_galore:
   - "--trim-n" #Removes Ns from either side of the read.
   - "--illumina" #Illumina adapter

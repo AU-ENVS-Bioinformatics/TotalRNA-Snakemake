@@ -8,7 +8,7 @@ configfile: "config/private-config.yaml"
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
 RRNA_FILEPATH = config.get("RRNA_FILEPATH","rrna/")
-METARIB_FILEPATH = config.get("METARIB_FILEPATH", "metarib/")
+METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 
 # Define available threads
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
@@ -17,12 +17,13 @@ regex_raw_illumina_files = (
     f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_{{read}}.fastq.gz"
 )
 sample, read = glob_wildcards(regex_raw_illumina_files)
+unique_samples = set(sample)
 # Define rule all
 rule all:
     input: 
-        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
+        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}Iterarions",
         expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}all.{{direction}}.fq.gz",
+            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
             direction = ["1", "2"]
         )
 # Include rules

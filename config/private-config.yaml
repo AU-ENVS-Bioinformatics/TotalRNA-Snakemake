@@ -1,6 +1,6 @@
 SORTMERNA_REF_DATABASE: "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta"
 PRIVATE_METARIB: 
   # EMIRGE references 
-  - EM_REF : ""
+  - EM_REF : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta"
   # EMIRGE reference index
-  - EM_BT : ""
+  - EM_BT : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed"
