@@ -17,7 +17,7 @@ regex_raw_illumina_files = (
     f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_{{read}}.fastq.gz"
 )
 sample, read = glob_wildcards(regex_raw_illumina_files)
-unique_samples = set(sample)
+unique_samples = sorted(set(sample))
 # Define rule all
 rule all:
     input: 

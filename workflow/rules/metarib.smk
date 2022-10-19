@@ -7,8 +7,8 @@ metarib_params = dict(ChainMap(*config.get('metarib')))
 private_metarib_params = dict(ChainMap(*config.get('PRIVATE_METARIB'),))
 rule prepare_metarib:
     input:
-        R1= expand(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_fwd.fq.gz", sample = sample),
-        R2= expand(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_rev.fq.gz", sample = sample),
+        R1= expand(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_fwd.fq.gz", sample = unique_samples),
+        R2= expand(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_rev.fq.gz", sample = unique_samples),
     output:
         R1 = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",   
         R2 = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
@@ -17,20 +17,19 @@ rule prepare_metarib:
             caption = "report/prepare_metarib.rst"
             ),
     log:
-        "logs/sortmerna/concatenate_all.log",
+        "logs/metarib/concatenate_all.log",
     conda:
         "../envs/base_python.yaml"
     threads: AVAILABLE_THREADS
     params:
-        samples_names = "\n".join(sorted(set(sample))),
+        samples_names = "\n".join(unique_samples),
     shell:
-        "cat {input.R1} > {output.R1}.gz && "
+        "cat {input.R1} | pigz -d -k -p{threads} > {output.R1} && "
         "echo 'Forward files were successfully concatenated' >> {log} && "
-        "cat {input.R2} > {output.R2}.gz && "
+        "cat {input.R2} | pigz -d -k -p{threads} > {output.R2} && "
         "echo 'Reverse files were successfully concatenated' >> {log} && "
         "echo '{params.samples_names}' > {output.sample_list} && "
-        "echo 'Copy samples names into samples_list.txt' >> {log} && "
-        "gzip -d {output.R1}.gz {output.R2}.gz"
+        "echo 'Copy samples names into samples_list.txt' >> {log} "
 
 rule move_files_to_metarib:
     input: 
@@ -40,7 +39,7 @@ rule move_files_to_metarib:
         R1= expand(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq", sample = unique_samples),
         R2= expand(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.2.fq", sample = unique_samples)
     script: 
-        "../scripts/ln_metarib.py"
+        "../scripts/cp_metarib.py"
 
 rule config_file_metarib:
     output: f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
@@ -84,7 +83,7 @@ rule MetaRib:
         R1 = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",
         R2 = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
         samples = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/samples.list.txt",
-        R1_samples= expand(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq", sample = sample)
+        R1_samples= expand(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq", sample = unique_samples)
     output: 
         directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib")
     params: 
