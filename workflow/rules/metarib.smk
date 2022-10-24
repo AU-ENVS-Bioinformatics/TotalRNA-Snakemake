@@ -85,7 +85,8 @@ rule MetaRib:
         samples = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/samples.list.txt",
         R1_samples= expand(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq", sample = unique_samples)
     output: 
-        directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib")
+        outdir = directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib"),
+        filtered_fasta = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta",
     params: 
         outdir = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}Iteration/"
     log:
