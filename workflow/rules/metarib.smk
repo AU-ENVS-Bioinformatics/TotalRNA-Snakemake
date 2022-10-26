@@ -44,7 +44,7 @@ rule move_files_to_metarib:
 rule config_file_metarib:
     output: f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
     params: 
-        PROJECT_DIR = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}",
+        PROJECT_DIR = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}"[:-1],
         DATA_DIR = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data",
         SAMPLING_NUM = metarib_params.get('SAMPLING_NUM', "1000000") if metarib_params else "1000000",
         EM_PARA = metarib_params.get('EM_PARA', ""),
