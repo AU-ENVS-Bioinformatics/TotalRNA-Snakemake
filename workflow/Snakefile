@@ -9,6 +9,7 @@ DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
 RRNA_FILEPATH = config.get("RRNA_FILEPATH","rrna/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
+QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
 
 # Define available threads
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
@@ -22,6 +23,7 @@ unique_samples = sorted(set(sample))
 rule all:
     input: 
         f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib",
+        f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}",
         expand(
             f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
             direction = ["1", "2"]
@@ -31,3 +33,4 @@ include: "rules/rename.smk"
 include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
 include: "rules/metarib.smk"
+include: "rules/quast.smk"
