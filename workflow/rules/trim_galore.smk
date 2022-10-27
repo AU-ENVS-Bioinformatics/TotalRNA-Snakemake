@@ -8,8 +8,12 @@ trim_galore_params.append(f"--cores {trim_galore_threads}")
 rule trim_galore:
     input:
         [
-            f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_R1.fastq.gz",
-            f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_R2.fastq.gz",
+            ancient(
+                f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_R1.fastq.gz"
+            ),
+            ancient(
+                f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_R2.fastq.gz"
+            ),
         ],
     output:
         f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R1_val_1.fq.gz",

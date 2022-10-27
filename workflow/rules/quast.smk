@@ -7,8 +7,8 @@ AVAILABLE_THREADS = int(workflow.cores * 0.75)
 rule quast:
     input:
         fasta=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta",
-        R1 = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",   
-        R2 = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
+        R1=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",
+        R2=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
     output:
         outdir=directory(f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}"),
         report_txt=report(

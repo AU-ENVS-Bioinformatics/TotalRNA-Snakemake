@@ -1,13 +1,15 @@
-# Main entrypoint of the workflow. 
-# Please follow the best practices: 
+# Main entrypoint of the workflow.
+# Please follow the best practices:
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there. 
+# in particular regarding the standardized folder structure mentioned there.
 configfile: "config/config.yaml"
 configfile: "config/private-config.yaml"
+
+
 # Define variables from configuration file
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
-RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH","renamed_raw_reads")
-RRNA_FILEPATH = config.get("RRNA_FILEPATH","rrna/")
+RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH", "renamed_raw_reads")
+RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
 
@@ -19,15 +21,19 @@ regex_raw_illumina_files = (
 )
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
+
+
 # Define rule all
 rule all:
-    input: 
+    input:
         f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib",
         f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}",
         expand(
             f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
-            direction = ["1", "2"]
-        )
+            direction=["1", "2"],
+        ),
+
+
 # Include rules
 include: "rules/rename.smk"
 include: "rules/trim_galore.smk"
