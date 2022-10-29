@@ -3,3 +3,6 @@ resources/**
 logs/**
 .snakemake
 .snakemake/**
+*.gz
+*.html
+config/private-config.yaml

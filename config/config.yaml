@@ -1,0 +1,35 @@
+DEFAULT_SOURCE_FILEPATH: "reads/"
+DEFAULT_DEST_FILEPATH: "results/"
+RENAMED_READS_FILEPATH: "renamed_raw_reads/"
+TRIMMED_READS_FILEPATH: "trimmed/"
+SORTMERNA_FILEPATH: "sortmerna/"
+RRNA_FILEPATH: "rrna/"
+METARIB_FILEPATH: "MetaRib/"
+QUAST_FILEPATH: "quast/"
+mRNA_FILEPATH: "mRNA/"
+
+trim_galore:
+  - "--trim-n" #Removes Ns from either side of the read.
+  - "--illumina" #Illumina adapter
+  # Don't run with --paired neither -j
+
+sortmerna:
+  - "--fastx" #Output aligned reads into FASTA/FASTQ file
+  - "--paired_in" #Flags the paired-end reads as Aligned, when either of them is Aligned.
+  - "--out2" #Output paired reads into separate files.
+  - "-m 10240" #"Indexing: the amount of memory (in Mbytes) for building the index"
+
+metarib:
+  # Subsampling reads number in each iteration        
+  - SAMPLING_NUM : 1000000
+  # EMIRGE parameters   
+  - EM_PARA : --phred33 -l 151 -i 300 -s 75 -a 64 -n 25
+  # BBTOOLS mapping parameters   
+  - MAP_PARA : minid=0.96 maxindel=1 minhits=2 idfilter=0.98   
+  # BBTOOLS cluster parameters   
+  - CLS_PARA : fo=t ow=t c=t mcs=1 e=5 mid=99    
+  # Minimium averge coverage in filter process    
+  - MIN_COV : 2 
+  # Minimium coverge percent in filter process   
+  - MIN_PER : 80
+
