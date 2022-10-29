@@ -66,7 +66,7 @@ rule move_files_to_metarib:
         ),
     conda:
         "../envs/base_python.yaml"
-    log: 
+    log:
         "logs/metarib/move_files_to_metarib.log",
     script:
         "../scripts/cp_metarib.py"
@@ -92,7 +92,7 @@ rule config_file_metarib:
     threads: AVAILABLE_THREADS
     conda:
         "../envs/metarib.yaml"
-    log: 
+    log:
         "logs/metarib/config_file.log",
     shell:
         "echo [BASE] > {output} && "
