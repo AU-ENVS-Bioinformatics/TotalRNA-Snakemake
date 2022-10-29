@@ -23,9 +23,9 @@ rule sortmerna:
         ),
     params:
         extra=" ".join(config.get("sortmerna", "")),
-        aligned= lambda wildcards, output: output[0][:-10],
-        other= lambda wildcards, output: output[2][:-10],
-        outdir= lambda wildcards, output: output[2][:-10].replace("not_SSU/", "")
+        aligned=lambda wildcards, output: output[0][:-10],
+        other=lambda wildcards, output: output[2][:-10],
+        outdir=lambda wildcards, output: output[2][:-10].replace("not_SSU/", ""),
     log:
         "logs/sortmerna/{sample}.log",
     conda:

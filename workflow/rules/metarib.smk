@@ -30,7 +30,7 @@ rule prepare_metarib:
             caption="report/prepare_metarib.rst",
         ),
     log:
-        "logs/metarib/concatenate_all.log",
+        "logs/metarib/prepare_metarib.log",
     conda:
         "../envs/base_python.yaml"
     threads: AVAILABLE_THREADS
@@ -64,6 +64,10 @@ rule move_files_to_metarib:
             f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.2.fq",
             sample=unique_samples,
         ),
+    conda:
+        "../envs/base_python.yaml"
+    log: 
+        "logs/metarib/move_files_to_metarib.log",
     script:
         "../scripts/cp_metarib.py"
 
@@ -72,7 +76,7 @@ rule config_file_metarib:
     output:
         f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
     params:
-        PROJECT_DIR=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}"[:-1],
+        PROJECT_DIR=lambda wildcards, output: output[0][:-12],
         DATA_DIR=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data",
         SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000")
         if metarib_params
@@ -88,10 +92,12 @@ rule config_file_metarib:
     threads: AVAILABLE_THREADS
     conda:
         "../envs/metarib.yaml"
+    log: 
+        "logs/metarib/config_file.log",
     shell:
         "echo [BASE] > {output} && "
         "echo PROJECT_DIR : $(pwd)/{params.PROJECT_DIR} >> {output} && "
-        "echo DATA_DIR : $(pwd)/{params.DATA_DIR} >> {output} && "
+        "echo DATA_DIR : $(pwd)/{params.PROJECT_DIR}/data >> {output} && "
         "echo SAMPLING_NUM : {params.SAMPLING_NUM} >> {output} && "
         "echo THREAD : {threads} >> {output} && "
         "echo [EMIRGE] >> {output} && "
@@ -105,7 +111,8 @@ rule config_file_metarib:
         "echo CLS_PARA : {params.CLS_PARA} >> {output} && "
         "echo [FILTER] >> {output} && "
         "echo MIN_COV : {params.MIN_COV} >> {output} && "
-        "echo MIN_PER : {params.MIN_PER} >> {output} "
+        "echo MIN_PER : {params.MIN_PER} >> {output} && "
+        "cat  {output} > {log}"
 
 
 rule MetaRib:
