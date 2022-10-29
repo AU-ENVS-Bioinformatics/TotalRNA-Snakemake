@@ -14,7 +14,6 @@ rule sortmerna:
         "minimal"
     output:
         protected(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_fwd.fq.gz"),
-        f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}.log",
         protected(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_rev.fq.gz"),
         protected(
             f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_fwd.fq.gz"
@@ -24,9 +23,9 @@ rule sortmerna:
         ),
     params:
         extra=" ".join(config.get("sortmerna", "")),
-        aligned=f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}",
-        other=f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}",
-        outdir=f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}{{sample}}",
+        aligned= lambda wildcards, output: output[0][:-10],
+        other= lambda wildcards, output: output[2][:-10],
+        outdir= lambda wildcards, output: output[2][:-10].replace("not_SSU/", "")
     log:
         "logs/sortmerna/{sample}.log",
     conda:
