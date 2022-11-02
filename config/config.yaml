@@ -7,6 +7,7 @@ RRNA_FILEPATH: "rrna/"
 METARIB_FILEPATH: "MetaRib/"
 QUAST_FILEPATH: "quast/"
 mRNA_FILEPATH: "mRNA/"
+OTU_FILEPATH: "mapped_reads_to_contigs/"
 
 trim_galore:
   - "--trim-n" #Removes Ns from either side of the read.
@@ -33,3 +34,6 @@ metarib:
   # Minimium coverge percent in filter process   
   - MIN_PER : 80
 
+blastn:
+  - "-task megablast"  #Traditional megablast used to find very similar (e.g., intraspecies or closely related species) sequences
+  - "-num_alignments 100" #Show alignments for this number of database sequences.

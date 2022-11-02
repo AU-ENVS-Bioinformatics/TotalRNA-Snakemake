@@ -4,3 +4,6 @@
 [submodule "workflow/scripts/BBMap"]
 	path = workflow/scripts/BBMap
 	url = https://github.com/BioInfoTools/BBMap
+[submodule "workflow/scripts/CoMW"]
+	path = workflow/scripts/CoMW
+	url = https://github.com/anwarMZ/CoMW
