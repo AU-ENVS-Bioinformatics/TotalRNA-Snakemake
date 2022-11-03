@@ -33,9 +33,7 @@ rule all:
             f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
             direction=["1", "2"],
         ),
-        f"{DEFAULT_DEST_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
-        f"{DEFAULT_DEST_FILEPATH}ml_rRNA/ml_rRNA_silvamod.xml",
-        f"{DEFAULT_DEST_FILEPATH}CREST_Results",
+        f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
 
 
 # Include rules

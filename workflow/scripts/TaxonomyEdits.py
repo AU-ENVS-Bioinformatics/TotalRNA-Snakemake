@@ -26,6 +26,9 @@ def add_prefix_taxonomy(x: List[str]) -> List[str]:
     ['k__Bacteria', 't__PVC group (Planctobacteria)', 'p__Planctomycetes', 'c__Phycisphaerae', 'o__Tepidisphaerales', 'f__Tepidisphaeraceae', 'g__', 's__']
     """
     y = ["k__","t__", "p__","c__","o__","f__","g__","s__"] 
+    if len(x) > len(y):
+        print("Warning: taxonomy column is longer than expected", file=sys.stderr)
+        print(x, file=sys.stderr)
     for i, v in enumerate(x):
         y[i] += v
     return y
@@ -63,6 +66,7 @@ def main() -> None:
         )
     for line in args.infile:
         args.outfile.write(edit_line(line)+'\n')
+    print("Everything runs smoothly", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

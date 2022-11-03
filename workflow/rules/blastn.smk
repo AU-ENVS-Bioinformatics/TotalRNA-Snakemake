@@ -26,7 +26,8 @@ rule crest4:
         silva = f"{DEFAULT_DEST_FILEPATH}ml_rRNA/ml_rRNA_silvamod.xml",
         otu = f"{DEFAULT_DEST_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
     output:
-        directory(f"{DEFAULT_DEST_FILEPATH}CREST_Results"),
+        outdir = directory(f"{DEFAULT_DEST_FILEPATH}CREST_Results"),
+        otu = f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv"
     params:
         script = config.get("CREST_LCAClassifier_BINARY", "")
     conda:
@@ -36,4 +37,4 @@ rule crest4:
         "{params.script} "
         "-t {input.otu} "
         "{input.silva} "
-        "-o {output} >> {log} 2>&1"
+        "-o {output.outdir} >> {log} 2>&1"
