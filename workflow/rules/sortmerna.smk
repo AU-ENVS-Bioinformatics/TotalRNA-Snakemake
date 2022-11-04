@@ -41,35 +41,38 @@ rule sortmerna:
         "--reads {input.R1} --reads {input.R2} "
         ">> {log} 2>&1 "
 
-
-# rule sortmerna_notSSU:
-#     input:
-#         R1=f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_fwd.fq.gz"",
-#         R2=f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_rev.fq.gz",
-#         database_ref = config.get("SORTMERNA_NOT_SSU_REF_DATABASE"),
-#     shadow: "minimal"
-#     output:
-#         protected(f"{DEFAULT_DEST_FILEPATH}{mRNA_FILEPATH}{{sample}}_fwd.fq.gz"),
-#         f"{DEFAULT_DEST_FILEPATH}{mRNA_FILEPATH}{{sample}}.log",
-#         protected(f"{DEFAULT_DEST_FILEPATH}{mRNA_FILEPATH}{{sample}}_rev.fq.gz"),
-#         protected(f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_fwd.fq.gz"),
-#         protected(f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_rev.fq.gz"),
-#     params:
-#         extra=" ".join(config.get("sortmerna", "")),
-#         aligned = f"{DEFAULT_DEST_FILEPATH}{mRNA_FILEPATH}{{sample}}",
-#         other = f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}",
-#         outdir = f"{DEFAULT_DEST_FILEPATH}smRNA/{{sample}}",
-#     log:
-#         "logs/sortmerna_not_SSU/{sample}.log",
-#     conda:
-#         "../envs/sortmerna.yaml"
-#     threads: AVAILABLE_THREADS
-#     shell:
-#         "sortmerna -ref {input.database_ref} "
-#         "--threads {threads} "
-#         "--workdir {params.outdir} "
-#         "{params.extra} "
-#         "--aligned {params.aligned} "
-#         "--other {params.other} "
-#         "--reads {input.R1} --reads {input.R2} "
-#         ">> {log} 2>&1 "
+rule sortmerna_LSU:
+    input:
+        R1=f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_fwd.fq.gz",
+        R2=f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_rev.fq.gz",
+        database_ref=config.get("SORTMERNA_LSU_REF_DATABASE"),
+    shadow:
+        "minimal"
+    output:
+        protected(f"{DEFAULT_DEST_FILEPATH}mRNA/{{sample}}_fwd.fq.gz"),
+        protected(f"{DEFAULT_DEST_FILEPATH}mRNA/{{sample}}_rev.fq.gz"),
+        protected(
+            f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}_fwd.fq.gz"
+        ),
+        protected(
+            f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}_rev.fq.gz"
+        ),
+    params:
+        extra=" ".join(config.get("sortmerna", "")),
+        aligned=lambda wildcards, output: output[0][:-10],
+        other=lambda wildcards, output: output[2][:-10],
+        outdir=lambda wildcards, output: output[2][:-10].replace("not_SSU/", ""),
+    log:
+        "logs/sortmerna_LSU/{sample}.log",
+    conda:
+        "../envs/sortmerna.yaml"
+    threads: AVAILABLE_THREADS
+    shell:
+        "sortmerna -ref {input.database_ref} "
+        "--threads {threads} "
+        "--workdir {params.outdir} "
+        "{params.extra} "
+        "--aligned {params.aligned} "
+        "--other {params.other} "
+        "--reads {input.R1} --reads {input.R2} "
+        ">> {log} 2>&1 "

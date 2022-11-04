@@ -29,7 +29,8 @@ rule crest4:
         outdir = directory(f"{DEFAULT_DEST_FILEPATH}CREST_Results"),
         otu = f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv"
     params:
-        script = config.get("CREST_LCAClassifier_BINARY", "")
+        script = config.get("CREST_LCAClassifier_BINARY", ""),
+        tmp = f"{DEFAULT_DEST_FILEPATH}tmp_crest"
     conda:
         "../envs/base_python.yaml"
     log: "logs/mapping_rrna/crest.log"
@@ -37,4 +38,6 @@ rule crest4:
         "{params.script} "
         "-t {input.otu} "
         "{input.silva} "
-        "-o {output.outdir} >> {log} 2>&1"
+        "-o {params.tmp} >> {log} 2>&1 && "
+        "mv {params.tmp}/* {output.outdir} && " 
+        "rm -rf {params.tmp}"
