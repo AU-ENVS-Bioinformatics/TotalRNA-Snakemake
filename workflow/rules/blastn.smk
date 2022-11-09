@@ -24,7 +24,7 @@ rule blast_silvamod128:
 rule crest4:
     input: 
         silva = f"{DEFAULT_DEST_FILEPATH}ml_rRNA/ml_rRNA_silvamod.xml",
-        otu = f"{DEFAULT_DEST_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
+        otu = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
     output:
         outdir = directory(f"{DEFAULT_DEST_FILEPATH}CREST_Results"),
         otu = f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv"

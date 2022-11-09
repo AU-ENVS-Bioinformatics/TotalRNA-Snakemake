@@ -37,6 +37,7 @@ rule all:
             f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}_fwd.fq.gz",
             sample= unique_samples,
         ),
+        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
         f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
 
 

@@ -43,7 +43,7 @@ rule map_reads_to_contigs:
         readsdir = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/",
         filtered = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta"
     output: 
-        f"{DEFAULT_DEST_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
+        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
     params:
         script = "workflow/scripts/CoMW/scripts/map_reads_to_contigs.py",
     threads: AVAILABLE_THREADS,
