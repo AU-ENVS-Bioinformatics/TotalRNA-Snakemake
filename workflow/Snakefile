@@ -47,7 +47,7 @@ include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
 include: "rules/metarib.smk"
 include: "rules/quast.smk"
-include: "rules/blastn.smk"
+include: "rules/annotate_rrna.smk"
 include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 

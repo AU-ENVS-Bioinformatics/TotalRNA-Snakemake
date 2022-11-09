@@ -5,22 +5,18 @@ mRNA_FILEPATH = config.get("RRNA_FILEPATH", "mRNA/")
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
 
 
-rule sortmerna:
+rule sortmerna_ssu:
     input:
-        R1=f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R1_val_1.fq.gz",
-        R2=f"{DEFAULT_DEST_FILEPATH}{TRIMMED_READS_FILEPATH}{{sample}}_R2_val_2.fq.gz",
-        database_ref=config.get("SORTMERNA_REF_DATABASE"),
+        R1=f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
+        R2=f"results/trimmed/{{sample}}_R2_val_2.fq.gz",
+        database_ref_ssu=config.get("SORTMERNA_SSU_REF_DATABASE"),
     shadow:
         "minimal"
     output:
-        protected(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_fwd.fq.gz"),
-        protected(f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_rev.fq.gz"),
-        protected(
-            f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_fwd.fq.gz"
-        ),
-        protected(
-            f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}not_SSU/{{sample}}_rev.fq.gz"
-        ),
+        protected(f"results/rrna/{{sample}}_fwd.fq.gz"),
+        protected(f"results/rrna/{{sample}}_rev.fq.gz"),
+        protected(f"results/sortmerna/not_SSU/{{sample}}_fwd.fq.gz"),
+        protected(f"results/sortmerna/not_SSU/{{sample}}_rev.fq.gz"),
     params:
         extra=" ".join(config.get("sortmerna", "")),
         aligned=lambda wildcards, output: output[0][:-10],
@@ -32,7 +28,7 @@ rule sortmerna:
         "../envs/sortmerna.yaml"
     threads: AVAILABLE_THREADS
     shell:
-        "sortmerna -ref {input.database_ref} "
+        "sortmerna -ref {input.database_ref_ssu} "
         "--threads {threads} "
         "--workdir {params.outdir} "
         "{params.extra} "

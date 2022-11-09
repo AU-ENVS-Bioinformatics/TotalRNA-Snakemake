@@ -1,14 +1,14 @@
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
 rule blast_silvamod128:
     input:
-        query = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta",
+        query = f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
         blastdb=multiext(config.get("BLAST_DATABASE", ""),
             ".nhr",
             ".nin",
             ".nsq",
         )
     output:
-        f"{DEFAULT_DEST_FILEPATH}ml_rRNA/ml_rRNA_silvamod.xml"
+        f"results/ml_rRNA/ml_rRNA_silvamod.xml"
     log:
         "logs/ml_rRNA_silvamod.blast.log"
     threads:
@@ -21,16 +21,16 @@ rule blast_silvamod128:
     wrapper:
         "v1.18.3/bio/blast/blastn"
 
-rule crest4:
+rule LCAClassifier:
     input: 
-        silva = f"{DEFAULT_DEST_FILEPATH}ml_rRNA/ml_rRNA_silvamod.xml",
-        otu = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
+        silva = f"results/ml_rRNA/ml_rRNA_silvamod.xml",
+        otu = f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv"
     output:
-        outdir = directory(f"{DEFAULT_DEST_FILEPATH}CREST_Results"),
-        otu = f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv"
+        outdir = directory(f"results/CREST_Results"),
+        otu = f"results/CREST_Results/mapped_reads_to_contigs.tsv"
     params:
         script = config.get("CREST_LCAClassifier_BINARY", ""),
-        tmp = f"{DEFAULT_DEST_FILEPATH}tmp_crest"
+        tmp = f"results/tmp_crest"
     conda:
         "../envs/base_python.yaml"
     log: "logs/mapping_rrna/crest.log"

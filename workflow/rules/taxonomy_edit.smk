@@ -1,8 +1,8 @@
 rule taxonomy_edit:
     input: 
-        f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv"
+        f"results/CREST_Results/mapped_reads_to_contigs.tsv"
     output: 
-        f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited"
+        f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited"
     log: 
         "logs/mapping_rrna/Taxonomy_edits.log"
     conda:

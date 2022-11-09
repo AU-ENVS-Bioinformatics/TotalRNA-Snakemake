@@ -7,23 +7,23 @@ AVAILABLE_THREADS = int(workflow.cores * 0.75)
 rule prepare_mapping_rrna:
     input: 
         R1=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq",
+            f"results/MetaRib/data/{{sample}}.1.fq",
             sample=unique_samples,
         ),
         R2=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.2.fq",
+            f"results/MetaRib/data/{{sample}}.2.fq",
             sample=unique_samples,
         )
     output: 
         R1=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{{sample}}_R1.fastq",
+            f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
             sample=unique_samples,
         ),
         R2=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{{sample}}_R2.fastq",
+            f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
             sample=unique_samples,
         ),
-        readsdir = directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/")
+        readsdir = directory(f"results/MetaRib/SSU_fastq/")
     log: "logs/mapping_rrna/make_symlinks.log"
     conda:
         "../envs/base_python.yaml"
@@ -33,17 +33,17 @@ rule prepare_mapping_rrna:
 rule map_reads_to_contigs:
     input: 
         R1=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{{sample}}_R1.fastq",
+            f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
             sample=unique_samples,
         ),
         R2=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{{sample}}_R2.fastq",
+            f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
             sample=unique_samples,
         ),
-        readsdir = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/",
-        filtered = f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta"
+        readsdir = f"results/MetaRib/SSU_fastq/",
+        filtered = f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta"
     output: 
-        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}"
+        f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv"
     params:
         script = "workflow/scripts/CoMW/scripts/map_reads_to_contigs.py",
     threads: AVAILABLE_THREADS,

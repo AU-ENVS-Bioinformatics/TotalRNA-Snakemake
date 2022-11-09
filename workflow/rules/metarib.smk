@@ -15,18 +15,18 @@ private_metarib_params = dict(
 rule prepare_metarib:
     input:
         R1=expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_fwd.fq.gz",
+            f"results/rrna/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
         R2=expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_rev.fq.gz",
+            f"results/rrna/{{sample}}_rev.fq.gz",
             sample=unique_samples,
         ),
     output:
-        R1=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",
-        R2=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
+        R1=f"results/MetaRib/data/all.1.fq",
+        R2=f"results/MetaRib/data/all.2.fq",
         sample_list=report(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/samples.list.txt",
+            f"results/MetaRib/data/samples.list.txt",
             caption="report/prepare_metarib.rst",
         ),
     log:
@@ -48,20 +48,20 @@ rule prepare_metarib:
 rule move_files_to_metarib:
     input:
         R1=expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_fwd.fq.gz",
+            f"results/rrna/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
         R2=expand(
-            f"{DEFAULT_DEST_FILEPATH}{RRNA_FILEPATH}{{sample}}_rev.fq.gz",
+            f"results/rrna/{{sample}}_rev.fq.gz",
             sample=unique_samples,
         ),
     output:
         R1=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq",
+            f"results/MetaRib/data/{{sample}}.1.fq",
             sample=unique_samples,
         ),
         R2=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.2.fq",
+            f"results/MetaRib/data/{{sample}}.2.fq",
             sample=unique_samples,
         ),
     conda:
@@ -74,10 +74,10 @@ rule move_files_to_metarib:
 
 rule config_file_metarib:
     output:
-        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
+        f"results/MetaRib/MetaRib.cfg",
     params:
         PROJECT_DIR=lambda wildcards, output: output[0][:-12],
-        DATA_DIR=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data",
+        DATA_DIR=f"results/MetaRib/data",
         SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000")
         if metarib_params
         else "1000000",
@@ -117,19 +117,19 @@ rule config_file_metarib:
 
 rule MetaRib:
     input:
-        config=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib.cfg",
-        R1=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",
-        R2=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
-        samples=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/samples.list.txt",
+        config=f"results/MetaRib/MetaRib.cfg",
+        R1=f"results/MetaRib/data/all.1.fq",
+        R2=f"results/MetaRib/data/all.2.fq",
+        samples=f"results/MetaRib/data/samples.list.txt",
         R1_samples=expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/{{sample}}.1.fq",
+            f"results/MetaRib/data/{{sample}}.1.fq",
             sample=unique_samples,
         ),
     output:
-        outdir=directory(f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib"),
-        filtered_fasta=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta",
+        outdir=directory(f"results/MetaRib/MetaRib"),
+        filtered_fasta=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
     params:
-        outdir=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}Iteration/",
+        outdir=f"results/MetaRib/Iteration/",
     log:
         "logs/metarib.log",
     conda:
