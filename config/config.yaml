@@ -41,3 +41,16 @@ blastn:
 crest4:
   - "--search_algo blast"
   - "--search_db silvamod128"
+
+assemble_reads:
+  - "-m 500G" # Max-memory to be used in Gb
+  - "-l paired" # single- or paired-end library
+  - "-s RF" # Strand-specific RNA-Seq read orientation
+
+filter_ncRNA:
+  - "-e 3" # E-value in integar
+  - "-r n" # Delete temporary files created
+
+filter_table_by_abundance:
+  - "-e 1" # Relative expression in integars
+  - "-r y" # Delete temporary files created

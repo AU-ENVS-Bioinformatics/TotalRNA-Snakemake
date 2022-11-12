@@ -1,7 +1,7 @@
 RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 OTU_FILEPATH = config.get("OTU_FILEPATH", "mapped_reads_to_contigs.tsv")
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
+AVAILABLE_THREADS = int(workflow.cores * 0.5)
 
 
 rule prepare_mapping_rrna:

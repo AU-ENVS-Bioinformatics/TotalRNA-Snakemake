@@ -39,6 +39,7 @@ rule all:
         ),
         f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
         f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
+        "results/mRNA/mapped_reads_to_contigs_filt"
 
 
 # Include rules
@@ -50,4 +51,5 @@ include: "rules/quast.smk"
 include: "rules/annotate_rrna.smk"
 include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
+include: "rules/assembling_reads.smk"
 

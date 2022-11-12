@@ -3,7 +3,7 @@ from collections import ChainMap
 
 RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
+AVAILABLE_THREADS = int(workflow.cores * 0.5)
 metarib_params = dict(ChainMap(*config.get("metarib")))
 private_metarib_params = dict(
     ChainMap(

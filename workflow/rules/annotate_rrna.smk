@@ -1,4 +1,4 @@
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
+AVAILABLE_THREADS = int(workflow.cores * 0.5)
 rule blast_silvamod128:
     input:
         query = f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",

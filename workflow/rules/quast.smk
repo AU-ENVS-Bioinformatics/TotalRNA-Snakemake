@@ -1,7 +1,7 @@
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
+AVAILABLE_THREADS = int(workflow.cores * 0.5)
 
 
 rule quast:
