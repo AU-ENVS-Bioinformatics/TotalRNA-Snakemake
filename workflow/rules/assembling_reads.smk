@@ -46,7 +46,7 @@ rule assemble_reads:
         outdir = directory(f"results/mRNA/trinity/"),
         outfile = "results/mRNA/trinity/Trinity.fasta"
     params:
-        script = "workflow/scripts/CoMW/scripts/assemble_reads.py",
+        script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/assemble_reads.py",
         extra=" ".join(config.get("assemble_reads", "")),
     threads: AVAILABLE_THREADS,
     conda: "../envs/CoMW.yaml"
@@ -65,7 +65,7 @@ rule filter_non_coding_rna:
     output: 
         f"results/mRNA/trinity/contigs_ncrna_filtered.fasta"
     params:
-        script = "workflow/scripts/CoMW/scripts/filter_ncRNA.py",
+        script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/filter_ncRNA_edited.py",
         extra=" ".join(config.get("filter_ncRNA", "")),
     threads: AVAILABLE_THREADS,
     conda:
@@ -86,7 +86,7 @@ rule map_reads_to_contigs_mRNA:
     output: 
         directory(f"results/mRNA/mapped_reads_to_contigs")
     params:
-        script = "workflow/scripts/CoMW/scripts/map_reads_to_contigs.py",
+        script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/map_reads_to_contigs.py",
         extra=" ".join(config.get("map_reads_to_contigs_mRNA", "")),
     threads: AVAILABLE_THREADS,
     conda:
@@ -95,7 +95,7 @@ rule map_reads_to_contigs_mRNA:
     shell: 
         "python {params.script} "
         "-f {input.fasta} "
-        "-i {input.indir}"
+        "-i {input.indir} "
         "-o {output} "
         "-t {threads} "
         "{params.extra} "
@@ -108,11 +108,11 @@ rule filter_table_by_abundance:
     output: 
         directory(f"results/mRNA/mapped_reads_to_contigs_filt")
     params:
-        script = "workflow/scripts/CoMW/scripts/filter_table_by_abundance.py",
+        script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/filter_table_by_abundance.py",
         extra=" ".join(config.get("filter_table_by_abundance", "")),
     threads: AVAILABLE_THREADS,
     conda:
-        "../envs/CoMW.yaml"
+        "../envs/biopython.yaml"
     log: "logs/assemble_mRNA/filter_table_by_abundance.log"
     shell: 
         "python {params.script} "
