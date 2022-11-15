@@ -122,13 +122,13 @@ rule filter_table_by_abundance:
         extra=" ".join(config.get("filter_table_by_abundance", "")),
     threads: AVAILABLE_THREADS
     conda:
-        "../envs/biopython.yaml"
+        "../envs/vegan.yaml"
     log:
         "logs/assemble_mRNA/filter_table_by_abundance.log",
     shell:
         "python {params.script} "
         "-f {input.fasta} "
-        "-i {input.indir}"
+        "-i {input.indir} "
         "-o {output} "
         "{params.extra} "
         ">> {log} 2>&1"
