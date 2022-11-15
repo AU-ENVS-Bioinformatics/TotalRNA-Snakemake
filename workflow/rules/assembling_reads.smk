@@ -1,7 +1,7 @@
 RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 OTU_FILEPATH = config.get("OTU_FILEPATH", "mapped_reads_to_contigs.tsv")
-AVAILABLE_THREADS = int(workflow.cores * 0.5)
+AVAILABLE_THREADS = int(workflow.cores * 0.75)
 
 
 rule prepare_assemble_reads:
@@ -84,7 +84,7 @@ rule map_reads_to_contigs_mRNA:
         fasta = f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
         indir = f"results/mRNA/renamed/"
     output: 
-        directory(f"results/mRNA/mapped_reads_to_contigs")
+        f"results/mRNA/mapped_reads_to_contigs.tsv"
     params:
         script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/map_reads_to_contigs.py",
         extra=" ".join(config.get("map_reads_to_contigs_mRNA", "")),
@@ -104,9 +104,9 @@ rule map_reads_to_contigs_mRNA:
 rule filter_table_by_abundance:
     input: 
         fasta = f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
-        indir = f"results/mRNA/mapped_reads_to_contigs"
+        indir = f"results/mRNA/mapped_reads_to_contigs.tsv"
     output: 
-        directory(f"results/mRNA/mapped_reads_to_contigs_filt")
+        f"results/mRNA/mapped_reads_to_contigs_filtered.tsv"
     params:
         script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/filter_table_by_abundance.py",
         extra=" ".join(config.get("filter_table_by_abundance", "")),
@@ -118,6 +118,25 @@ rule filter_table_by_abundance:
         "python {params.script} "
         "-f {input.fasta} "
         "-i {input.indir}"
+        "-o {output} "
+        "{params.extra} "
+        ">> {log} 2>&1"
+
+rule align_contigs_to_database:
+    input: 
+        fasta = f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
+    output: 
+        f"results/mRNA/ML_SWORD_result.tsv"
+    params:
+        script = config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/") + "scripts/align_contigs_to_database.py",
+        extra=" ".join(config.get("align_contigs_to_database", "")),
+    threads: AVAILABLE_THREADS,
+    conda:
+        "../envs/biopython.yaml"
+    log: "logs/assemble_mRNA/filter_table_by_abundance.log"
+    shell: 
+        "python {params.script} "
+        "-f {input.fasta} "
         "-o {output} "
         "{params.extra} "
         ">> {log} 2>&1"

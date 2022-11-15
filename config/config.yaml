@@ -45,7 +45,7 @@ crest4:
 assemble_reads:
   - "-m 500G" # Max-memory to be used in Gb
   - "-l paired" # single- or paired-end library
-  - "-s RF" # Strand-specific RNA-Seq read orientation
+  - "-s RF" # Strand-specific RNA-Seq read orientation 
 
 filter_ncRNA:
   - "-e 3" # E-value in integar
@@ -54,3 +54,12 @@ filter_ncRNA:
 filter_table_by_abundance:
   - "-e 1" # Relative expression in integars
   - "-r y" # Delete temporary files created
+
+align_contigs_to_database:
+  - "-s 12" # Number of parts Fasta file to be splitted in
+  - "-n 6" # Number of ORFs (1-6) to be calculated for alignment
+  - "-d 1" # Alignment database of choice 1: Md5nr, 2: CAZy, 3: NCyc
+  - "-r y" # Remove temporary files
+
+# map_reads_to_contigs_mRNA:
+#   - "-m n" # paired-end

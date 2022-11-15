@@ -39,7 +39,8 @@ rule all:
         ),
         f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
         f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
-        "results/mRNA/mapped_reads_to_contigs_filt"
+        "results/mRNA/mapped_reads_to_contigs_filtered.tsv",
+        f"results/mRNA/ML_SWORD_result.tsv"
 
 
 # Include rules
