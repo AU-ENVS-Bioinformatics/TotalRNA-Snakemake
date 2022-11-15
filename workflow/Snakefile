@@ -14,6 +14,7 @@ METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
 OTU_FILEPATH = config.get("OTU_FILEPATH", "mapped_reads_to_contigs/")
 SORTMERNA_FILEPATH = config.get("SORTMERNA_FILEPATH", "mapped_reads_to_contigs/")
+
 # Define available threads
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
 # Define global wildcards for input data after renaming
@@ -53,4 +54,3 @@ include: "rules/annotate_rrna.smk"
 include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 include: "rules/assembling_reads.smk"
-
