@@ -37,6 +37,7 @@ rule sortmerna_ssu:
         "--reads {input.R1} --reads {input.R2} "
         ">> {log} 2>&1 "
 
+
 rule sortmerna_LSU:
     input:
         R1=f"results/rrna/{{sample}}_fwd.fq.gz",

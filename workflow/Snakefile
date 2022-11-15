@@ -36,12 +36,12 @@ rule all:
         ),
         expand(
             f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}_fwd.fq.gz",
-            sample= unique_samples,
+            sample=unique_samples,
         ),
         f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
         f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_filtered.tsv",
-        f"results/mRNA/ML_SWORD_result.tsv"
+        f"results/mRNA/ML_SWORD_result.tsv",
 
 
 # Include rules
