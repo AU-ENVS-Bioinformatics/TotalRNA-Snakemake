@@ -22,6 +22,14 @@ rule all:
             direction=["1", "2"],
         ),
         expand(
+            f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
+            sample=unique_samples,
+        ),
+        expand(
+            f"results/trimmed/{{sample}}_R2_val_2.fq.gz",
+            sample=unique_samples,
+        ),
+        expand(
             f"results/rrna/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),

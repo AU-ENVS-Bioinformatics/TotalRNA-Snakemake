@@ -1,13 +1,12 @@
 trim_galore_params = config.get("trim_galore", "")
-trim_galore_threads = min(config.get("TRIM_GALORE-THREADS", 7), 7)
+trim_galore_threads = config.get("TRIM_GALORE-THREADS", 7)
 trim_galore_params.append(f"--cores {trim_galore_threads}")
-
 
 rule trim_galore:
     input:
         [
-            f"results/renamed_raw_reads/{{sample}}_R2.fastq.gz",
             f"results/renamed_raw_reads/{{sample}}_R1.fastq.gz",
+            f"results/renamed_raw_reads/{{sample}}_R2.fastq.gz",
         ],
     output:
         f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
