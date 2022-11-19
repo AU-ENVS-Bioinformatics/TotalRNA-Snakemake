@@ -134,6 +134,7 @@ rule filter_table_by_abundance:
         "-o ./mapped_reads_to_contigs "
         ">> ../../{log} 2>&1"
 
+
 rule align_contigs_to_database:
     input:
         fasta=f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
