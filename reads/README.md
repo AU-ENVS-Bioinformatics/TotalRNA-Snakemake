@@ -11,3 +11,5 @@ That matches the following example file:
 ```
 INTERACT_ML7_S7_R1_001.fastq.gz
 ```
+
+You can use another regular expression by editing the [configuration file](../config/config.yaml).

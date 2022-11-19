@@ -10,6 +10,9 @@ filter_non_coding_rna-THREADS: 16
 map_reads_to_contigs-THREADS: 24
 align_contigs_to_database-THREADS: 120
 
+# Regular expression to rename raw reads
+READS_REGEX: .+[-|_](.+)_.+_(.+)_.+\.fastq.gz
+
 trim_galore:
   - "--trim-n" #Removes Ns from either side of the read.
   - "--illumina" #Illumina adapter

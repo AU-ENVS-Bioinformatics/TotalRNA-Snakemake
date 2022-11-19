@@ -8,7 +8,7 @@ DEFAULT_SOURCE_FILEPATH = "reads/"
 DEFAULT_DEST_FILEPATH = "results/"
 RENAMED_READS_FILEPATH = "renamed_raw_reads/"
 
-regular_expression = ".+[-|_](.+)_.+_(.+)_.+\.fastq.gz"
+regular_expression = snakemake.config.get("READS_REGEX", ".+[-|_](.+)_.+_(.+)_.+\.fastq.gz")
 input_dir = DEFAULT_SOURCE_FILEPATH
 output_dir = f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}"
 
