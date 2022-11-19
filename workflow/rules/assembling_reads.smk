@@ -115,7 +115,7 @@ rule filter_table_by_abundance:
         fasta=f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
         indir=f"results/mRNA/mapped_reads_to_contigs.tsv",
     output:
-        f"results/mRNA/mapped_reads_to_contigs_filtered.tsv",
+        f"results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
     params:
         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
         + "scripts/filter_table_by_abundance.py",
@@ -126,13 +126,13 @@ rule filter_table_by_abundance:
     log:
         "logs/assemble_mRNA/filter_table_by_abundance.log",
     shell:
+        "cd results/mRNA && "
         "python {params.script} "
-        "-f {input.fasta} "
-        "-i {input.indir} "
-        "-o {output} "
+        "-i ./mapped_reads_to_contigs.tsv "
+        "-f ./trinity/contigs_ncrna_filtered.fasta "
         "{params.extra} "
-        ">> {log} 2>&1"
-
+        "-o ./mapped_reads_to_contigs "
+        ">> ../../{log} 2>&1"
 
 rule align_contigs_to_database:
     input:
@@ -145,12 +145,13 @@ rule align_contigs_to_database:
         extra=" ".join(config.get("align_contigs_to_database", "")),
     threads: AVAILABLE_THREADS
     conda:
-        "../envs/biopython.yaml"
+        "../envs/pyfasta.yaml"
     log:
-        "logs/assemble_mRNA/filter_table_by_abundance.log",
+        "logs/assemble_mRNA/align_contigs_to_database.log",
     shell:
         "python {params.script} "
         "-f {input.fasta} "
         "-o {output} "
+        "-t {threads} "
         "{params.extra} "
         ">> {log} 2>&1"
