@@ -1,5 +1,4 @@
-AVAILABLE_THREADS = int(workflow.cores * 0.5)
-
+AVAILABLE_THREADS = int(config.get("BLAST-THREADS", 50))
 
 rule blast_silvamod128:
     input:

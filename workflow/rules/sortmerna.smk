@@ -1,9 +1,4 @@
-TRIMMED_READS_FILEPATH = config.get("TRIMMED_READS_FILEPATH", "trimmed/")
-SORTMERNA_FILEPATH = config.get("SORTMERNA_FILEPATH", "sortmerna/")
-RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
-mRNA_FILEPATH = config.get("RRNA_FILEPATH", "mRNA/")
-AVAILABLE_THREADS = int(workflow.cores * 0.5)
-
+AVAILABLE_THREADS = int(config.get("SORTMERNA-THREADS", 50))
 
 rule sortmerna_ssu:
     input:

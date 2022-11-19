@@ -1,5 +1,5 @@
 trim_galore_params = config.get("trim_galore", "")
-trim_galore_threads = min(AVAILABLE_THREADS, 7)
+trim_galore_threads = min(config.get("TRIM_GALORE-THREADS", 7), 7)
 trim_galore_params.append(f"--cores {trim_galore_threads}")
 
 

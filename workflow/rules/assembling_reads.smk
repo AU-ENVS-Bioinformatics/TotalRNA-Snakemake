@@ -26,7 +26,7 @@ rule prepare_assemble_reads:
         readsdir=directory(f"results/mRNA/renamed/"),
     log:
         "logs/assemble_mRNA/pigz.log",
-    threads: AVAILABLE_THREADS
+    threads: int(config.get("PIGZ-THREADS", 50))
     conda:
         "../envs/base_python.yaml"
     script:
@@ -48,7 +48,7 @@ rule assemble_reads:
         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
         + "scripts/assemble_reads.py",
         extra=" ".join(config.get("assemble_reads", "")),
-    threads: AVAILABLE_THREADS
+    threads: int(config.get("assemble_reads-THREADS", 50))
     conda:
         "../envs/CoMW.yaml"
     log:
@@ -71,7 +71,7 @@ rule filter_non_coding_rna:
         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
         + "scripts/filter_ncRNA_edited.py",
         extra=" ".join(config.get("filter_ncRNA", "")),
-    threads: AVAILABLE_THREADS
+    threads: int(config.get("filter_non_coding_rna-THREADS", 50))
     conda:
         "../envs/biopython.yaml"
     log:
@@ -95,7 +95,7 @@ rule map_reads_to_contigs_mRNA:
         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
         + "scripts/map_reads_to_contigs.py",
         extra=" ".join(config.get("map_reads_to_contigs_mRNA", "")),
-    threads: AVAILABLE_THREADS
+    threads: int(config.get("map_reads_to_contigs-THREADS", 50))
     conda:
         "../envs/CoMW.yaml"
     log:
@@ -120,7 +120,6 @@ rule filter_table_by_abundance:
         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
         + "scripts/filter_table_by_abundance.py",
         extra=" ".join(config.get("filter_table_by_abundance", "")),
-    threads: AVAILABLE_THREADS
     conda:
         "../envs/vegan.yaml"
     log:
@@ -144,7 +143,7 @@ rule align_contigs_to_database:
         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
         + "scripts/align_contigs_to_database.py",
         extra=" ".join(config.get("align_contigs_to_database", "")),
-    threads: AVAILABLE_THREADS
+    threads: int(config.get("align_contigs_to_database-THREADS", 50))
     conda:
         "../envs/pyfasta.yaml"
     log:

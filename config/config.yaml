@@ -1,13 +1,14 @@
-DEFAULT_SOURCE_FILEPATH: "reads/"
-DEFAULT_DEST_FILEPATH: "results/"
-RENAMED_READS_FILEPATH: "renamed_raw_reads/"
-TRIMMED_READS_FILEPATH: "trimmed/"
-SORTMERNA_FILEPATH: "sortmerna/"
-RRNA_FILEPATH: "rrna/"
-METARIB_FILEPATH: "MetaRib/"
-QUAST_FILEPATH: "quast/"
-mRNA_FILEPATH: "mRNA/"
-OTU_FILEPATH: "mapped_reads_to_contigs.tsv"
+TRIM_GALORE-THREADS: 7
+SORTMERNA-THREADS: 50
+METARIB-THREADS: 50
+QUAST-THREADS: 50
+QUAST-THREADS: 50
+BLAST-THREADS: 32
+PIGZ-THREADS: 50
+assemble_reads-THREADS: 50
+filter_non_coding_rna-THREADS: 16
+map_reads_to_contigs-THREADS: 24
+align_contigs_to_database-THREADS: 120
 
 trim_galore:
   - "--trim-n" #Removes Ns from either side of the read.
@@ -60,6 +61,3 @@ align_contigs_to_database:
   - "-n 6" # Number of ORFs (1-6) to be calculated for alignment
   - "-d 1" # Alignment database of choice 1: Md5nr, 2: CAZy, 3: NCyc
   - "-r y" # Remove temporary files
-
-# map_reads_to_contigs_mRNA:
-#   - "-m n" # paired-end
