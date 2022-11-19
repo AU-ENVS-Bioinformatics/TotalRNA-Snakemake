@@ -26,46 +26,46 @@ This pipeline manages large-scale TotalRNA meta-transcriptomic data for taxonomi
 
 It is best to pre-install Mamba before starting. All other dependencies will be installed automatically when running the pipeline for the first time.
 
-´´´bash
+```bash
 conda activate base
 mamba create -c conda-forge -c bioconda -n snakemake snakemake
-´´´
+```
 
 #### Usage
 Activating conda environment:
 
-´´´bash
+```bash
 conda activate snakemake
-´´´
+```
 
 Clone this git repository to the location where you want to run your analysis:
 
-´´´bash
+```bash
 git clone https://github.com/currocam/TotalRNA-Snakemake
 cd TotalRNA-Snakemake
-´´´
+```
 
-Copy raw fastq files into the ´reads´ directory. See [reads[/README.md](reads/README.md) for more information. Now, we are going to rename those files and made symlinks to the `results/renamed` directory.
+Copy raw fastq files into the ´reads´ directory. See [reads/README.md](reads/README.md) for more information. Now, we are going to rename those files and made symlinks to the `results/renamed` directory.
 
-´´´bash
+```bash
 snakemake -n rename
 snakemake -c1 rename
-´´´
+```
 
 Check that all your samples are in `results/renamed`:
 
-´´´bash
+```bash
 ls results/renamed_raw_reads/
-´´´
+```
 
 Check that the pipeline will behave as expected by running a dry run and check the [configuration file](config/config.yaml) if not.
 
-´´´bash
+```bash
 snakemake -n --use-conda
-´´´
+```
 
 Finally, run the whole pipeline. A useful flag to add is `--keep-going` to prevent the pipeline to stop if an error occurs.
 
-´´´bash
+```bash
 snakemake -c100 --use-conda --keep-going
-´´´
+```
