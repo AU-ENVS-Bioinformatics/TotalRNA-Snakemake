@@ -1,26 +1,26 @@
 DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
+AVAILABLE_THREADS = int(workflow.cores * 0.5)
 
 
 rule quast:
     input:
-        fasta=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib/Abundance/all.dedup.filtered.fasta",
-        R1=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.1.fq",
-        R2=f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.2.fq",
+        fasta=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
+        R1=f"results/MetaRib/data/all.1.fq",
+        R2=f"results/MetaRib/data/all.2.fq",
     output:
-        outdir=directory(f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}"),
+        outdir=directory(f"results/quast/"),
         report_txt=report(
-            f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}report.txt",
+            f"results/quast/report.txt",
             category="Genome assembly",
         ),
         report_tsv=report(
-            f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}report.tsv",
+            f"results/quast/report.tsv",
             category="Genome assembly",
         ),
         report_html=report(
-            f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}report.html",
+            f"results/quast/report.html",
             caption="report/quast_html.rst",
             category="Genome assembly",
         ),

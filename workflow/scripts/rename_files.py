@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import shutil
 import re
 
@@ -11,8 +12,11 @@ input_dir = DEFAULT_SOURCE_FILEPATH
 output_dir = f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}"
 
 def copy_file(original: str, target: str) -> None:
-    os.makedirs(os.path.dirname(target), exist_ok=True)
-    shutil.copyfile(original, target)
+    src, dest = Path(original).absolute(), Path(target).absolute()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    print(src)
+    print(dest)
+    dest.symlink_to(src)
 
 for file in os.listdir(input_dir):
     match = re.match(regular_expression, file)

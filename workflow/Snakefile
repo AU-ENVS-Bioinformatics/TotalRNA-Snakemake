@@ -12,6 +12,8 @@ RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH", "renamed_raw_reads
 RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
 METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
 QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
+OTU_FILEPATH = config.get("OTU_FILEPATH", "mapped_reads_to_contigs/")
+SORTMERNA_FILEPATH = config.get("SORTMERNA_FILEPATH", "mapped_reads_to_contigs/")
 
 # Define available threads
 AVAILABLE_THREADS = int(workflow.cores * 0.75)
@@ -32,6 +34,14 @@ rule all:
             f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
             direction=["1", "2"],
         ),
+        expand(
+            f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}_fwd.fq.gz",
+            sample=unique_samples,
+        ),
+        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
+        f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
+        "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
+        f"results/mRNA/ML_SWORD_result.tsv",
 
 
 # Include rules
@@ -40,3 +50,7 @@ include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
 include: "rules/metarib.smk"
 include: "rules/quast.smk"
+include: "rules/annotate_rrna.smk"
+include: "rules/mapping_rrna.smk"
+include: "rules/taxonomy_edit.smk"
+include: "rules/assembling_reads.smk"

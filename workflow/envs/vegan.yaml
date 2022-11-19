@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - pip
+  - r-vegan
+  - r-base
+  - pip:
+    - biopython

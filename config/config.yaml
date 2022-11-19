@@ -7,6 +7,7 @@ RRNA_FILEPATH: "rrna/"
 METARIB_FILEPATH: "MetaRib/"
 QUAST_FILEPATH: "quast/"
 mRNA_FILEPATH: "mRNA/"
+OTU_FILEPATH: "mapped_reads_to_contigs.tsv"
 
 trim_galore:
   - "--trim-n" #Removes Ns from either side of the read.
@@ -33,3 +34,32 @@ metarib:
   # Minimium coverge percent in filter process   
   - MIN_PER : 80
 
+blastn:
+  - "-task megablast"  #Traditional megablast used to find very similar (e.g., intraspecies or closely related species) sequences
+  - "-num_alignments 100" #Show alignments for this number of database sequences.
+
+crest4:
+  - "--search_algo blast"
+  - "--search_db silvamod128"
+
+assemble_reads:
+  - "-m 500G" # Max-memory to be used in Gb
+  - "-l paired" # single- or paired-end library
+  - "-s RF" # Strand-specific RNA-Seq read orientation 
+
+filter_ncRNA:
+  - "-e 3" # E-value in integar
+  - "-r n" # Delete temporary files created
+
+filter_table_by_abundance:
+  - "-e 1" # Relative expression in integars
+  - "-r y" # Delete temporary files created
+
+align_contigs_to_database:
+  - "-s 12" # Number of parts Fasta file to be splitted in
+  - "-n 6" # Number of ORFs (1-6) to be calculated for alignment
+  - "-d 1" # Alignment database of choice 1: Md5nr, 2: CAZy, 3: NCyc
+  - "-r y" # Remove temporary files
+
+# map_reads_to_contigs_mRNA:
+#   - "-m n" # paired-end
