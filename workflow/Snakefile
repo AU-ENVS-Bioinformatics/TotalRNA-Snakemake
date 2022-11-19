@@ -6,40 +6,32 @@ configfile: "config/config.yaml"
 configfile: "config/private-config.yaml"
 
 
-# Define variables from configuration file
-DEFAULT_DEST_FILEPATH = config.get("DEFAULT_DEST_FILEPATH", "results/")
-RENAMED_READS_FILEPATH = config.get("RENAMED_READS_FILEPATH", "renamed_raw_reads")
-RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
-METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
-QUAST_FILEPATH = config.get("QUAST_FILEPATH", "quast/")
-OTU_FILEPATH = config.get("OTU_FILEPATH", "mapped_reads_to_contigs/")
-SORTMERNA_FILEPATH = config.get("SORTMERNA_FILEPATH", "mapped_reads_to_contigs/")
-
-# Define available threads
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
 # Define global wildcards for input data after renaming
 regex_raw_illumina_files = (
-    f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}{{sample}}_{{read}}.fastq.gz"
+    f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
 )
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
 
-
 # Define rule all
 rule all:
     input:
-        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}MetaRib",
-        f"{DEFAULT_DEST_FILEPATH}{QUAST_FILEPATH}",
+        "results/MetaRib/MetaRib",
+        "results/quast/",
         expand(
-            f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}data/all.{{direction}}.fq",
+            f"results/MetaRib/data/all.{{direction}}.fq",
             direction=["1", "2"],
         ),
         expand(
-            f"{DEFAULT_DEST_FILEPATH}{SORTMERNA_FILEPATH}LSU/{{sample}}_fwd.fq.gz",
+            f"results/rrna/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
-        f"{DEFAULT_DEST_FILEPATH}{METARIB_FILEPATH}SSU_fastq/{OTU_FILEPATH}",
-        f"{DEFAULT_DEST_FILEPATH}CREST_Results/mapped_reads_to_contigs.tsv.edited",
+        expand(
+            f"results/mRNA/{{sample}}_rev.fq.gz",
+            sample=unique_samples,
+        ),
+        f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv",
+        f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
         f"results/mRNA/ML_SWORD_result.tsv",
 

@@ -1,9 +1,3 @@
-RRNA_FILEPATH = config.get("RRNA_FILEPATH", "rrna/")
-METARIB_FILEPATH = config.get("METARIB_FILEPATH", "MetaRib/")
-OTU_FILEPATH = config.get("OTU_FILEPATH", "mapped_reads_to_contigs.tsv")
-AVAILABLE_THREADS = int(workflow.cores * 0.75)
-
-
 rule prepare_assemble_reads:
     input:
         R1=expand(
