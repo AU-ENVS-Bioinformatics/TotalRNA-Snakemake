@@ -1,5 +1,6 @@
 AVAILABLE_THREADS = int(config.get("BLAST-THREADS", 50))
 
+
 rule blast_silvamod128:
     input:
         query=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",

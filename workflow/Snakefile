@@ -7,11 +7,10 @@ configfile: "config/private-config.yaml"
 
 
 # Define global wildcards for input data after renaming
-regex_raw_illumina_files = (
-    f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
-)
+regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
+
 
 # Define rule all
 rule all:

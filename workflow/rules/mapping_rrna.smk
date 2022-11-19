@@ -1,5 +1,6 @@
 AVAILABLE_THREADS = int(config.get("METARIB-THREADS", 50))
 
+
 rule prepare_mapping_rrna:
     input:
         R1=expand(

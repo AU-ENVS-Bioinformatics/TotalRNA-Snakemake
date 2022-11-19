@@ -1,5 +1,6 @@
 AVAILABLE_THREADS = int(config.get("SORTMERNA-THREADS", 50))
 
+
 rule sortmerna_ssu:
     input:
         R1=f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
