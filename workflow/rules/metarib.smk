@@ -132,6 +132,7 @@ rule MetaRib:
         "logs/metarib.log",
     conda:
         "../envs/metarib.yaml"
+    threads: AVAILABLE_THREADS
     shell:
         "python2 workflow/scripts/MetaRib/run_MetaRib.py -cfg {input.config}"
         ">> {log} 2>&1 "
