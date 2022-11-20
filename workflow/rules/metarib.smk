@@ -29,6 +29,8 @@ rule prepare_metarib:
         ),
     log:
         "logs/metarib/prepare_metarib.log",
+    benchmark:
+        "benchmarks/metarib/prepare_metarib.log"
     conda:
         "../envs/base_python.yaml"
     threads: AVAILABLE_THREADS
@@ -66,6 +68,8 @@ rule move_files_to_metarib:
         "../envs/base_python.yaml"
     log:
         "logs/metarib/move_files_to_metarib.log",
+    benchmark:
+        "benchmarks/metarib/move_files_to_metarib.log"
     script:
         "../scripts/cp_metarib.py"
 
@@ -92,6 +96,8 @@ rule config_file_metarib:
         "../envs/metarib.yaml"
     log:
         "logs/metarib/config_file.log",
+    benchmark:
+        "benchmarks/metarib/config_file.log"
     shell:
         "echo [BASE] > {output} && "
         "echo PROJECT_DIR : $(pwd)/{params.PROJECT_DIR} >> {output} && "
@@ -130,6 +136,8 @@ rule MetaRib:
         outdir=f"results/MetaRib/Iteration/",
     log:
         "logs/metarib.log",
+    benchmark:
+        "benchmarks/metarib/metarib.log"
     conda:
         "../envs/metarib.yaml"
     threads: AVAILABLE_THREADS

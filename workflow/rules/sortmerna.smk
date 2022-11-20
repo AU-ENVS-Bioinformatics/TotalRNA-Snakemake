@@ -20,6 +20,8 @@ rule sortmerna_ssu:
         outdir=lambda wildcards, output: output[2][:-10].replace("not_SSU/", ""),
     log:
         "logs/sortmerna/{sample}.log",
+    benchmark:
+        "benchmarks/sortmerna/{sample}.log"
     conda:
         "../envs/sortmerna.yaml"
     threads: AVAILABLE_THREADS
@@ -53,6 +55,8 @@ rule sortmerna_LSU:
         outdir=lambda wildcards, output: output[2][:-10].replace("not_LSU/", ""),
     log:
         "logs/sortmerna_LSU/{sample}.log",
+    benchmark:
+        "benchmarks/sortmerna_LSU/{sample}.log"
     conda:
         "../envs/sortmerna.yaml"
     threads: AVAILABLE_THREADS

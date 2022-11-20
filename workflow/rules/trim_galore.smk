@@ -2,6 +2,7 @@ trim_galore_params = config.get("trim_galore", "")
 trim_galore_threads = config.get("TRIM_GALORE-THREADS", 7)
 trim_galore_params.append(f"--cores {trim_galore_threads}")
 
+
 rule trim_galore:
     input:
         [
@@ -27,5 +28,7 @@ rule trim_galore:
         extra=" ".join(trim_galore_params),
     log:
         "logs/trim_galore/{sample}.log",
+    benchmark:
+        "benchmarks/trim_galore/{sample}.log"
     wrapper:
         "v1.12.1/bio/trim_galore/pe"

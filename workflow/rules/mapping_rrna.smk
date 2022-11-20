@@ -23,6 +23,8 @@ rule prepare_mapping_rrna:
         readsdir=directory(f"results/MetaRib/SSU_fastq/"),
     log:
         "logs/mapping_rrna/make_symlinks.log",
+    benchmark:
+        "benchmarks/mapping_rrna/make_symlinks.log"
     conda:
         "../envs/base_python.yaml"
     script:
@@ -50,6 +52,8 @@ rule map_reads_to_contigs:
         "../envs/CoMW.yaml"
     log:
         "logs/mapping_rrna/map_reads_to_contigs.log",
+    benchmark:
+        "benchmarks/mapping_rrna/map_reads_to_contigs.log"
     shell:
         "python {params.script} "
         "-f {input.filtered} "

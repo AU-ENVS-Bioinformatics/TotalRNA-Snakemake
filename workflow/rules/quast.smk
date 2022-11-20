@@ -23,6 +23,8 @@ rule quast:
         ),
     log:
         "logs/quast.log",
+    benchmark:
+        "benchmarks/quast.log"
     conda:
         "../envs/quast.yaml"
     params:

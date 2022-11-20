@@ -14,6 +14,8 @@ rule blast_silvamod128:
         f"results/ml_rRNA/ml_rRNA_silvamod.xml",
     log:
         "logs/ml_rRNA_silvamod.blast.log",
+    benchmark:
+        "benchmarks/ml_rRNA_silvamod.blast.log"
     threads: AVAILABLE_THREADS
     params:
         # Usable options and specifiers for the different output formats are listed here:
@@ -38,6 +40,8 @@ rule LCAClassifier:
         "../envs/base_python.yaml"
     log:
         "logs/mapping_rrna/crest.log",
+    benchmark:
+        "benchmarks/mapping_rrna/crest.log"
     shell:
         "{params.script} "
         "-t {input.otu} "

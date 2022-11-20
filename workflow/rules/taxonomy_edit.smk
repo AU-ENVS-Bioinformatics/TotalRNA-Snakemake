@@ -5,6 +5,8 @@ rule taxonomy_edit:
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
     log:
         "logs/mapping_rrna/Taxonomy_edits.log",
+    benchmark:
+        "benchmarks/mapping_rrna/Taxonomy_edits.log"
     conda:
         "../envs/base_python.yaml"
     shell:

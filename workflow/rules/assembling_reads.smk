@@ -20,6 +20,8 @@ rule prepare_assemble_reads:
         readsdir=directory(f"results/mRNA/renamed/"),
     log:
         "logs/assemble_mRNA/pigz.log",
+    benchmark:
+        "benchmarks/assemble_mRNA/pigz.log"
     threads: int(config.get("PIGZ-THREADS", 50))
     conda:
         "../envs/base_python.yaml"
@@ -47,6 +49,8 @@ rule assemble_reads:
         "../envs/CoMW.yaml"
     log:
         "logs/assemble_mRNA/assemble_reads.log",
+    benchmark:
+        "benchmarks/assemble_mRNA/assemble_reads.log"
     shell:
         "python {params.script} "
         "-i {input.readsdir} "
@@ -70,6 +74,8 @@ rule filter_non_coding_rna:
         "../envs/biopython.yaml"
     log:
         "logs/assemble_mRNA/filter_non_coding_rna.log",
+    benchmark:
+        "benchmarks/assemble_mRNA/filter_non_coding_rna.log"
     shell:
         "python {params.script} "
         "-f {input.fasta} "
@@ -94,6 +100,8 @@ rule map_reads_to_contigs_mRNA:
         "../envs/CoMW.yaml"
     log:
         "logs/assemble_mRNA/map_reads_to_contigs.log",
+    benchmark:
+        "benchmarks/assemble_mRNA/map_reads_to_contigs.log"
     shell:
         "python {params.script} "
         "-f {input.fasta} "
@@ -118,6 +126,8 @@ rule filter_table_by_abundance:
         "../envs/vegan.yaml"
     log:
         "logs/assemble_mRNA/filter_table_by_abundance.log",
+    benchmark:
+        "benchmarks/assemble_mRNA/filter_table_by_abundance.log"
     shell:
         "cd results/mRNA && "
         "python {params.script} "
@@ -142,6 +152,8 @@ rule align_contigs_to_database:
         "../envs/pyfasta.yaml"
     log:
         "logs/assemble_mRNA/align_contigs_to_database.log",
+    benchmark:
+        "benchmarks/assemble_mRNA/align_contigs_to_database.log"
     shell:
         "python {params.script} "
         "-f {input.fasta} "
