@@ -38,10 +38,9 @@ Activating conda environment:
 conda activate snakemake
 ```
 
-Clone this git repository to the location where you want to run your analysis:
-
+Clone this git repository to the location where you want to run your analysis. Notice that you will need the flag --recurse-submodules in order to clone other repositories as dependencies. 
 ```bash
-git clone https://github.com/currocam/TotalRNA-Snakemake
+git clone --recurse-submodules -j8 https://github.com/currocam/TotalRNA-Snakemake
 cd TotalRNA-Snakemake
 ```
 
