@@ -22,7 +22,8 @@ sortmerna:
   - "--fastx" #Output aligned reads into FASTA/FASTQ file
   - "--paired_in" #Flags the paired-end reads as Aligned, when either of them is Aligned.
   - "--out2" #Output paired reads into separate files.
-  - "-m 10240" #"Indexing: the amount of memory (in Mbytes) for building the index"
+# https://github.com/biocore/sortmerna/issues/206
+#  - "-m 10240" #"Indexing: the amount of memory (in Mbytes) for building the index"
 
 metarib:
   # Subsampling reads number in each iteration        
