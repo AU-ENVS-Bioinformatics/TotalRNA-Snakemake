@@ -1,5 +1,5 @@
 AVAILABLE_THREADS = int(config.get("SORTMERNA-THREADS", 50))
-
+idx_directory = config.get("SORTMERNA_DATABASE_INDEX", "")
 
 rule sortmerna_ssu:
     input:
@@ -18,6 +18,7 @@ rule sortmerna_ssu:
         aligned=lambda wildcards, output: output[0][:-10],
         other=lambda wildcards, output: output[2][:-10],
         outdir=lambda wildcards, output: output[2][:-10].replace("not_SSU/", ""),
+        idx_flag = f"--idx-dir {idx_directory}" if idx_directory else ""
     log:
         "logs/sortmerna/{sample}.log",
     benchmark:
@@ -30,6 +31,7 @@ rule sortmerna_ssu:
         "--threads {threads} "
         "--workdir {params.outdir} "
         "{params.extra} "
+        "{params.idx_flag} "
         "--aligned {params.aligned} "
         "--other {params.other} "
         "--reads {input.R1} --reads {input.R2} "
@@ -53,6 +55,7 @@ rule sortmerna_LSU:
         aligned=lambda wildcards, output: output[0][:-10],
         other=lambda wildcards, output: output[2][:-10],
         outdir=lambda wildcards, output: output[2][:-10].replace("not_LSU/", ""),
+        idx_flag = f"--idx-dir {idx_directory}" if idx_directory else ""
     log:
         "logs/sortmerna_LSU/{sample}.log",
     benchmark:
@@ -65,6 +68,7 @@ rule sortmerna_LSU:
         "--threads {threads} "
         "--workdir {params.outdir} "
         "{params.extra} "
+        "{params.idx_flag} "
         "--aligned {params.aligned} "
         "--other {params.other} "
         "--reads {input.R1} --reads {input.R2} "
