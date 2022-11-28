@@ -46,8 +46,8 @@ rule sortmerna_LSU:
     shadow:
         "minimal"
     output:
-        protected(f"results/mRNA/{{sample}}_fwd.fq.gz"),
-        protected(f"results/mRNA/{{sample}}_rev.fq.gz"),
+        protected(f"results/sortmerna/LSU/{{sample}}_fwd.fq.gz"),
+        protected(f"results/sortmerna/LSU/{{sample}}_rev.fq.gz"),
         protected(f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz"),
         protected(f"results/sortmerna/not_LSU/{{sample}}_rev.fq.gz"),
     params:

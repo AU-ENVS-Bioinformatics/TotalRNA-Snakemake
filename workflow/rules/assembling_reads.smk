@@ -1,11 +1,11 @@
 rule prepare_assemble_reads:
     input:
         R1=expand(
-            f"results/mRNA/{{sample}}_fwd.fq.gz",
+            f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
         R2=expand(
-            f"results/mRNA/{{sample}}_rev.fq.gz",
+            f"results/sortmerna/not_LSU/{{sample}}_rev.fq.gz",
             sample=unique_samples,
         ),
     output:
