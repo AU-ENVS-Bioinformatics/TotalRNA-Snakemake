@@ -33,10 +33,6 @@ rule all:
             f"results/rrna/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
-        expand(
-            f"results/mRNA/{{sample}}_rev.fq.gz",
-            sample=unique_samples,
-        ),
         f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv",
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
