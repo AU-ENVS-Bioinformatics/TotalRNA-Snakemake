@@ -33,18 +33,10 @@ rule prepare_mapping_rrna:
 
 rule map_reads_to_contigs:
     input:
-        R1=expand(
-            f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
-            sample=unique_samples,
-        ),
-        R2=expand(
-            f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
-            sample=unique_samples,
-        ),
         readsdir=f"results/MetaRib/SSU_fastq/",
         filtered=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
     output:
-        f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv",
+        f"results/MetaRib/mapped_reads_to_contigs.tsv",
     params:
         script="workflow/scripts/CoMW/scripts/map_reads_to_contigs.py",
     threads: AVAILABLE_THREADS

@@ -29,7 +29,7 @@ rule blast_silvamod128:
 rule LCAClassifier:
     input:
         silva=f"results/ml_rRNA/ml_rRNA_silvamod.xml",
-        otu=f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv",
+        otu=f"results/MetaRib/mapped_reads_to_contigs.tsv",
     output:
         outdir=directory(f"results/CREST_Results"),
         otu=f"results/CREST_Results/mapped_reads_to_contigs.tsv",

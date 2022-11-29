@@ -33,7 +33,11 @@ rule all:
             f"results/rrna/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
-        f"results/MetaRib/SSU_fastq/mapped_reads_to_contigs.tsv",
+        expand(
+            f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz",
+            sample=unique_samples,
+        ),
+        f"results/MetaRib/mapped_reads_to_contigs.tsv",
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
         f"results/mRNA/ML_SWORD_result.tsv",
