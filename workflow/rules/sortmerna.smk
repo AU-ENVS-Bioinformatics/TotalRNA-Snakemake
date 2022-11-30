@@ -41,8 +41,8 @@ rule sortmerna_ssu:
 
 rule sortmerna_LSU:
     input:
-        R1=f"results/rrna/{{sample}}_fwd.fq.gz",
-        R2=f"results/rrna/{{sample}}_rev.fq.gz",
+        R1=f"results/sortmerna/not_SSU/{{sample}}_fwd.fq.gz",
+        R2=f"results/sortmerna/not_SSU/{{sample}}_rev.fq.gz",
         database_ref=config.get("SORTMERNA_LSU_REF_DATABASE"),
     shadow:
         "minimal"
