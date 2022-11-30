@@ -4,6 +4,12 @@ SORTMERNA_DATABASE_INDEX: "/Databases/sortmerna_idx"
 BLAST_DATABASE: "/Databases/SilvaMod138PR2/silvamod138pr2.fasta"
 CREST_LCAClassifier_BINARY: "/software/CREST/LCAClassifier/bin/classify"
 CoMW_REPOSITORY: "/software/CoMW/"
+SWORD_DATABASES:
+  - Md5nr: /software/CoMW/databases/M5NR_protien.fasta
+  - CAZy: /software/CoMW/databases/CAZyDB.07202017.fa
+  - NCyc: /software/CoMW/databases/NCyc_100.faa
+
+
 PRIVATE_METARIB: 
   # EMIRGE references 
   - EM_REF : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta"

@@ -63,5 +63,4 @@ filter_table_by_abundance:
 align_contigs_to_database:
   - "-s 12" # Number of parts Fasta file to be splitted in
   - "-n 6" # Number of ORFs (1-6) to be calculated for alignment
-  - "-d 1" # Alignment database of choice 1: Md5nr, 2: CAZy, 3: NCyc
-  - "-r y" # Remove temporary files
+  - "--remove" # Remove temporary files
