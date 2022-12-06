@@ -1,4 +1,6 @@
 from collections import ChainMap
+
+
 # Main entrypoint of the workflow.
 # Please follow the best practices:
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
@@ -12,6 +14,8 @@ regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
 sword_databases = dict(ChainMap(*config.get("SWORD_DATABASES")))
+
+shell.prefix("set -o pipefail; ")
 
 
 # Define rule all
@@ -41,11 +45,11 @@ rule all:
         ),
         expand(
             f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
-            database = list(sword_databases.keys())
+            database=list(sword_databases.keys()),
         ),
         f"results/MetaRib/mapped_reads_to_contigs.tsv",
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
-        "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv"
+        "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
 
 
 # Include rules
@@ -58,3 +62,8 @@ include: "rules/annotate_rrna.smk"
 include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 include: "rules/assembling_reads.smk"
+
+
+rule clean:
+    shell:
+        f"snakemake --conda-cleanup-pkgs "
