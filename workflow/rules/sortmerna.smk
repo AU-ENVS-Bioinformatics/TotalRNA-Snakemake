@@ -2,6 +2,7 @@ AVAILABLE_THREADS = int(config.get("SORTMERNA-THREADS", 50))
 idx_SSU_directory = config.get("SORTMERNA_SSU_DATABASE_INDEX", "")
 idx_LSU_directory = config.get("SORTMERNA_LSU_DATABASE_INDEX", "")
 
+
 rule sortmerna_ssu:
     input:
         R1=f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
@@ -19,7 +20,7 @@ rule sortmerna_ssu:
         aligned=lambda wildcards, output: output[0][:-10],
         other=lambda wildcards, output: output[2][:-10],
         outdir=lambda wildcards, output: output[2][:-10].replace("not_SSU/", ""),
-        idx_flag = f"--idx-dir {idx_SSU_directory}" if idx_SSU_directory else ""
+        idx_flag=f"--idx-dir {idx_SSU_directory}" if idx_SSU_directory else "",
     log:
         "logs/sortmerna/{sample}.log",
     benchmark:
@@ -56,7 +57,7 @@ rule sortmerna_LSU:
         aligned=lambda wildcards, output: output[0][:-10],
         other=lambda wildcards, output: output[2][:-10],
         outdir=lambda wildcards, output: output[2][:-10].replace("not_LSU/", ""),
-        idx_flag = f"--idx-dir {idx_LSU_directory}" if idx_LSU_directory else ""
+        idx_flag=f"--idx-dir {idx_LSU_directory}" if idx_LSU_directory else "",
     log:
         "logs/sortmerna_LSU/{sample}.log",
     benchmark:

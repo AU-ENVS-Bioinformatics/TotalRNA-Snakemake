@@ -142,10 +142,10 @@ rule align_contigs_to_database:
     input:
         fasta=f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
     output:
-        f"results/mRNA/ML_SWORD_{{database}}_result.tsv"
+        f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
     params:
-        database_path = lambda wildcards: sword_databases.get(wildcards["database"]),
-        script= "workflow/scripts/align_contigs_to_database.py",
+        database_path=lambda wildcards: sword_databases.get(wildcards["database"]),
+        script="workflow/scripts/align_contigs_to_database.py",
         extra=" ".join(config.get("align_contigs_to_database", "")),
     threads: int(config.get("align_contigs_to_database-THREADS", 50))
     conda:
