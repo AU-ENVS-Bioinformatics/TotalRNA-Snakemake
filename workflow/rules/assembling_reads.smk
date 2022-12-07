@@ -28,37 +28,23 @@ rule prepare_assemble_reads:
     script:
         "../scripts/pigz_reads.py"
 
-
-rule assemble_reads:
+rule trinity:
     input:
-        R1=expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
-        R2=expand(
-            f"results/mRNA/renamed/{{sample}}_R2.fastq",
-            sample=unique_samples,
-        ),
-        readsdir=f"results/mRNA/renamed/",
+        left= expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
+        right= expand(f"results/mRNA/renamed/{{sample}}_R2.fastq",sample=unique_samples,)
     output:
-        outdir=directory(f"results/mRNA/trinity/"),
-        outfile="results/mRNA/trinity/Trinity.fasta",
-    params:
-        script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
-        + "scripts/assemble_reads.py",
-        extra=" ".join(config.get("assemble_reads", "")),
-    threads: int(config.get("assemble_reads-THREADS", 50))
-    conda:
-        "../envs/CoMW.yaml"
+        "results/mRNA/trinity/Trinity.fasta"
     log:
         "logs/assemble_mRNA/assemble_reads.log",
     benchmark:
         "benchmarks/assemble_mRNA/assemble_reads.log"
-    shell:
-        "python {params.script} "
-        "-i {input.readsdir} "
-        "-o {output.outdir} "
-        "-c {threads} "
-        "{params.extra} "
-        ">> {log} 2>&1"
-
+    params:
+        extra=" ".join(config.get("assemble_reads", ""))
+    threads: int(config.get("assemble_reads-THREADS", 50))
+    resources:
+        mem_gb= int(config.get("assemble_reads-MEMORY", 500))
+    wrapper:
+        "v1.20.0/bio/trinity"
 
 rule filter_non_coding_rna:
     input:

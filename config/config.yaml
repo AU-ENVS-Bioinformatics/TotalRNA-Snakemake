@@ -6,6 +6,7 @@ QUAST-THREADS: 50
 BLAST-THREADS: 32
 PIGZ-THREADS: 50
 assemble_reads-THREADS: 100
+assemble_reads-MEMORY: 500 # Gb
 filter_non_coding_rna-THREADS: 16
 map_reads_to_contigs-THREADS: 24
 align_contigs_to_database-THREADS: 120
@@ -48,10 +49,8 @@ crest4:
   - "--search_db silvamod128"
 
 assemble_reads:
-  - "-m 500G" # Max-memory to be used in Gb
-  - "-l paired" # single- or paired-end library
-  - "-s RF" # Strand-specific RNA-Seq read orientation 
-
+  - "--SS_lib_type RF" # Strand-specific RNA-Seq read orientation
+  # There is no need to add --single or seqtype
 filter_ncRNA:
   - "-e 3" # E-value in integar
   - "-r n" # Delete temporary files created
