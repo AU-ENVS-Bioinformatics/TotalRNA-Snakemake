@@ -59,7 +59,7 @@ def construct_batchsword_command(
 def concatenate_files(infiles: list[Path], outfile: Path):
     outfile.parent.mkdir(parents=True, exist_ok=True)
     merging = " ".join(infiles)
-    subprocess.call(f"cat {merging} > {str(outfile)}" ,shell= True)
+    subprocess.run(f"cat {merging} > {str(outfile)}" ,shell= True, check=True)
 @app.command()
 def align_contigs_to_database(
     infile: Path = typer.Argument(..., help="Fasta file of assembled contigs, output from Trinity"),
@@ -90,25 +90,25 @@ def align_contigs_to_database(
         infile, translated_sequences_file, orf
         )
     debug_command(translation_command)
-    subprocess.call(translation_command)
+    subprocess.run(translation_command, check=True)
     echo_success("Translation done")
     # Split fasta files
     if splitsize > 1:
         echo_message(f"Splitting translated fasta file into {splitsize} to use less memory")
         splitting_command = construct_splitting_command(translated_sequences_file, splitsize)
         debug_command(splitting_command)
-        subprocess.call(splitting_command)
+        subprocess.run(splitting_command, check=True)
         echo_success("Splitting done")  
     # Align to databases
     splitted_fasta = list(get_splitted_fasta_files(translated_sequences_file))
     batchsword_commands = construct_batchsword_command(splitted_fasta, database, threads)
     for command in batchsword_commands:
         debug_command(command)
-        subprocess.call(command) 
+        subprocess.run(command, check=True) 
     merging_files = [construct_split_outfile(fasta, database) for fasta in splitted_fasta]
     concatenate_files(merging_files, outfile)
     if remove:
-        subprocess.call(["rm", "-rf", str(temp_directory)])
+        subprocess.run(["rm", "-rf", str(temp_directory)], check=True)
 
 if __name__ == "__main__":
     app()
