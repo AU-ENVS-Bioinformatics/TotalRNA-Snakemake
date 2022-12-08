@@ -65,7 +65,7 @@ include: "rules/assembling_reads.smk"
 
 
 rule clean:
-    shell:
-        f"snakemake --conda-cleanup-pkgs "
     log:
         "logs/clean.log"
+    shell:
+        f"snakemake --conda-cleanup-pkgs "
