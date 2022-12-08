@@ -43,6 +43,9 @@ rule all:
             f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
+        
+rule mRNA:
+    input:
         expand(
             f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
             database=list(sword_databases.keys()),
@@ -50,7 +53,7 @@ rule all:
         f"results/MetaRib/mapped_reads_to_contigs.tsv",
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-
+        
 
 # Include rules
 include: "rules/rename.smk"
