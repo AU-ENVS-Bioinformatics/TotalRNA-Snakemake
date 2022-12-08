@@ -48,7 +48,7 @@ rule trinity:
 
 rule filter_non_coding_rna:
     input:
-        fasta="results/mRNA/trinity/Trinity.fasta",
+        fasta=ancient("results/mRNA/trinity/Trinity.fasta"),
     output:
         f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
     params:
