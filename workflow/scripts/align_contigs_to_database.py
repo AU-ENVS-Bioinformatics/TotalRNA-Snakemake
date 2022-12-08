@@ -53,7 +53,7 @@ def construct_batchsword_command(
         return [
             "sword", "-i", str(fasta), "-t", str(threads),
             "-o", construct_split_outfile(fasta, database),
-            "-f", "bm9",  "-j", str(database.filepath), "-c", "30000"
+            "-f", "bm9",  "-j", str(database), "-c", "30000"
         ]
     return [inner(fasta, database) for fasta in infiles]
 def concatenate_files(infiles: list[Path], outfile: Path):
