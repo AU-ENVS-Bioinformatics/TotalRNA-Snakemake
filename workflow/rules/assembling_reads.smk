@@ -36,6 +36,8 @@ rule trinity:
         "results/mRNA/trinity/Trinity.fasta"
     log:
         "logs/assemble_mRNA/assemble_reads.log",
+    conda:
+        "../envs/trinity.yaml"
     benchmark:
         "benchmarks/assemble_mRNA/assemble_reads.log"
     params:
@@ -43,8 +45,8 @@ rule trinity:
     threads: int(config.get("assemble_reads-THREADS", 50))
     resources:
         mem_gb= int(config.get("assemble_reads-MEMORY", 500))
-    wrapper:
-        "v1.20.0/bio/trinity"
+    script:
+        "../scripts/trinity_wrapper.py"
 
 rule filter_non_coding_rna:
     input:
