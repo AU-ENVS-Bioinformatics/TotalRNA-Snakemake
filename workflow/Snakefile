@@ -43,9 +43,6 @@ rule all:
             f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
-        
-rule mRNA:
-    input:
         expand(
             f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
             database=list(sword_databases.keys()),
@@ -70,3 +67,5 @@ include: "rules/assembling_reads.smk"
 rule clean:
     shell:
         f"snakemake --conda-cleanup-pkgs "
+    log:
+        "logs/clean.log"
