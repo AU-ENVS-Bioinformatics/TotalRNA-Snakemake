@@ -30,8 +30,8 @@ rule prepare_assemble_reads:
 
 rule trinity:
     input:
-        left= expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
-        right= expand(f"results/mRNA/renamed/{{sample}}_R2.fastq",sample=unique_samples,)
+        left= ancient(expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples)),
+        right= ancient(expand(f"results/mRNA/renamed/{{sample}}_R2.fastq",sample=unique_samples)),
     output:
         "results/mRNA/trinity/Trinity.fasta"
     log:
@@ -128,7 +128,7 @@ rule filter_table_by_abundance:
 
 rule align_contigs_to_database:
     input:
-        fasta=f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
+        fasta=ancient(f"results/mRNA/trinity/contigs_ncrna_filtered.fasta"),
     output:
         f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
     params:
