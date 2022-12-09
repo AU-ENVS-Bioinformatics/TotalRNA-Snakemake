@@ -59,7 +59,9 @@ filter_table_by_abundance:
   - "-e 1" # Relative expression in integars
   - "-r y" # Delete temporary files created
 
+ORFs_translate: 6 # Number of ORFs (1-6) to be calculated for alignment
+split_fasta: 12 # Number of parts Fasta file to be splitted in (greater than 1)
 align_contigs_to_database:
-  - "-s 12" # Number of parts Fasta file to be splitted in
+  - "-s 12" # Number of parts Fasta file to be splitted in (greater than 1)
   - "-n 6" # Number of ORFs (1-6) to be calculated for alignment
   - "--remove" # Remove temporary files

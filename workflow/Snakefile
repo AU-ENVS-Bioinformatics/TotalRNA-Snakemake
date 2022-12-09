@@ -50,7 +50,7 @@ rule all:
         f"results/MetaRib/mapped_reads_to_contigs.tsv",
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-        
+
 
 # Include rules
 include: "rules/rename.smk"
@@ -62,10 +62,11 @@ include: "rules/annotate_rrna.smk"
 include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 include: "rules/assembling_reads.smk"
+include: "rules/align_contigs_to_database.smk"
 
 
 rule clean:
     log:
-        "logs/clean.log"
+        "logs/clean.log",
     shell:
         f"snakemake --conda-cleanup-pkgs "

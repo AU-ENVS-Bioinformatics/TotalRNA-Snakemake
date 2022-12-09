@@ -28,23 +28,28 @@ rule prepare_assemble_reads:
     script:
         "../scripts/pigz_reads.py"
 
+
 rule trinity:
     input:
-        left= expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
-        right= expand(f"results/mRNA/renamed/{{sample}}_R2.fastq",sample=unique_samples,)
+        left=expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
+        right=expand(
+            f"results/mRNA/renamed/{{sample}}_R2.fastq",
+            sample=unique_samples,
+        ),
     output:
-        "results/mRNA/trinity/Trinity.fasta"
+        "results/mRNA/trinity/Trinity.fasta",
     log:
         "logs/assemble_mRNA/assemble_reads.log",
     benchmark:
         "benchmarks/assemble_mRNA/assemble_reads.log"
     params:
-        extra=" ".join(config.get("assemble_reads", ""))
+        extra=" ".join(config.get("assemble_reads", "")),
     threads: int(config.get("assemble_reads-THREADS", 50))
     resources:
-        mem_gb= int(config.get("assemble_reads-MEMORY", 500))
+        mem_gb=int(config.get("assemble_reads-MEMORY", 500)),
     wrapper:
         "v1.20.0/bio/trinity"
+
 
 rule filter_non_coding_rna:
     input:
@@ -122,29 +127,3 @@ rule filter_table_by_abundance:
         "{params.extra} "
         "-o ./mapped_reads_to_contigs "
         ">> ../../{log} 2>&1"
-
-
-rule align_contigs_to_database:
-    input:
-        fasta=f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
-    output:
-        f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
-    params:
-        database_path=lambda wildcards: sword_databases.get(wildcards["database"]),
-        script="workflow/scripts/align_contigs_to_database.py",
-        extra=" ".join(config.get("align_contigs_to_database", "")),
-    threads: int(config.get("align_contigs_to_database-THREADS", 50))
-    conda:
-        "../envs/align_contigs_to_database.yaml"
-    log:
-        "logs/assemble_mRNA/align_contigs_to_{database}.log",
-    benchmark:
-        "benchmarks/assemble_mRNA/align_contigs_to_{database}.log"
-    shell:
-        "python {params.script} "
-        "{input.fasta} "
-        "{output} "
-        "{params.database_path} "
-        "-t {threads} "
-        "{params.extra} "
-        ">> {log} 2>&1"
