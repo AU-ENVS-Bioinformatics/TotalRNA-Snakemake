@@ -1,6 +1,6 @@
 rule translate_filtered_trinity:
     input:
-        f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
+        ancient(f"results/mRNA/trinity/contigs_ncrna_filtered.fasta"),
     output:
         f"results/mRNA/trinity/translated/contigs_ncrna_filtered.fasta",
     params:
