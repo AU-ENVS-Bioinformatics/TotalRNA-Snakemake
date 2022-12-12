@@ -30,8 +30,6 @@ def newnames(oldname, n, kmers=None, overlap=None, header=None):
     else:
         width = len(str(n))
         names = [pattern % str(i).rjust(width, '0') for i in range(n)]
-    print("creating new files:", file=sys.stderr)
-    print("\n".join(names), file=sys.stderr)
     return names
 
 
