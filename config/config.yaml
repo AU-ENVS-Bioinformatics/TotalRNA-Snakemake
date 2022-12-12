@@ -9,7 +9,7 @@ assemble_reads-THREADS: 100
 assemble_reads-MEMORY: 500 # Gb
 filter_non_coding_rna-THREADS: 16
 map_reads_to_contigs-THREADS: 24
-align_contigs_to_database-THREADS: 120
+align_contigs_to_database-THREADS: 50
 
 # Regular expression to rename raw reads
 READS_REGEX: .+[-|_](.+)_.+_(.+)_.+\.fastq.gz
