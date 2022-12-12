@@ -85,7 +85,6 @@ rule sword:
         f"benchmarks/align_contigs_to_database/sword_{{database}}_{{index}}.log"
     threads: int(config.get("align_contigs_to_database-THREADS", 50))
     shell:
-
         "sword -i {input} "
         "-t {threads} -o {output} "
         "-f bm9 -j {params.database_path} -c 30000 "
