@@ -31,8 +31,12 @@ rule prepare_assemble_reads:
 
 rule trinity:
     input:
-        left= ancient(expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples)),
-        right= ancient(expand(f"results/mRNA/renamed/{{sample}}_R2.fastq",sample=unique_samples)),
+        left=ancient(
+            expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples)
+        ),
+        right=ancient(
+            expand(f"results/mRNA/renamed/{{sample}}_R2.fastq", sample=unique_samples)
+        ),
     output:
         "results/mRNA/trinity/Trinity.fasta",
     log:
@@ -45,7 +49,7 @@ rule trinity:
         extra=" ".join(config.get("assemble_reads", "")),
     threads: int(config.get("assemble_reads-THREADS", 50))
     resources:
-        mem_gb= int(config.get("assemble_reads-MEMORY", 500))
+        mem_gb=int(config.get("assemble_reads-MEMORY", 500)),
     script:
         "../scripts/trinity_wrapper.py"
 
