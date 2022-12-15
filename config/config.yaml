@@ -3,6 +3,7 @@ SORTMERNA-THREADS: 50
 METARIB-THREADS: 50
 QUAST-THREADS: 50
 QUAST-THREADS: 50
+ANTISMASH-THREADS: 50
 BLAST-THREADS: 32
 PIGZ-THREADS: 50
 assemble_reads-THREADS: 100
@@ -59,6 +60,8 @@ filter_table_by_abundance:
   - "-e 1" # Relative expression in integars
   - "-r y" # Delete temporary files created
 
+# Align contigs to database
+filter_by_abundance_before_align: false
 ORFs_translate: 6 # Number of ORFs (1-6) to be calculated for alignment
 split_fasta: 12 # Number of parts Fasta file to be splitted in (greater than 1)
 align_contigs_to_database:
