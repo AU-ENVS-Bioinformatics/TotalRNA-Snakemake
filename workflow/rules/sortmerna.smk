@@ -7,7 +7,7 @@ rule sortmerna_ssu:
     input:
         R1=f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
         R2=f"results/trimmed/{{sample}}_R2_val_2.fq.gz",
-        database_ref_ssu=config.get("SORTMERNA_SSU_REF_DATABASE"),
+        database_ref_ssu=ancient(config.get("SORTMERNA_SSU_REF_DATABASE")),
     shadow:
         "minimal"
     output:
@@ -44,7 +44,7 @@ rule sortmerna_LSU:
     input:
         R1=f"results/sortmerna/not_SSU/{{sample}}_fwd.fq.gz",
         R2=f"results/sortmerna/not_SSU/{{sample}}_rev.fq.gz",
-        database_ref=config.get("SORTMERNA_LSU_REF_DATABASE"),
+        database_ref=ancient(config.get("SORTMERNA_LSU_REF_DATABASE")),
     shadow:
         "minimal"
     output:
