@@ -2,12 +2,13 @@ def parse_pyfasta_int(length: int):
     width = len(str(length))
     return [str(number).zfill(width) for number in range(length)]
 
+
 rule filter_before_align:
     input:
-        table = "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-        fasta = "results/mRNA/trinity/contigs_ncrna_filtered.fasta",
+        table="results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
+        fasta="results/mRNA/trinity/contigs_ncrna_filtered.fasta",
     output:
-        "results/mRNA/trinity/contigs_ncrna_filtered_AbundanceFiltered.fasta"
+        "results/mRNA/trinity/contigs_ncrna_filtered_AbundanceFiltered.fasta",
     conda:
         "../envs/biopython.yaml"
     log:
@@ -17,15 +18,17 @@ rule filter_before_align:
     script:
         "../scripts/filter_fasta_by_abundance.py"
 
+
 def choose_filepath(configuration: dict):
     """
     It returns a non-filtered mRNA fasta or a abundance_filtered fasta based
-    on configuration file. 
+    on configuration file.
     """
     is_filter = configuration.get("filter_by_abundance_before_align", False)
     filtered = "results/mRNA/trinity/contigs_ncrna_filtered_AbundanceFiltered.fasta"
     non_filtered = "results/mRNA/trinity/contigs_ncrna_filtered.fasta"
     return filtered if is_filter else non_filtered
+
 
 rule translate_trinity:
     input:
