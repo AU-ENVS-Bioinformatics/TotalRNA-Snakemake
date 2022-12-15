@@ -68,5 +68,7 @@ include: "rules/align_contigs_to_database.smk"
 rule clean:
     log:
         "logs/clean.log",
+    conda:
+        "../envs/base_python.yaml"
     shell:
         f"snakemake --conda-cleanup-pkgs "
