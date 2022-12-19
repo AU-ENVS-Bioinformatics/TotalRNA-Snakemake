@@ -1,3 +1,6 @@
+include: "common.smk"
+
+
 rule prepare_assemble_reads:
     input:
         R1=expand(

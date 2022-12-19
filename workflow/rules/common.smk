@@ -7,3 +7,8 @@ def choose_filepath(configuration: dict):
     filtered = "results/mRNA/trinity/contigs_ncrna_filtered_AbundanceFiltered.fasta"
     non_filtered = "results/mRNA/trinity/contigs_ncrna_filtered.fasta"
     return filtered if is_filter else non_filtered
+
+
+def parse_pyfasta_int(length: int):
+    width = len(str(length))
+    return [str(number).zfill(width) for number in range(length)]
