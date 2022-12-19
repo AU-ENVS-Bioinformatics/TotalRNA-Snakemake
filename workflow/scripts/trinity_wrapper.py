@@ -64,7 +64,7 @@ if not seqtype:
             seqtype is not None
         ), "cannot infer 'fq' or 'fa' seqtype from input files. Please specify 'fq' or 'fa' in 'seqtype' parameter"
 
-outdir = path.dirname(snakemake.output[0])
+outdir = snakemake.output[0]
 assert "trinity" in outdir, "output directory name must contain 'trinity'"
 
 log = snakemake.log_fmt_shell(stdout=True, stderr=True)
