@@ -63,6 +63,7 @@ include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 include: "rules/assembling_reads.smk"
 include: "rules/align_contigs_to_database.smk"
+include: "rules/common.smk"
 
 
 rule clean:
