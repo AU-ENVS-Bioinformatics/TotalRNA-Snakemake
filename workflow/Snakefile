@@ -44,7 +44,7 @@ rule all:
             sample=unique_samples,
         ),
         expand(
-            f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
+            f"results/sword/parsed_{{database}}.tsv",
             database=list(sword_databases.keys()),
         ),
         f"results/MetaRib/mapped_reads_to_contigs.tsv",

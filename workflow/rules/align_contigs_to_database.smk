@@ -92,3 +92,18 @@ rule align_contigs_to_database:
     shell:
         "cat {input} > {output} && "
         "echo Finished > {log}"
+
+
+rule parse_sword:
+    input:
+        f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
+    output:
+        f"results/sword/parsed_{{database}}.tsv",
+    conda:
+        "../envs/dask.yaml"
+    log:
+        "logs/sword/parse_sword_{database}.log",
+    benchmark:
+        "benchmarks/sword/parse_sword_{database}.log"
+    script:
+        "../scripts/parse_sword.py"
