@@ -43,10 +43,10 @@ rule all:
             f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz",
             sample=unique_samples,
         ),
-        expand(
-            f"results/sword/parsed_{{database}}.tsv",
-            database=list(sword_databases.keys()),
-        ),
+ #        expand(
+ #           f"results/sword/parsed_{{database}}.tsv",
+ #           database=list(sword_databases.keys()),
+ #       ),
         f"results/MetaRib/mapped_reads_to_contigs.tsv",
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
