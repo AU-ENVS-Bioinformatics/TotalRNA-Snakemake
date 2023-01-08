@@ -82,7 +82,7 @@ rule align_contigs_to_database:
             index=parse_pyfasta_int(int(config.get("split_fasta", 2))),
         ),
     output:
-        f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
+        f"results/mRNA/sword/SWORD_{{database}}_result.bm9",
     conda:
         "../envs/align_contigs_to_database.yaml"
     log:
@@ -96,7 +96,7 @@ rule align_contigs_to_database:
 
 rule parse_sword:
     input:
-        f"results/mRNA/ML_SWORD_{{database}}_result.tsv",
+        f"results/mRNA/sword/SWORD_{{database}}_result.bm9",
     output:
         f"results/sword/parsed_{{database}}.tsv",
     conda:
