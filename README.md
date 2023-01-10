@@ -68,3 +68,7 @@ Finally, run the whole pipeline. A useful flag to add is `--keep-going` to preve
 ```bash
 snakemake -c100 --use-conda --keep-going
 ```
+
+## Glossary
+
+Please find a glossary with the main generated files in the [Wiki of the project](https://github.com/currocam/TotalRNA-Snakemake/wiki).
