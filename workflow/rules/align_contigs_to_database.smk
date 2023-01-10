@@ -58,7 +58,7 @@ rule sword:
     input:
         f"results/mRNA/trinity/translated/contigs_ncrna_filtered.{{index}}.fasta",
     output:
-        f"results/mRNA/trinity/sword/temp/{{database}}.{{index}}.tsv",
+        f"results/mRNA/trinity/sword/temp/{{database}}.{{index}}.bm9",
     conda:
         "../envs/align_contigs_to_database.yaml"
     params:
@@ -78,7 +78,7 @@ rule sword:
 rule align_contigs_to_database:
     input:
         expand(
-            "results/mRNA/trinity/sword/temp/{{database}}.{index}.tsv",
+            "results/mRNA/trinity/sword/temp/{{database}}.{index}.bm9",
             index=parse_pyfasta_int(int(config.get("split_fasta", 2))),
         ),
     output:
