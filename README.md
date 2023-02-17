@@ -1,5 +1,6 @@
 # Snakemake workflow: TotalRNA-Snakemake
 
+[![DOI](https://zenodo.org/badge/546561474.svg)](https://zenodo.org/badge/latestdoi/546561474)
 [![Snakemake](https://img.shields.io/badge/snakemake-≥6.3.0-brightgreen.svg)](https://snakemake.github.io)
 [![GitHub actions status](https://github.com/currocam/TotalRNA-Snakemake/workflows/Tests/badge.svg?branch=main)](https://github.com/currocam/TotalRNA-Snakemake/actions?query=branch%3Amain+workflow%3ATests)
 
