@@ -42,7 +42,7 @@ rule trinity:
         ),
     output:
         "results/mRNA/trinity/",
-        "results/mRNA/trinity/Trinity.fasta",
+        "results/mRNA/trinity.Trinity.fasta",
     log:
         "logs/assemble_mRNA/assemble_reads.log",
     conda:
@@ -60,7 +60,7 @@ rule trinity:
 
 rule filter_non_coding_rna:
     input:
-        fasta=ancient("results/mRNA/trinity/Trinity.fasta"),
+        fasta=ancient("results/mRNA/trinity.Trinity.fasta"),
     output:
         f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
     params:
