@@ -1,18 +1,40 @@
-SORTMERNA_SSU_REF_DATABASE: "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta"
-SORTMERNA_LSU_REF_DATABASE: "/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta"
-SORTMERNA_SSU_DATABASE_INDEX: "/Databases/sortmerna_idx/SSU"
-SORTMERNA_LSU_DATABASE_INDEX: "/Databases/sortmerna_idx/LSU"
-BLAST_DATABASE: "/Databases/SilvaMod138PR2/silvamod138pr2.fasta"
-CREST_LCAClassifier_BINARY: "/software/CREST/LCAClassifier/bin/classify"
-CoMW_REPOSITORY: "/software/CoMW/"
+# Databases: absolute paths
+# Silvamod or Greengenes reference databases, for example silvamod138pr2.fasta
+BLAST_DATABASE: ""
+# Small ribosome subunit database such as SILVA_138.1_SSURef
+SORTMERNA_SSU_REF_DATABASE: ""
+# Large ribosome subunit database such as SILVA_138.1_SSURef
+SORTMERNA_LSU_REF_DATABASE: ""
+# Index cache for sortmerna
+# Sortmerna will save the index in those directories to avoid computing them again and again
+# Please, create an empty directory (one for each)
+SORTMERNA_SSU_DATABASE_INDEX: ""
+SORTMERNA_LSU_DATABASE_INDEX: ""
+
+# This pipeline have 2 dependencies which are not handle automatically
+# Please, install CREST as follows
+# https://github.com/lanzen/CREST#installation
+# Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
+CREST_LCAClassifier_BINARY: ""
+# Please, install CREST as follows
+# https://github.com/lanzen/CREST#installation
+# Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
+# Please, install CoMW as follows
+# https://github.com/anwarMZ/CoMW#system-requirement-structure-and-installation
+# Next variable points to the CoMW directory (wherever you cloned it)
+CoMW_REPOSITORY: ""
+#Next variables points to each of the 3 available databases in CoMW (Md5nr, CAZy and NCyC)
+# that you have installed with CoMW
 SWORD_DATABASES:
-  - Md5nr: /software/CoMW/databases/M5NR_protien.fasta
-  - CAZy: /software/CoMW/databases/CAZyDB.07202017.fa
-  - NCyc: /software/CoMW/databases/NCyc_100.faa
+  - Md5nr: ""
+  - CAZy: ""
+  - NCyc: ""
 
 
 PRIVATE_METARIB: 
-  # EMIRGE references 
-  - EM_REF : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta"
-  # EMIRGE reference index
-  - EM_BT : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed"
+  # Database for EMIRGE such us SILVA_138.1_SSURef 
+  - EM_REF : ""
+  # Index cache for Emirge reference
+  # Metarib will save the index in those directories to avoid computing them again and again
+  # Please, create an empty directory
+  - EM_BT : ""
