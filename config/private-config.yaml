@@ -20,7 +20,8 @@ CREST_LCAClassifier_BINARY: ""
 # https://github.com/lanzen/CREST#installation
 # Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
 # Please, install CoMW as follows
-# https://github.com/anwarMZ/CoMW#system-requirement-structure-and-installation
+https://github.com/currocam/CoMW#system-requirement-structure-and-installation
+# Please, be aware this is a temporary solution
 # Next variable points to the CoMW directory (wherever you cloned it)
 CoMW_REPOSITORY: ""
 #Next variables points to each of the 3 available databases in CoMW (Md5nr, CAZy and NCyC)
