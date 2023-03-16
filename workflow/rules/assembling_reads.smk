@@ -41,7 +41,7 @@ rule trinity:
             expand(f"results/mRNA/renamed/{{sample}}_R2.fastq", sample=unique_samples)
         ),
     output:
-        "results/mRNA/trinity/",
+        directory("results/mRNA/trinity/"),
         "results/mRNA/trinity.Trinity.fasta",
     log:
         "logs/assemble_mRNA/assemble_reads.log",
