@@ -1,48 +1,41 @@
+
 # Databases: absolute paths
 # Silvamod or Greengenes reference databases, for example silvamod138pr2.fasta
-BLAST_DATABASE: 
-  - ""
+BLAST_DATABASE: "<custom_dir>/silvamod138pr2.fasta"
 # Small ribosome subunit database such as SILVA_138.1_SSURef
-SORTMERNA_SSU_REF_DATABASE:
-  - ""
+SORTMERNA_SSU_REF_DATABASE: "<custom_dir>/SILVA_138.1_SSURef"
 # Large ribosome subunit database such as SILVA_138.1_SSURef
-SORTMERNA_LSU_REF_DATABASE:
-  - ""
+SORTMERNA_LSU_REF_DATABASE: "<custom_dir>/SILVA_138.1_SSURef"
 # Index cache for sortmerna
 # Sortmerna will save the index in those directories to avoid computing them again and again
 # Please, create an empty directory (one for each)
-SORTMERNA_SSU_DATABASE_INDEX:
-  - ""
-SORTMERNA_LSU_DATABASE_INDEX:
-  - ""
+SORTMERNA_SSU_DATABASE_INDEX: "<custom_dir>"
+SORTMERNA_LSU_DATABASE_INDEX: "<custom_dir>"
 
 # This pipeline have 2 dependencies which are not handle automatically
 # Please, install CREST as follows
 # https://github.com/lanzen/CREST#installation
 # Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
-CREST_LCAClassifier_BINARY:
-  - ""
+CREST_LCAClassifier_BINARY: "<custom_dir>/CREST/LCAClassifier/bin/classify"
 # Please, install CREST as follows
 # https://github.com/lanzen/CREST#installation
 # Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
 # Please, install CoMW as follows
-https://github.com/currocam/CoMW#system-requirement-structure-and-installation
+# https://github.com/currocam/CoMW#system-requirement-structure-and-installation
 # Please, be aware this is a temporary solution
 # Next variable points to the CoMW directory (wherever you cloned it)
-CoMW_REPOSITORY:
-  - ""
+CoMW_REPOSITORY: "<custom_dir>"
 #Next variables points to each of the 3 available databases in CoMW (Md5nr, CAZy and NCyC)
 # that you have installed with CoMW
 SWORD_DATABASES:
-  - Md5nr: ""
-  - CAZy: ""
-  - NCyc: ""
-
+  - Md5nr: "<custom_dir>/file.fasta"
+  - CAZy: "<custom_dir>/file.fasta"
+  - NCyc: "<custom_dir>/file.fasta"
 
 PRIVATE_METARIB: 
   # Database for EMIRGE such us SILVA_138.1_SSURef 
-  - EM_REF : ""
+  - EM_REF : "<custom_dir>/SILVA_138.1_SSURef "
   # Index cache for Emirge reference
   # Metarib will save the index in those directories to avoid computing them again and again
   # Please, create an empty directory
-  - EM_BT : ""
+  - EM_BT : "<custom_dir>"
