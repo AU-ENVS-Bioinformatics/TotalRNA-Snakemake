@@ -1,51 +1,38 @@
 AVAILABLE_THREADS = int(config.get("BLAST-THREADS", 50))
 
-
-rule blast_silvamod:
+rule CREST4:
     input:
-        query=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
-        blastdb=multiext(
-            config.get("BLAST_DATABASE", ""),
-            ".nhr",
-            ".nin",
-            ".nsq",
-        ),
+        fasta= "results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
+        otu= "results/MetaRib/mapped_reads_to_contigs.tsv",
     output:
-        f"results/ml_rRNA/ml_rRNA_silvamod.xml",
-    log:
-        "logs/ml_rRNA_silvamod.blast.log",
-    benchmark:
-        "benchmarks/ml_rRNA_silvamod.blast.log"
-    threads: AVAILABLE_THREADS
+        outdir=directory("results/CREST_Results"),
+        otu= "results/CREST_Results/assignments.txt",
     params:
-        # Usable options and specifiers for the different output formats are listed here:
-        # https://snakemake-wrappers.readthedocs.io/en/stable/wrappers/blast/blastn.html.
-        format="5",
-        extra=" ".join(config.get("blastn", "")),
-    wrapper:
-        "v1.18.3/bio/blast/blastn"
-
-
-rule LCAClassifier:
-    input:
-        silva=f"results/ml_rRNA/ml_rRNA_silvamod.xml",
-        otu=f"results/MetaRib/mapped_reads_to_contigs.tsv",
-    output:
-        outdir=directory(f"results/CREST_Results"),
-        otu=f"results/CREST_Results/mapped_reads_to_contigs.tsv",
-    params:
-        script=config.get("CREST_LCAClassifier_BINARY", ""),
-        tmp=f"results/tmp_crest",
+        CREST4_DIR=config.get("CREST4_DIR", "~/.crest4/"),
     conda:
-        "../envs/base_python.yaml"
+        "../envs/CREST.yaml"
     log:
         "logs/mapping_rrna/crest.log",
+    threads: AVAILABLE_THREADS
     benchmark:
         "benchmarks/mapping_rrna/crest.log"
     shell:
-        "{params.script} "
-        "-t {input.otu} "
-        "{input.silva} "
-        "-o {params.tmp} >> {log} 2>&1 && "
-        "mv {params.tmp}/* {output.outdir} && "
-        "rm -rf {params.tmp}"
+        "export CREST4_DIR={params.CREST4_DIR} &&"
+        "crest4 -f {input.fasta} "
+        "-t {threads} "
+        "-u {input.otu} "
+        "-o {output.outdir} "
+        "> {log} 2>&1 || true"
+
+rule add_taxa_mapped:
+    input:
+        taxa= "results/CREST_Results/assignments.txt",
+        otu= "results/MetaRib/mapped_reads_to_contigs.tsv",
+    output:
+        "results/CREST_Results/mapped_reads_to_contigs.tsv",
+    conda:
+        "../envs/pandas.yaml"
+    log:
+        "logs/mapping_rrna/add_taxa.log",
+    script:
+        "../scripts/add_taxa_mapped_contigs.py"
