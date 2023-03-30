@@ -64,8 +64,7 @@ rule filter_non_coding_rna:
     output:
         f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
     params:
-        script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
-        + "scripts/filter_ncRNA_edited.py",
+        script="workflow/scripts/CoMW/scripts/filter_ncRNA.py",
         extra=" ".join(config.get("filter_ncRNA", "")),
     threads: int(config.get("filter_non_coding_rna-THREADS", 50))
     conda:
@@ -90,8 +89,7 @@ rule map_reads_to_contigs_mRNA:
     output:
         f"results/mRNA/mapped_reads_to_contigs.tsv",
     params:
-        script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
-        + "scripts/map_reads_to_contigs.py",
+        script="workflow/scripts/CoMW/scripts/map_reads_to_contigs.py",
         extra=" ".join(config.get("map_reads_to_contigs_mRNA", "")),
     threads: int(config.get("map_reads_to_contigs-THREADS", 50))
     conda:
@@ -117,8 +115,7 @@ rule filter_table_by_abundance:
     output:
         f"results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
     params:
-        script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
-        + "scripts/filter_table_by_abundance.py",
+        script="workflow/scripts/CoMW/scripts/filter_table_by_abundance.py",
         extra=" ".join(config.get("filter_table_by_abundance", "")),
     conda:
         "../envs/vegan.yaml"
