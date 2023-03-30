@@ -62,6 +62,13 @@ filter_table_by_abundance:
 
 # Align contigs to database
 filter_by_abundance_before_align: false
+# Align contigs to database (diamond edition)
+diamond: 
+  - "-e 0.001" # Maximum expected value to report an alignmen
+  - "--very-sensitive" # enable the very-sensitive mode designed for best sensitivity including the twilight zone range of <40% identity
+  - "--compress 1" # gzip compression
+
+# Old sword edition
 ORFs_translate: 6 # Number of ORFs (1-6) to be calculated for alignment
 split_fasta: 12 # Number of parts Fasta file to be splitted in (greater than 1)
 align_contigs_to_database:

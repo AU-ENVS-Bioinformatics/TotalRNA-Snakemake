@@ -7,7 +7,7 @@ PVC_POSITION = 1
 def get_taxonomy_list(x: List[str]) -> List[str]:
     """
     Get taxonomy column and split it into a list of values. 
-    >>> cols = ['RandomId', '1347', '253', '339', 'Main genome;Bacteria;Bacteria (superkingdom);PVC group (Planctobacteria);Planctomycetes;Phycisphaerae;Tepidisphaerales;Tepidisphaeraceae']
+    >>> cols = ['RandomId', '1347', '253', '339', 'root; Main genome; Bacteria; Bacteria (superkingdom); PVC group (Planctobacteria); Planctomycetes; Phycisphaerae; Tepidisphaerales; Tepidisphaeraceae']
     >>> get_taxonomy_list(cols)
     ['Bacteria', 'PVC group (Planctobacteria)', 'Planctomycetes', 'Phycisphaerae', 'Tepidisphaerales', 'Tepidisphaeraceae']
     """
@@ -15,7 +15,7 @@ def get_taxonomy_list(x: List[str]) -> List[str]:
     .replace(" (superkingdom)","") \
     .replace(" (superphylum)","") \
     .split(";")
-    return taxonomy[2:]
+    return [x.strip() for x in taxonomy[3:]]
 
 def add_prefix_taxonomy(x: List[str]) -> List[str]:
     """
@@ -66,7 +66,7 @@ def main() -> None:
         )
     for line in args.infile:
         args.outfile.write(edit_line(line)+'\n')
-    print("Everything runs smoothly", file=sys.stderr)
+    print("Everything run smoothly", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

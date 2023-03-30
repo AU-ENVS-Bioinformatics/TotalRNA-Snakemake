@@ -11,20 +11,15 @@ SORTMERNA_LSU_REF_DATABASE: "<custom_dir>/SILVA_138.1_SSURef"
 # Please, create an empty directory (one for each)
 SORTMERNA_SSU_DATABASE_INDEX: "<custom_dir>"
 SORTMERNA_LSU_DATABASE_INDEX: "<custom_dir>"
-
-# This pipeline have 2 dependencies which are not handle automatically
-# Please, install CREST as follows
-# https://github.com/lanzen/CREST#installation
-# Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
-CREST_LCAClassifier_BINARY: "<custom_dir>/CREST/LCAClassifier/bin/classify"
-# Please, install CREST as follows
-# https://github.com/lanzen/CREST#installation
-# Next variable handles the classify binary file (something like CREST/LCAClassifier/bin/classify)
-# Please, install CoMW as follows
-# https://github.com/currocam/CoMW#system-requirement-structure-and-installation
-# Please, be aware this is a temporary solution
-# Next variable points to the CoMW directory (wherever you cloned it)
-CoMW_REPOSITORY: "<custom_dir>"
+# When annotating rRNA, CREST4 will download Silva 138 in the following path
+CREST4_DIR: "~/.crest4/"
+#Next variables point to any database you want to use for functional analysis
+#Diamond will your mRNA against those. The pipeline expects all databases in a single directory
+DIAMOND_DATABASES_DIR: "<custom_dir>"
+#The filename without extension of a valid diamond database
+#The pipeline will run only those you add here
+DIAMOND_DATABASES_IDENTIFIER:
+  - "<fake_database>"
 #Next variables points to each of the 3 available databases in CoMW (Md5nr, CAZy and NCyC)
 # that you have installed with CoMW
 SWORD_DATABASES:
