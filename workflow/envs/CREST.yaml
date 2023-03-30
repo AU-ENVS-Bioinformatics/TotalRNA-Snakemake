@@ -1,0 +1,9 @@
+channels:
+  - bioconda
+  - conda-forge
+  - xapple
+dependencies:
+  - blast
+  - pip
+  - pip:
+    - crest4
