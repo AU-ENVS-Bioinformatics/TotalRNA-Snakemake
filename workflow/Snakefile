@@ -53,12 +53,13 @@ rule all:
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         f"results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
 
+
 rule diamond:
-    input: 
+    input:
         expand(
             "results/mRNA/diamond/{database}.tsv.gz",
             database=config.get("DIAMOND_DATABASES_IDENTIFIER"),
-        )
+        ),
 
 
 # Include rules
