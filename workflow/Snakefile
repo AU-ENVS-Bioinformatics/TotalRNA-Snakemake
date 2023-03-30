@@ -53,6 +53,13 @@ rule all:
         f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         f"results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
 
+rule diamond:
+    input: 
+        expand(
+            "results/mRNA/diamond/{database}.tsv.gz",
+            database=config.get("DIAMOND_DATABASES_IDENTIFIER"),
+        )
+
 
 # Include rules
 include: "rules/rename.smk"
@@ -65,6 +72,7 @@ include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 include: "rules/assembling_reads.smk"
 include: "rules/align_contigs_to_database.smk"
+include: "rules/diamond_aligned_mRNA.smk"
 include: "rules/common.smk"
 
 
