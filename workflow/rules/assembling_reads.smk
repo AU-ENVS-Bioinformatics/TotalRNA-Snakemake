@@ -12,14 +12,14 @@ rule prepare_assemble_reads:
             sample=unique_samples,
         ),
     output:
-        R1=expand(
+        R1=temp(expand(
             f"results/mRNA/renamed/{{sample}}_R1.fastq",
             sample=unique_samples,
-        ),
-        R2=expand(
+        )),
+        R2=temp(expand(
             f"results/mRNA/renamed/{{sample}}_R2.fastq",
             sample=unique_samples,
-        ),
+        )),
         readsdir=directory(f"results/mRNA/renamed/"),
     log:
         "logs/assemble_mRNA/pigz.log",
@@ -41,7 +41,7 @@ rule trinity:
             expand(f"results/mRNA/renamed/{{sample}}_R2.fastq", sample=unique_samples)
         ),
     output:
-        directory("results/mRNA/trinity/"),
+        temp(directory("results/mRNA/trinity/")),
         "results/mRNA/trinity.Trinity.fasta",
     log:
         "logs/assemble_mRNA/assemble_reads.log",

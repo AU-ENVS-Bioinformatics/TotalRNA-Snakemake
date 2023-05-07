@@ -21,8 +21,8 @@ rule prepare_metarib:
             sample=unique_samples,
         ),
     output:
-        R1=f"results/MetaRib/data/all.1.fq",
-        R2=f"results/MetaRib/data/all.2.fq",
+        R1=temp(f"results/MetaRib/data/all.1.fq"),
+        R2=temp(f"results/MetaRib/data/all.2.fq"),
         sample_list=report(
             f"results/MetaRib/data/samples.list.txt",
             caption="report/prepare_metarib.rst",

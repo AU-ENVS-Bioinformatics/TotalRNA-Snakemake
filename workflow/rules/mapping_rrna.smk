@@ -12,15 +12,15 @@ rule prepare_mapping_rrna:
             sample=unique_samples,
         ),
     output:
-        R1=expand(
+        R1=temp(expand(
             f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
             sample=unique_samples,
-        ),
-        R2=expand(
+        )),
+        R2=temp(expand(
             f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
             sample=unique_samples,
-        ),
-        readsdir=directory(f"results/MetaRib/SSU_fastq/"),
+        )),
+        readsdir=temp(directory(f"results/MetaRib/SSU_fastq/")),
     log:
         "logs/mapping_rrna/make_symlinks.log",
     benchmark:

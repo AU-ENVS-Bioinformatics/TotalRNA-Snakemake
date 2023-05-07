@@ -18,7 +18,7 @@ rule translate_trinity:
     input:
         ancient(choose_filepath(config)),
     output:
-        f"results/mRNA/trinity/translated/contigs_ncrna_filtered.fasta",
+        temp(f"results/mRNA/trinity/translated/contigs_ncrna_filtered.fasta"),
     params:
         orfs=int(config.get("ORFs_translate", 6)),
     conda:
@@ -37,10 +37,10 @@ rule split_fasta:
     input:
         f"results/mRNA/trinity/translated/contigs_ncrna_filtered.fasta",
     output:
-        expand(
+        temp(expand(
             f"results/mRNA/trinity/translated/contigs_ncrna_filtered.{{index}}.fasta",
             index=parse_pyfasta_int(int(config.get("split_fasta", 2))),
-        ),
+        )),
     params:
         n=int(config.get("split_fasta", 2)),
     conda:
@@ -58,7 +58,7 @@ rule sword:
     input:
         f"results/mRNA/trinity/translated/contigs_ncrna_filtered.{{index}}.fasta",
     output:
-        f"results/mRNA/trinity/sword/temp/{{database}}.{{index}}.bm9",
+        temp(f"results/mRNA/trinity/sword/temp/{{database}}.{{index}}.bm9"),
     conda:
         "../envs/align_contigs_to_database.yaml"
     params:
