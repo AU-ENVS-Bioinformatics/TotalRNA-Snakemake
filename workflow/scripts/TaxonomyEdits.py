@@ -2,7 +2,6 @@
 import sys
 from typing import List
 import argparse
-from Bio import Entrez
 
 PVC_POSITION = 1
 
