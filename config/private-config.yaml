@@ -20,12 +20,15 @@ DIAMOND_DATABASES_DIR: "<custom_dir>"
 #The pipeline will run only those you add here
 DIAMOND_DATABASES_IDENTIFIER:
   - "<fake_database>"
+# Still dealing with legacy code of CoMW
+# Please install CoMW and make sure that variable points there
+CoMW_REPOSITORY: "<custom_dir>"
 #Next variables points to each of the 3 available databases in CoMW (Md5nr, CAZy and NCyC)
 # that you have installed with CoMW
 SWORD_DATABASES:
-  - Md5nr: "<custom_dir>/file.fasta"
-  - CAZy: "<custom_dir>/file.fasta"
-  - NCyc: "<custom_dir>/file.fasta"
+  - Md5nr: "/software/CoMW/databases/file.fasta"
+  - CAZy: "/software/CoMW/databases/file.fasta"
+  - NCyc: "/software/CoMW/databases/file.fasta"
 
 PRIVATE_METARIB: 
   # Database for EMIRGE such us SILVA_138.1_SSURef 
