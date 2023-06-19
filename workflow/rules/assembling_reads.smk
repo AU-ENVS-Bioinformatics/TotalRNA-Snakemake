@@ -49,31 +49,6 @@ rule trinity:
     wrapper:
         "v2.0.0/bio/trinity"
 
-# rule filter_non_coding_rna:
-#     input:
-#         fasta=ancient("results/mRNA/trinity.Trinity.fasta"),
-#     output:
-#         f"results/mRNA/contigs_ncrna_filtered.fasta",
-#     params:
-#         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
-#         + "scripts/filter_ncRNA_edited.py",
-#         extra=" ".join(config.get("filter_ncRNA", "")),
-#     threads: int(config.get("filter_non_coding_rna-THREADS", 50))
-#     conda:
-#         "../envs/biopython.yaml"
-#     log:
-#         "logs/assemble_mRNA/filter_non_coding_rna.log",
-#     benchmark:
-#         "benchmarks/assemble_mRNA/filter_non_coding_rna.log"
-#     shell:
-#         "python {params.script} "
-#         "-f {input.fasta} "
-#         "-o {output} "
-#         "-t {threads} "
-#         "{params.extra} "
-#         ">> {log} 2>&1"
-
-
 rule map_reads_to_contigs_mRNA:
     input:
         fasta="results/mRNA/trinity/contigs_ncrna_filtered.fasta",

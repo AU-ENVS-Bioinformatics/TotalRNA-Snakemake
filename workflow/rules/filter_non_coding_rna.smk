@@ -9,7 +9,7 @@ rule infernal_cmsearch:
     conda:
         "../envs/CoMW.yaml"
     params:
-        database="/software/CoMW/databases/Rfam.cm"
+        database= config.get("RFAM_DATABASE"),
     shell:
         "cmsearch -o {output} --cpu {threads} "
         "{params.database} {input} > {log} 2>&1"
