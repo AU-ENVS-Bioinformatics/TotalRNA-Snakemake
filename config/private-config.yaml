@@ -13,23 +13,8 @@ SORTMERNA_SSU_DATABASE_INDEX: "<custom_dir>"
 SORTMERNA_LSU_DATABASE_INDEX: "<custom_dir>"
 # When annotating rRNA, CREST4 will download Silva 138 in the following path
 CREST4_DIR: "~/.crest4/"
-#Next variables point to any database you want to use for functional analysis
-#Diamond will your mRNA against those. The pipeline expects all databases in a single directory
-DIAMOND_DATABASES_DIR: "<custom_dir>"
-#The filename without extension of a valid diamond database
-#The pipeline will run only those you add here
-DIAMOND_DATABASES_IDENTIFIER:
-  - "<fake_database>"
-# Still dealing with legacy code of CoMW
-# Please install CoMW and make sure that variable points there
-CoMW_REPOSITORY: "<custom_dir>"
-#Next variables points to each of the 3 available databases in CoMW (Md5nr, CAZy and NCyC)
-# that you have installed with CoMW
-SWORD_DATABASES:
-  - Md5nr: "/software/CoMW/databases/file.fasta"
-  - CAZy: "/software/CoMW/databases/file.fasta"
-  - NCyc: "/software/CoMW/databases/file.fasta"
-
+# Rfam database to filter ncRNA
+RFAM_DATABASE : "<Rfam>.cm"
 PRIVATE_METARIB: 
   # Database for EMIRGE such us SILVA_138.1_SSURef 
   - EM_REF : "<custom_dir>/SILVA_138.1_SSURef "

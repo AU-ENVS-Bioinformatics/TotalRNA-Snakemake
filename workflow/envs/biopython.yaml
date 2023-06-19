@@ -4,5 +4,6 @@ channels:
 dependencies:
   - python
   - pip
+  - pandas
   - pip:
     - biopython

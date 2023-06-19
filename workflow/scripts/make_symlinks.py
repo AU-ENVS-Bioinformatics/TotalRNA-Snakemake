@@ -13,4 +13,3 @@ with open(snakemake.log[0], "w") as f:
         print(src)
         print(dest)
         dest.symlink_to(src)
-        

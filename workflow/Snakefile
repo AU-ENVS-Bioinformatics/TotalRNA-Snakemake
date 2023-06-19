@@ -15,51 +15,16 @@ sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
 if len(unique_samples) == 0:
     print("There are no samples name detected. Did you rename files?")
-sword_databases = dict(ChainMap(*config.get("SWORD_DATABASES")))
-
 shell.prefix("set -o pipefail; ")
 
 
 # Define rule all
 rule all:
     input:
-        "results/MetaRib/MetaRib",
         "results/quast/",
-        expand(
-            f"results/MetaRib/data/all.{{direction}}.fq",
-            direction=["1", "2"],
-        ),
-        expand(
-            f"results/trimmed/{{sample}}_R1_val_1.fq.gz",
-            sample=unique_samples,
-        ),
-        expand(
-            f"results/trimmed/{{sample}}_R2_val_2.fq.gz",
-            sample=unique_samples,
-        ),
-        expand(
-            f"results/rrna/{{sample}}_fwd.fq.gz",
-            sample=unique_samples,
-        ),
-        expand(
-            f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz",
-            sample=unique_samples,
-        ),
-        expand(
-            f"results/mRNA/sword/SWORD_{{database}}_result.bm9",
-            database=list(sword_databases.keys()),
-        ),
-        f"results/MetaRib/mapped_reads_to_contigs.tsv",
-        f"results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
-        f"results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-
-
-rule diamond:
-    input:
-        expand(
-            "results/mRNA/diamond/{database}.tsv.gz",
-            database=config.get("DIAMOND_DATABASES_IDENTIFIER"),
-        ),
+        "results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
+        "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
+        "results/mRNA/contigs_ncrna_filtered_AbundanceFiltered.fasta",
 
 
 # Include rules
@@ -72,15 +37,5 @@ include: "rules/annotate_rrna.smk"
 include: "rules/mapping_rrna.smk"
 include: "rules/taxonomy_edit.smk"
 include: "rules/assembling_reads.smk"
-include: "rules/align_contigs_to_database.smk"
-include: "rules/diamond_aligned_mRNA.smk"
 include: "rules/common.smk"
-
-
-rule clean:
-    log:
-        "logs/clean.log",
-    conda:
-        "../envs/base_python.yaml"
-    shell:
-        f"snakemake --conda-cleanup-pkgs "
+include: "rules/filter_non_coding_rna.smk"
