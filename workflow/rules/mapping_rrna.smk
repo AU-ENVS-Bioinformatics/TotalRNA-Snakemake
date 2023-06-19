@@ -12,14 +12,18 @@ rule prepare_mapping_rrna:
             sample=unique_samples,
         ),
     output:
-        R1=temp(expand(
-            f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
-            sample=unique_samples,
-        )),
-        R2=temp(expand(
-            f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
-            sample=unique_samples,
-        )),
+        R1=temp(
+            expand(
+                f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
+                sample=unique_samples,
+            )
+        ),
+        R2=temp(
+            expand(
+                f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
+                sample=unique_samples,
+            )
+        ),
         readsdir=temp(directory(f"results/MetaRib/SSU_fastq/")),
     log:
         "logs/mapping_rrna/make_symlinks.log",

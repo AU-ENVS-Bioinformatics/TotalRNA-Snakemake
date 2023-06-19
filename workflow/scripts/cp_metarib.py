@@ -11,4 +11,3 @@ with open(snakemake.log[0], "w") as f:
         cmd = f"pigz -dkf -p{threads} < {old} > {new}"
         os.system(cmd)
         print(cmd)
-        

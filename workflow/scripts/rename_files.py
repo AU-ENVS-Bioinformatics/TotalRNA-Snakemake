@@ -8,9 +8,12 @@ DEFAULT_SOURCE_FILEPATH = "reads/"
 DEFAULT_DEST_FILEPATH = "results/"
 RENAMED_READS_FILEPATH = "renamed_raw_reads/"
 
-regular_expression = snakemake.config.get("READS_REGEX", ".+[-|_](.+)_.+_(.+)_.+\.fastq.gz")
+regular_expression = snakemake.config.get(
+    "READS_REGEX", ".+[-|_](.+)_.+_(.+)_.+\.fastq.gz"
+)
 input_dir = DEFAULT_SOURCE_FILEPATH
 output_dir = f"{DEFAULT_DEST_FILEPATH}{RENAMED_READS_FILEPATH}"
+
 
 def copy_file(original: str, target: str) -> None:
     src, dest = Path(original).absolute(), Path(target).absolute()
@@ -18,6 +21,7 @@ def copy_file(original: str, target: str) -> None:
     print(src)
     print(dest)
     dest.symlink_to(src)
+
 
 with open(snakemake.log[0], "w") as f:
     sys.stderr = sys.stdout = f
@@ -27,7 +31,6 @@ with open(snakemake.log[0], "w") as f:
             original = input_dir + match.string
             target = output_dir + match.group(1) + "_" + match.group(2) + ".fastq.gz"
             if os.path.exists(target):
-                print('The previous file was already there.', file=sys.stderr)
+                print("The previous file was already there.", file=sys.stderr)
             else:
-                copy_file (original, target)
-  
+                copy_file(original, target)

@@ -31,6 +31,7 @@ rule prepare_assemble_reads:
     script:
         "../scripts/pigz_reads.py"
 
+
 rule trinity:
     input:
         left=expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
@@ -40,7 +41,7 @@ rule trinity:
         fas="results/mRNA/trinity.Trinity.fasta",
         map="results/mRNA/trinity.Trinity.fasta.gene_trans_map",
     log:
-        'logs/trinity/trinity.log',
+        "logs/trinity/trinity.log",
     params:
         extra=" ".join(config.get("assemble_reads", "")),
     threads: int(config.get("assemble_reads-THREADS", 50))
@@ -49,13 +50,15 @@ rule trinity:
     wrapper:
         "v2.0.0/bio/trinity"
 
+
 rule map_reads_to_contigs_mRNA:
     input:
         fasta="results/mRNA/trinity/contigs_ncrna_filtered.fasta",
         indir=f"results/mRNA/renamed/",
-        fastq_files = expand(
+        fastq_files=expand(
             f"results/mRNA/renamed/{{sample}}_R{{direction}}.fastq",
-            sample=unique_samples, direction = [1, 2]
+            sample=unique_samples,
+            direction=[1, 2],
         ),
     output:
         f"results/mRNA/mapped_reads_to_contigs.tsv",

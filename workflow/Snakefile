@@ -25,7 +25,8 @@ rule all:
         "results/quast/",
         "results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-        "results/mRNA/contigs_ncrna_filtered_AbundanceFiltered.fasta"
+        "results/mRNA/contigs_ncrna_filtered_AbundanceFiltered.fasta",
+
 
 # Include rules
 include: "rules/rename.smk"
