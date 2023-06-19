@@ -15,7 +15,6 @@ SORTMERNA_LSU_DATABASE_INDEX: "<custom_dir>"
 CREST4_DIR: "~/.crest4/"
 # Rfam database to filter ncRNA
 RFAM_DATABASE : "<Rfam>.cm"
-
 PRIVATE_METARIB: 
   # Database for EMIRGE such us SILVA_138.1_SSURef 
   - EM_REF : "<custom_dir>/SILVA_138.1_SSURef "
