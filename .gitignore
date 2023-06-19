@@ -1,8 +1,10 @@
 results/**
 resources/**
+benchmarks/**
 logs/**
 .snakemake
 .snakemake/**
 *.gz
 *.html
+*.txt
 config/private-config.yaml

@@ -12,14 +12,14 @@ rule prepare_assemble_reads:
             sample=unique_samples,
         ),
     output:
-        R1=temp(expand(
+        R1=expand(
             f"results/mRNA/renamed/{{sample}}_R1.fastq",
             sample=unique_samples,
-        )),
-        R2=temp(expand(
+        ),
+        R2=expand(
             f"results/mRNA/renamed/{{sample}}_R2.fastq",
             sample=unique_samples,
-        )),
+        ),
         readsdir=directory(f"results/mRNA/renamed/"),
     log:
         "logs/assemble_mRNA/pigz.log",
@@ -31,61 +31,57 @@ rule prepare_assemble_reads:
     script:
         "../scripts/pigz_reads.py"
 
-
 rule trinity:
     input:
-        left=ancient(
-            expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples)
-        ),
-        right=ancient(
-            expand(f"results/mRNA/renamed/{{sample}}_R2.fastq", sample=unique_samples)
-        ),
+        left=expand(f"results/mRNA/renamed/{{sample}}_R1.fastq", sample=unique_samples),
+        right=expand(f"results/mRNA/renamed/{{sample}}_R2.fastq", sample=unique_samples),
     output:
-        temp(directory("results/mRNA/trinity/")),
-        "results/mRNA/trinity.Trinity.fasta",
+        dir=directory("results/mRNA/trinity/"),
+        fas="results/mRNA/trinity.Trinity.fasta",
+        map="results/mRNA/trinity.Trinity.fasta.gene_trans_map",
     log:
-        "logs/assemble_mRNA/assemble_reads.log",
-    conda:
-        "../envs/trinity.yaml"
-    benchmark:
-        "benchmarks/assemble_mRNA/assemble_reads.log"
+        'logs/trinity/trinity.log',
     params:
         extra=" ".join(config.get("assemble_reads", "")),
     threads: int(config.get("assemble_reads-THREADS", 50))
     resources:
         mem_gb=int(config.get("assemble_reads-MEMORY", 500)),
-    script:
-        "../scripts/trinity_wrapper.py"
+    wrapper:
+        "v2.0.0/bio/trinity"
 
-
-rule filter_non_coding_rna:
-    input:
-        fasta=ancient("results/mRNA/trinity.Trinity.fasta"),
-    output:
-        f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
-    params:
-        script="workflow/scripts/CoMW/scripts/filter_ncRNA.py",
-        extra=" ".join(config.get("filter_ncRNA", "")),
-    threads: int(config.get("filter_non_coding_rna-THREADS", 50))
-    conda:
-        "../envs/biopython.yaml"
-    log:
-        "logs/assemble_mRNA/filter_non_coding_rna.log",
-    benchmark:
-        "benchmarks/assemble_mRNA/filter_non_coding_rna.log"
-    shell:
-        "python {params.script} "
-        "-f {input.fasta} "
-        "-o {output} "
-        "-t {threads} "
-        "{params.extra} "
-        ">> {log} 2>&1"
+# rule filter_non_coding_rna:
+#     input:
+#         fasta=ancient("results/mRNA/trinity.Trinity.fasta"),
+#     output:
+#         f"results/mRNA/contigs_ncrna_filtered.fasta",
+#     params:
+#         script=config.get("CoMW_REPOSITORY", "workflow/scripts/CoMW/")
+#         + "scripts/filter_ncRNA_edited.py",
+#         extra=" ".join(config.get("filter_ncRNA", "")),
+#     threads: int(config.get("filter_non_coding_rna-THREADS", 50))
+#     conda:
+#         "../envs/biopython.yaml"
+#     log:
+#         "logs/assemble_mRNA/filter_non_coding_rna.log",
+#     benchmark:
+#         "benchmarks/assemble_mRNA/filter_non_coding_rna.log"
+#     shell:
+#         "python {params.script} "
+#         "-f {input.fasta} "
+#         "-o {output} "
+#         "-t {threads} "
+#         "{params.extra} "
+#         ">> {log} 2>&1"
 
 
 rule map_reads_to_contigs_mRNA:
     input:
-        fasta=f"results/mRNA/trinity/contigs_ncrna_filtered.fasta",
+        fasta="results/mRNA/trinity/contigs_ncrna_filtered.fasta",
         indir=f"results/mRNA/renamed/",
+        fastq_files = expand(
+            f"results/mRNA/renamed/{{sample}}_R{{direction}}.fastq",
+            sample=unique_samples, direction = [1, 2]
+        ),
     output:
         f"results/mRNA/mapped_reads_to_contigs.tsv",
     params:
@@ -125,9 +121,9 @@ rule filter_table_by_abundance:
         "benchmarks/assemble_mRNA/filter_table_by_abundance.log"
     shell:
         "cd results/mRNA && "
-        "python {params.script} "
+        "python ../../{params.script} "
         "-i ./mapped_reads_to_contigs.tsv "
-        "-f ./trinity/contigs_ncrna_filtered.fasta "
+        "-f ./contigs_ncrna_filtered.fasta "
         "{params.extra} "
         "-o ./mapped_reads_to_contigs "
         ">> ../../{log} 2>&1"

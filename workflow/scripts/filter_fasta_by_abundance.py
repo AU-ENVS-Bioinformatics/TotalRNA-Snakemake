@@ -7,8 +7,8 @@ from Bio import SeqIO
 ID_COLUMN = "ContigID"
 # Filepaths
 filtered_table = pd.read_table(snakemake.input.table)       
-infile = Path(snakemake.input.fasta)
-outfile = Path(snakemake.output)
+infile = Path(str(snakemake.input.fasta))
+outfile = Path(str(snakemake.output))
 # Get desired headers
 headers = filtered_table[ID_COLUMN].values
 
