@@ -15,7 +15,6 @@ sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
 if len(unique_samples) == 0:
     print("There are no samples name detected. Did you rename files?")
-    exit(1)
 shell.prefix("set -o pipefail; ")
 
 
