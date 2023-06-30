@@ -41,7 +41,7 @@ rule exclude_non_coding_rna:
         fasta="results/mRNA/trinity.Trinity.fasta",
         exclude="results/mRNA/trinity/Trinity_cmsearchncRNA.txt",
     output:
-        "results/mRNA/contigs_ncrna_filtered.fasta",
+        "results/mRNA/trinity/contigs_ncrna_filtered.fasta",
     log:
         "logs/exclude_non_coding.log",
     conda:
