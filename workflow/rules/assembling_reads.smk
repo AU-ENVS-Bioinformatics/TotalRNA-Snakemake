@@ -101,7 +101,7 @@ rule filter_table_by_abundance:
         "cd results/mRNA && "
         "python ../../{params.script} "
         "-i ./mapped_reads_to_contigs.tsv "
-        "-f ./contigs_ncrna_filtered.fasta "
+        "-f ./trinity/contigs_ncrna_filtered.fasta "
         "{params.extra} "
         "-o ./mapped_reads_to_contigs "
         ">> ../../{log} 2>&1"
