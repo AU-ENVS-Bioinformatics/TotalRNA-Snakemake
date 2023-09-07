@@ -22,8 +22,7 @@ rule all:
         "qc/trim_galore_multiqc.html",
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
-        "results/mRNA/trinity.Trinity.fasta",
-        "results/mRNA/non_coding_rna/RFAM_cmsearch.out",
+        "results/mRNA/Trinity_contigs_ncrna_filtered.fasta",
 
 
 # Include rules
