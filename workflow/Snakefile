@@ -8,8 +8,6 @@ from collections import ChainMap
 configfile: "config/config.yaml"
 configfile: "config/private-config.yaml"
 
-
-# Define global wildcards for input data after renaming
 regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
@@ -17,25 +15,11 @@ if len(unique_samples) == 0:
     print("There are no samples name detected. Did you rename files?")
 shell.prefix("set -o pipefail; ")
 
-
-# Define rule all
-rule all:
-    input:
-        "results/quast/",
-        "results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
-        "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-        "results/mRNA/contigs_ncrna_filtered_AbundanceFiltered.fasta",
-
-
 # Include rules
-include: "rules/rename.smk"
+include: "rules/rename_input.smk"
 include: "rules/trim_galore.smk"
-include: "rules/sortmerna.smk"
-include: "rules/metarib.smk"
-include: "rules/quast.smk"
-include: "rules/annotate_rrna.smk"
-include: "rules/mapping_rrna.smk"
-include: "rules/taxonomy_edit.smk"
-include: "rules/assembling_reads.smk"
-include: "rules/common.smk"
-include: "rules/filter_non_coding_rna.smk"
+include: "rules/multiqc.smk"
+
+rule all:
+  input: 
+    "qc/trim_galore_multiqc.html"

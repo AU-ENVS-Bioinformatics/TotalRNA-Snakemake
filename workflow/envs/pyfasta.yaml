@@ -1,8 +1,0 @@
-channels:
-  - conda-forge
-  - defaults
-  - bioconda
-dependencies:
-  - python== 3.6.7
-  - sword== 1.0.4
-  - pyfasta
