@@ -1,11 +1,6 @@
 rule rename:
     output:
-        expand(
-            f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz",
-            zip,
-            sample=sample,
-            read=read,
-        ),
+        touch("results/rename.done"),
     log:
         "logs/renaming_files.log",
     conda:

@@ -8,6 +8,7 @@ from collections import ChainMap
 configfile: "config/config.yaml"
 configfile: "config/private-config.yaml"
 
+
 regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
@@ -15,11 +16,15 @@ if len(unique_samples) == 0:
     print("There are no samples name detected. Did you rename files?")
 shell.prefix("set -o pipefail; ")
 
+
+rule all:
+    input:
+        "qc/trim_galore_multiqc.html",
+        "qc/sortmerna_multiqc.html",
+
+
 # Include rules
 include: "rules/rename_input.smk"
 include: "rules/trim_galore.smk"
+include: "rules/sortmerna.smk"
 include: "rules/multiqc.smk"
-
-rule all:
-  input: 
-    "qc/trim_galore_multiqc.html"
