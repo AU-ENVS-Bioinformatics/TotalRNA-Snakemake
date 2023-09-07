@@ -23,6 +23,7 @@ rule all:
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
         "results/mRNA/trinity.Trinity.fasta",
+        "results/mRNA/non_coding_rna/RFAM_cmsearch.out",
 
 
 # Include rules
@@ -31,3 +32,4 @@ include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
 include: "rules/multiqc.smk"
 include: "rules/trinity.smk"
+include: "rules/non_coding_RNA.smk"
