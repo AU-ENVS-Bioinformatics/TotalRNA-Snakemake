@@ -17,7 +17,7 @@ rule infernal_cmsearch:
 
 rule legacy_tempdir:
     output:
-        temp(directory("results/mRNA/trinity/TempFiles")),
+        directory("results/mRNA/trinity/TempFiles"),
     shell:
         "mkdir -p {output}"
 
