@@ -20,7 +20,9 @@ shell.prefix("set -o pipefail; ")
 rule all:
     input:
         "qc/trim_galore_multiqc.html",
-        "qc/sortmerna_multiqc.html",
+        "qc/sortmerna_SSU_multiqc.html",
+        "qc/sortmerna_LSU_multiqc.html",
+        "results/mRNA/trinity.Trinity.fasta",
 
 
 # Include rules
@@ -28,3 +30,4 @@ include: "rules/rename_input.smk"
 include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
 include: "rules/multiqc.smk"
+include: "rules/trinity.smk"

@@ -23,7 +23,7 @@ rule sortmerna_ssu:
     params:
         extra=" ".join(config.get("sortmerna", "")),
     log:
-        "logs/sortmerna/{sample}.log",
+        "logs/sortmerna/{sample}_SSU.log",
     conda:
         "../envs/sortmerna.yaml"
     threads: AVAILABLE_THREADS
@@ -31,38 +31,32 @@ rule sortmerna_ssu:
         "../scripts/sortmerna.py"
 
 
-# rule sortmerna_LSU:
-#     input:
-#         R1=f"results/sortmerna/not_SSU/{{sample}}_fwd.fq.gz",
-#         R2=f"results/sortmerna/not_SSU/{{sample}}_rev.fq.gz",
-#         database_ref=ancient(config.get("SORTMERNA_LSU_REF_DATABASE")),
-#     shadow:
-#         "minimal"
-#     output:
-#         protected(f"results/sortmerna/LSU/{{sample}}_fwd.fq.gz"),
-#         protected(f"results/sortmerna/LSU/{{sample}}_rev.fq.gz"),
-#         protected(f"results/sortmerna/not_LSU/{{sample}}_fwd.fq.gz"),
-#         protected(f"results/sortmerna/not_LSU/{{sample}}_rev.fq.gz"),
-#     params:
-#         extra=" ".join(config.get("sortmerna", "")),
-#         aligned=lambda wildcards, output: output[0][:-10],
-#         other=lambda wildcards, output: output[2][:-10],
-#         outdir=lambda wildcards, output: output[2][:-10].replace("not_LSU/", ""),
-#         idx_flag=f"--idx-dir {idx_LSU_directory}" if idx_LSU_directory else "",
-#     log:
-#         "logs/sortmerna_LSU/{sample}.log",
-#     benchmark:
-#         "benchmarks/sortmerna_LSU/{sample}.log"
-#     conda:
-#         "../envs/sortmerna.yaml"
-#     threads: AVAILABLE_THREADS
-#     shell:
-#         "sortmerna -ref {input.database_ref} "
-#         "--threads {threads} "
-#         "--workdir {params.outdir} "
-#         "{params.extra} "
-#         "{params.idx_flag} "
-#         "--aligned {params.aligned} "
-#         "--other {params.other} "
-#         "--reads {input.R1} --reads {input.R2} "
-#         ">> {log} 2>&1 "
+rule sortmerna_lsu:
+    input:
+        fasta=[
+            "results/sortmerna/not_SSU/{sample}_fwd.fq.gz",
+            "results/sortmerna/not_SSU/{sample}_rev.fq.gz",
+        ],
+        database=ancient(config.get("SORTMERNA_LSU_REF_DATABASE")),
+        database_index=idx_LSU_directory,
+    shadow:
+        "minimal"
+    output:
+        aligned=[
+            protected("results/sortmerna/LSU/{sample}_fwd.fq.gz"),
+            protected("results/sortmerna/LSU/{sample}_rev.fq.gz"),
+        ],
+        not_aligned=[
+            protected("results/sortmerna/not_LSU/{sample}_fwd.fq.gz"),
+            protected("results/sortmerna/not_LSU/{sample}_rev.fq.gz"),
+        ],
+        stats="results/sortmerna/LSU/{sample}.log",
+    params:
+        extra=" ".join(config.get("sortmerna", "")),
+    log:
+        "logs/sortmerna/{sample}_LSU.log",
+    conda:
+        "../envs/sortmerna.yaml"
+    threads: AVAILABLE_THREADS
+    script:
+        "../scripts/sortmerna.py"

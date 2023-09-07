@@ -10,22 +10,38 @@ rule multiqc_trim_galore:
     params:
         extra="",  # Optional: extra parameters for multiqc.
     log:
-        "logs/multiqc_trim_galore.log",
+        "logs/multiqc/multiqc_trim_galore.log",
     wrapper:
         "v2.6.0/bio/multiqc"
 
 
-rule multiqc_sortmerna:
+rule multiqc_sortmerna_SSU:
     input:
         expand(
             "results/rrna/{sample}.log",
             sample=unique_samples,
         ),
     output:
-        "qc/sortmerna_multiqc.html",
+        "qc/sortmerna_SSU_multiqc.html",
     params:
         extra="",  # Optional: extra parameters for multiqc.
     log:
-        "logs/sortmerna_multiqc.log",
+        "logs/multiqc/sortmerna_SSU_multiqc.log",
+    wrapper:
+        "v2.6.0/bio/multiqc"
+
+
+rule multiqc_sortmerna_LSU:
+    input:
+        expand(
+            "results/sortmerna/LSU/{sample}.log",
+            sample=unique_samples,
+        ),
+    output:
+        "qc/sortmerna_LSU_multiqc.html",
+    params:
+        extra="",  # Optional: extra parameters for multiqc.
+    log:
+        "logs/multiqc/sortmerna_LSU_multiqc.log",
     wrapper:
         "v2.6.0/bio/multiqc"
