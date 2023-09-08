@@ -39,6 +39,14 @@ rule map_reads_to_contigs:
     input:
         readsdir=f"results/MetaRib/SSU_fastq/",
         filtered=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
+        R1=expand(
+                f"results/MetaRib/SSU_fastq/{{sample}}_R1.fastq",
+                sample=unique_samples,
+                ),
+        R2=expand(
+                f"results/MetaRib/SSU_fastq/{{sample}}_R2.fastq",
+                sample=unique_samples,
+                ),
     output:
         f"results/MetaRib/mapped_reads_to_contigs.tsv",
     params:
