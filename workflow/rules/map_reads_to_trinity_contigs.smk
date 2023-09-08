@@ -81,20 +81,21 @@ rule samtools_idxstats:
         "v2.6.0/bio/samtools/idxstats"
 
 
-rule map_reads_to_trinity_contigs:
+rule processing_mapped_contigs:
     input:
-        left=expand(
-            "results/sortmerna/not_LSU/{sample}_fwd.fq.gz", sample=unique_samples
+        expand(
+            "results/mRNA/bwa/{sample}_{dir}_sorted.bam.idxstats",
+            sample=unique_samples,
+            dir=["fwd", "rev"],
         ),
-        right=expand(
-            "results/sortmerna/not_LSU/{sample}_rev.fq.gz", sample=unique_samples
-        ),
-        contigs="results/mRNA/trinity.Trinity.fasta",
     output:
-        bam="results/mRNA/trinity.Trinity.bam",
-        bai="results/mRNA/trinity.Trinity.bam.bai",
-    threads: 50
+        "results/mRNA/mapped_reads_to_contigs.tsv",
     log:
-        "logs/trinity/trinity_bam.log",
+        "logs/samtools/mapped_reads_table.log",
+    params:
+        extension_fwd="_fwd",
+        extension_rev="_rev",
+    conda:
+        "../envs/pandas.yaml"
     script:
-        "scripts/map_reads_to_trinity_contigs.py"
+        "../scripts/process_mapped_reads_contigs.py"
