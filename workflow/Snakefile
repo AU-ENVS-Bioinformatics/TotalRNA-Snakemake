@@ -23,6 +23,11 @@ rule all:
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
         "results/mRNA/Trinity_contigs_ncrna_filtered.fasta",
+        expand(
+            "results/mRNA/bwa/{sample}_{dir}_sorted.bam.idxstats",
+            sample=unique_samples,
+            dir=["fwd", "rev"],
+        ),
 
 
 # Include rules
@@ -32,3 +37,4 @@ include: "rules/sortmerna.smk"
 include: "rules/multiqc.smk"
 include: "rules/trinity.smk"
 include: "rules/non_coding_RNA.smk"
+include: "rules/map_reads_to_trinity_contigs.smk"
