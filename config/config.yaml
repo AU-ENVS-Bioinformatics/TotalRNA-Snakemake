@@ -56,9 +56,7 @@ filter_ncRNA:
   - "-e 3" # E-value in integar
   - "-r n" # Delete temporary files created
 
-filter_table_by_abundance:
-  - "-e 1" # Relative expression in integars
-  - "-r y" # Delete temporary files created
+filter_mRNA_abundance_minimum: 1 # Relative expression in integars
 
 # Align contigs to database
 filter_by_abundance_before_align: false
