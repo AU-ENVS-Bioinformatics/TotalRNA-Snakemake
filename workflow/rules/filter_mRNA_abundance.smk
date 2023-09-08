@@ -2,7 +2,7 @@ rule find_contigs_to_keep:
     input:
         "results/mRNA/mapped_reads_to_contigs.tsv",
     output:
-        "results/mRNA/abundance_filtered/contigs_to_keep.txt",
+        "results/mRNA/abundance_filtered/mapped_reads_to_contigs.tsv",
     params:
         minimum=config.get("minimum_abundance", 1),
     conda:
@@ -16,7 +16,7 @@ rule find_contigs_to_keep:
 rule filter_contigs:
     input:
         fasta="results/mRNA/Trinity_contigs_ncrna_filtered.fasta",
-        contigs="results/mRNA/abundance_filtered/contigs_to_keep.txt",
+        table="results/mRNA/abundance_filtered/mapped_reads_to_contigs.tsv",
     output:
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
     conda:
@@ -24,4 +24,4 @@ rule filter_contigs:
     log:
         "logs/mRNA_abundance_filter/seqtk_subset.log",
     shell:
-        "seqtk subseq {input.fasta} {input.contigs} > {output} 2> {log}"
+        "awk '{{print $1}}' {input.table} | seqtk subseq {input.fasta} - > {output} 2> {log}"

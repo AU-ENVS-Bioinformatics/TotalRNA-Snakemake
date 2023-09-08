@@ -14,8 +14,11 @@ run <- function(infile, outfile, minimum) {
     data_stand <- data |> t() |> vegan::decostand(method="total") |> t()
     included_idx <- rowMeans(data_stand) >= minimum/lowest_sample_reads_sum
     included_contigs <- row.names(data_stand)[included_idx]
-    # Write out the included contigs
-    write.table(included_contigs, outfile, quote=FALSE, row.names=FALSE, col.names=FALSE)
+    # Data rownames to column ContigID as first column using base R
+    data$ContigID <- row.names(data)
+    data <- data[,c(ncol(data),1:(ncol(data)-1))]
+    write.table(data[included_contigs,], outfile, sep="\t", quote=FALSE, row.names=FALSE)
+
 }
 
 
