@@ -25,6 +25,7 @@ rule all:
         "qc/sortmerna_LSU_multiqc.html",
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
         "results/MetaRib/all.dedup.filtered.fasta",
+        "results/rrna/mapped_reads_to_contigs.tsv",
 
 
 # Include rules
@@ -37,3 +38,4 @@ include: "rules/non_coding_RNA.smk"
 include: "rules/map_reads_to_trinity_contigs.smk"
 include: "rules/filter_mRNA_abundance.smk"
 include: "rules/metarib.smk"
+include: "rules/map_reads_to_metarib_contigs.smk"

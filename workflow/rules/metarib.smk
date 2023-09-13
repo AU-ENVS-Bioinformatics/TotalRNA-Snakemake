@@ -8,13 +8,14 @@ private_metarib_params = dict(
     )
 )
 
+
 rule decompress_rrna:
     input:
-        fwd = "results/rrna/{sample}_fwd.fq.gz",
-        rev = "results/rrna/{sample}_rev.fq.gz",
+        fwd="results/rrna/{sample}_fwd.fq.gz",
+        rev="results/rrna/{sample}_rev.fq.gz",
     output:
-        fwd = "results/MetaRib/data/{sample}.1.fq",
-        rev = "results/MetaRib/data/{sample}.2.fq",
+        fwd=temp("results/MetaRib/data/{sample}.1.fq"),
+        rev=temp("results/MetaRib/data/{sample}.2.fq"),
     log:
         "logs/rrna/decompress_{sample}.log",
     conda:
@@ -25,6 +26,7 @@ rule decompress_rrna:
         "echo 'Forward file was successfully decompressed' >> {log} && "
         "pigz -dkf -p{threads} < {input.rev} > {output.rev} && "
         "echo 'Reverse file was successfully decompressed' >> {log} "
+
 
 rule data_preparation:
     input:
@@ -54,6 +56,7 @@ rule data_preparation:
         "echo 'Reverse files were successfully concatenated' >> {log} && "
         "echo '{params.samples_names}' > {output.sample_list} && "
         "echo 'Copy samples names into samples_list.txt' >> {log} "
+
 
 rule config_file_metarib:
     output:

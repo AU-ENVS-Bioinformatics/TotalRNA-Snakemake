@@ -6,14 +6,14 @@ rule trinity_bwa_index:
             "results/mRNA/trinity.Trinity.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"
         ),
     log:
-        "logs/bwa_index/trinity.log",
+        "logs/bwa/index/trinity.log",
     params:
         algorithm="bwtsw",
     wrapper:
         "v2.6.0/bio/bwa/index"
 
 
-rule bwa_contig:
+rule bwa_contig_mRNA:
     input:
         contig=multiext(
             "results/mRNA/trinity.Trinity.fasta",
@@ -28,7 +28,7 @@ rule bwa_contig:
     output:
         temp("results/mRNA/bwa/{sample_dir}.sam"),
     log:
-        "logs/mRNA_bwa/{sample_dir}.log",
+        "logs/bwa/{sample_dir}_mRNA.log",
     threads: 50
     conda:
         "../envs/bwa.yaml"
@@ -38,13 +38,13 @@ rule bwa_contig:
         """
 
 
-rule sort_bwa_contig:
+rule sort_bwa_contig_mRNA:
     input:
         "results/mRNA/bwa/{sample_dir}.sam",
     output:
         "results/mRNA/bwa/{sample_dir}_sorted.bam",
     log:
-        "logs/mRNA_samtools/{sample_dir}_sort.log",
+        "logs/samtools/{sample_dir}_sort_mRNA.log",
     conda:
         "../envs/samtools.yaml"
     shell:
@@ -53,13 +53,13 @@ rule sort_bwa_contig:
         """
 
 
-rule samtools_index:
+rule samtools_index_mRNA:
     input:
         "results/mRNA/bwa/{sample_dir}_sorted.bam",
     output:
         "results/mRNA/bwa/{sample_dir}_sorted.bam.bai",
     log:
-        "logs/samtools/index/{sample_dir}.log",
+        "logs/samtools/index/{sample_dir}_mRNA.log",
     params:
         extra="",  # optional params string
     threads: 4  # This value - 1 will be sent to -@
@@ -67,21 +67,21 @@ rule samtools_index:
         "v2.6.0/bio/samtools/index"
 
 
-rule samtools_idxstats:
+rule samtools_idxstats_mRNA:
     input:
         bam="results/mRNA/bwa/{sample_dir}_sorted.bam",
         idx="results/mRNA/bwa/{sample_dir}_sorted.bam.bai",
     output:
         "results/mRNA/bwa/{sample_dir}_sorted.bam.idxstats",
     log:
-        "logs/samtools/idxstats/{sample_dir}.log",
+        "logs/samtools/idxstats/{sample_dir}_mRNA.log",
     params:
         extra="",  # optional params string
     wrapper:
         "v2.6.0/bio/samtools/idxstats"
 
 
-rule processing_mapped_contigs:
+rule processing_mapped_contigs_mRNA:
     input:
         expand(
             "results/mRNA/bwa/{sample}_{dir}_sorted.bam.idxstats",
@@ -91,7 +91,7 @@ rule processing_mapped_contigs:
     output:
         "results/mRNA/mapped_reads_to_contigs.tsv",
     log:
-        "logs/samtools/mapped_reads_table.log",
+        "logs/samtools/mapped_reads_table_mRNA.log",
     params:
         extension_fwd="_fwd",
         extension_rev="_rev",
