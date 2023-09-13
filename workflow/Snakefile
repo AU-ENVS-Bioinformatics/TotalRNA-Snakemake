@@ -14,6 +14,7 @@ sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
 if len(unique_samples) == 0:
     print("There are no samples name detected. Did you rename files?")
+print(f"Detected {len(unique_samples)} samples: {unique_samples}")
 shell.prefix("set -o pipefail; ")
 
 
@@ -23,6 +24,7 @@ rule all:
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
+        "results/MetaRib/all.dedup.filtered.fasta",
 
 
 # Include rules
@@ -34,3 +36,4 @@ include: "rules/trinity.smk"
 include: "rules/non_coding_RNA.smk"
 include: "rules/map_reads_to_trinity_contigs.smk"
 include: "rules/filter_mRNA_abundance.smk"
+include: "rules/metarib.smk"

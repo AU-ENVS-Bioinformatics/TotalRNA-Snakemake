@@ -7,8 +7,6 @@ run <- function(infile, outfile, minimum) {
     if (!requireNamespace("vegan", quietly = TRUE)) {
         stop("vegan package is not installed")
     }
-
-
     data <- read.table(infile,sep="\t",header=TRUE,row.names=1)
     lowest_sample_reads_sum <- data |> colSums() |> min()
     data_stand <- data |> t() |> vegan::decostand(method="total") |> t()
