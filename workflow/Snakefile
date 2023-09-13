@@ -17,6 +17,8 @@ if len(unique_samples) == 0:
 print(f"Detected {len(unique_samples)} samples: {unique_samples}")
 shell.prefix("set -o pipefail; ")
 
+shell("type usearch || {{ echo 'usearch not found'; }}")
+
 
 rule all:
     input:
