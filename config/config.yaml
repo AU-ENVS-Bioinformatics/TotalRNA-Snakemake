@@ -1,16 +1,18 @@
-TRIM_GALORE-THREADS: 7
-SORTMERNA-THREADS: 50
-METARIB-THREADS: 50
-QUAST-THREADS: 50
-QUAST-THREADS: 50
-ANTISMASH-THREADS: 50
-BLAST-THREADS: 32
-PIGZ-THREADS: 50
-assemble_reads-THREADS: 100
-assemble_reads-MEMORY: 500 # Gb
-filter_non_coding_rna-THREADS: 16
-map_reads_to_contigs-THREADS: 24
-align_contigs_to_database-THREADS: 50
+threads:
+  trim_galore: 7
+  sortmerna: 50
+  metarib: 50
+  quast: 50
+  pigz: 50
+  trinity: 50
+  cmsearch: 16
+  bwamem: 50
+  samtools: 50
+  crest4: 50
+
+memory:
+  trinity: 500 #Gb
+
 
 # Regular expression to rename raw reads
 READS_REGEX: .+[-|_](.+)_.+_(.+)_.+\.fastq.gz
@@ -41,35 +43,14 @@ metarib:
   # Minimium coverge percent in filter process   
   - MIN_PER : 80
 
-blastn:
-  - "-task megablast"  #Traditional megablast used to find very similar (e.g., intraspecies or closely related species) sequences
-  - "-num_alignments 100" #Show alignments for this number of database sequences.
-
 crest4:
   - "--search_algo blast"
-  - "--search_db silvamod128"
+  - "--search_db silvamod138pr2"
 
-assemble_reads:
+trinity:
   - "--SS_lib_type RF" # Strand-specific RNA-Seq read orientation
   # There is no need to add --single or seqtype
-filter_ncRNA:
-  - "-e 3" # E-value in integar
-  - "-r n" # Delete temporary files created
 
-filter_mRNA_abundance_minimum: 1 # Relative expression in integars
+evalue_non_coding_rna: 0.001 # E-value for non-coding RNA search using cmsearch
 
-# Align contigs to database
-filter_by_abundance_before_align: false
-# Align contigs to database (diamond edition)
-diamond: 
-  - "-e 0.001" # Maximum expected value to report an alignmen
-  - "--very-sensitive" # enable the very-sensitive mode designed for best sensitivity including the twilight zone range of <40% identity
-  - "--compress 1" # gzip compression
-
-# Old sword edition
-ORFs_translate: 6 # Number of ORFs (1-6) to be calculated for alignment
-split_fasta: 12 # Number of parts Fasta file to be splitted in (greater than 1)
-align_contigs_to_database:
-  - "-s 12" # Number of parts Fasta file to be splitted in (greater than 1)
-  - "-n 6" # Number of ORFs (1-6) to be calculated for alignment
-  - "--remove" # Remove temporary files
+filter_mRNA_abundance_minimum: 1 # Relative expression in integers

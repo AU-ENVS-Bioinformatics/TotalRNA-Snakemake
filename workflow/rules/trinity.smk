@@ -13,9 +13,9 @@ rule trinity:
     log:
         "logs/trinity/trinity.log",
     params:
-        extra=" ".join(config.get("assemble_reads", "")),
-    threads: int(config.get("assemble_reads-THREADS", 50))
+        extra=" ".join(config.get("trinity", "")),
+    threads: config["threads"]["trinity"]
     resources:
-        mem_gb=int(config.get("assemble_reads-MEMORY", 500)),
+        mem_gb=int(config["memory"]["trinity"]),
     wrapper:
         "v2.6.0/bio/trinity"

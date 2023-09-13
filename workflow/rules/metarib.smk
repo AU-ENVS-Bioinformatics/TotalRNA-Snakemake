@@ -1,6 +1,5 @@
 from collections import ChainMap
 
-AVAILABLE_THREADS = int(config.get("METARIB-THREADS", 50))
 metarib_params = dict(ChainMap(*config.get("metarib")))
 private_metarib_params = dict(
     ChainMap(
@@ -20,7 +19,7 @@ rule decompress_rrna:
         "logs/rrna/decompress_{sample}.log",
     conda:
         "../envs/pigz.yaml"
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["pigz"]
     shell:
         "pigz -dkf -p{threads} < {input.fwd} > {output.fwd} && "
         "echo 'Forward file was successfully decompressed' >> {log} && "
@@ -39,14 +38,14 @@ rule data_preparation:
             sample=unique_samples,
         ),
     output:
-        R1=temp(f"results/MetaRib/data/all.1.fq"),
-        R2=temp(f"results/MetaRib/data/all.2.fq"),
-        sample_list=f"results/MetaRib/data/samples.list.txt",
+        R1=temp("results/MetaRib/data/all.1.fq"),
+        R2=temp("results/MetaRib/data/all.2.fq"),
+        sample_list="results/MetaRib/data/samples.list.txt",
     log:
         "logs/metarib/data_preparation.log",
     conda:
         "../envs/pigz.yaml"
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["pigz"]
     params:
         samples_names="\n".join(unique_samples),
     shell:
@@ -71,7 +70,7 @@ rule config_file_metarib:
         CLS_PARA=metarib_params.get("CLS_PARA", ""),
         MIN_COV=metarib_params.get("MIN_COV", "2"),
         MIN_PER=metarib_params.get("MIN_PER", "80"),
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["metarib"]
     conda:
         "../envs/metarib.yaml"
     log:
@@ -118,7 +117,7 @@ rule MetaRib:
         "logs/metarib.log",
     conda:
         "../envs/metarib.yaml"
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["metarib"]
     params:
         script="workflow/external_scripts/run_MetaRib.py",
     shell:

@@ -29,7 +29,7 @@ rule bwa_contig_mRNA:
         temp("results/mRNA/bwa/{sample_dir}.sam"),
     log:
         "logs/bwa/{sample_dir}_mRNA.log",
-    threads: 50
+    threads: config["threads"]["bwamem"]
     conda:
         "../envs/bwa.yaml"
     shell:
@@ -62,7 +62,7 @@ rule samtools_index_mRNA:
         "logs/samtools/index/{sample_dir}_mRNA.log",
     params:
         extra="",  # optional params string
-    threads: 4  # This value - 1 will be sent to -@
+    threads: config["threads"]["samtools"]
     wrapper:
         "v2.6.0/bio/samtools/index"
 

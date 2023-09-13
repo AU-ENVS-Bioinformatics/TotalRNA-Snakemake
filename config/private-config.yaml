@@ -1,28 +1,4 @@
 
-# Databases: absolute paths
-# Silvamod or Greengenes reference databases, for example silvamod138pr2.fasta
-BLAST_DATABASE: "<custom_dir>/silvamod138pr2.fasta"
-# Small ribosome subunit database such as SILVA_138.1_SSURef
-SORTMERNA_SSU_REF_DATABASE: "<custom_dir>/SILVA_138.1_SSURef"
-# Large ribosome subunit database such as SILVA_138.1_SSURef
-SORTMERNA_LSU_REF_DATABASE: "<custom_dir>/SILVA_138.1_SSURef"
-# Index cache for sortmerna
-# Sortmerna will save the index in those directories to avoid computing them again and again
-# Please, create an empty directory (one for each)
-SORTMERNA_SSU_DATABASE_INDEX: "<custom_dir>"
-SORTMERNA_LSU_DATABASE_INDEX: "<custom_dir>"
-# When annotating rRNA, CREST4 will download Silva 138 in the following path
-CREST4_DIR: "~/.crest4/"
-# Rfam database to filter ncRNA
-RFAM_DATABASE : "<Rfam>.cm"
-PRIVATE_METARIB: 
-  # Database for EMIRGE such us SILVA_138.1_SSURef 
-  - EM_REF : "<custom_dir>/SILVA_138.1_SSURef "
-  # Index cache for Emirge reference
-  # Metarib will save the index in those directories to avoid computing them again and again
-  # Please, create an empty directory
-  - EM_BT : "<custom_dir>"
-
 SORTMERNA_SSU_REF_DATABASE: "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta"
 SORTMERNA_LSU_REF_DATABASE: "/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta"
 SORTMERNA_SSU_DATABASE_INDEX: "/Databases/sortmerna_idx/SSU"

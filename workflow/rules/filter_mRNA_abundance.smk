@@ -4,7 +4,7 @@ rule find_contigs_to_keep:
     output:
         "results/mRNA/abundance_filtered/mapped_reads_to_contigs.tsv",
     params:
-        minimum=config.get("minimum_abundance", 1),
+        minimum=config.get("filter_mRNA_abundance_minimum", 1),
     conda:
         "../envs/vegan.yaml"
     log:

@@ -1,5 +1,5 @@
 trim_galore_params = config.get("trim_galore", "")
-trim_galore_threads = config.get("TRIM_GALORE-THREADS", 7)
+trim_galore_threads = config["threads"]["trim_galore"]
 trim_galore_params.append(f"--cores {trim_galore_threads}")
 
 

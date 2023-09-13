@@ -1,4 +1,3 @@
-AVAILABLE_THREADS = int(config.get("SORTMERNA-THREADS", 50))
 idx_SSU_directory = config.get("SORTMERNA_SSU_DATABASE_INDEX")
 idx_LSU_directory = config.get("SORTMERNA_LSU_DATABASE_INDEX")
 
@@ -26,7 +25,7 @@ rule sortmerna_ssu:
         "logs/sortmerna/{sample}_SSU.log",
     conda:
         "../envs/sortmerna.yaml"
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["sortmerna"]
     script:
         "../scripts/sortmerna.py"
 
@@ -57,6 +56,6 @@ rule sortmerna_lsu:
         "logs/sortmerna/{sample}_LSU.log",
     conda:
         "../envs/sortmerna.yaml"
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["sortmerna"]
     script:
         "../scripts/sortmerna.py"

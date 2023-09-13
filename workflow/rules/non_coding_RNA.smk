@@ -7,7 +7,7 @@ rule infernal_cmsearch:
         tbl="results/mRNA/non_coding_rna/RFAM_cmsearch.tbl",
     log:
         "logs/cmsearch.log",
-    threads: int(config.get("filter_non_coding_rna-THREADS", 50))
+    threads: config["threads"]["cmsearch"]
     conda:
         "../envs/infernal.yaml"
     shell:
@@ -25,7 +25,7 @@ rule processing_cmsearch_tbl:
     conda:
         "../envs/pandas.yaml"
     params:
-        evalue=1e-3,
+        evalue=config["evalue_non_coding_rna"],
     script:
         "../scripts/processing_cmsearch_tbl.py"
 

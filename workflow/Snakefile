@@ -25,9 +25,9 @@ rule all:
         "qc/trim_galore_multiqc.html",
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
+        "qc/quast/report.html",
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
-        "results/MetaRib/all.dedup.filtered.fasta",
-        "results/crest4_results/assignments.txt",
+        "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
 
 
 # Include rules
@@ -42,3 +42,4 @@ include: "rules/filter_mRNA_abundance.smk"
 include: "rules/metarib.smk"
 include: "rules/map_reads_to_metarib_contigs.smk"
 include: "rules/crest4.smk"
+include: "rules/quast.smk"
