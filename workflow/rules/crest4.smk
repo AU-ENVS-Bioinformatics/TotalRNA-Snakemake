@@ -23,7 +23,7 @@ rule CREST4:
         "-o results/crest4_results "
         "{params.extra} "
         "> {log} 2>&1 || true"
-        # Crest4 sends an error signal, so we need to make it always work
+        # Crest4 sends an error signal
 
 
 rule add_taxa_to_mapped_contigs:

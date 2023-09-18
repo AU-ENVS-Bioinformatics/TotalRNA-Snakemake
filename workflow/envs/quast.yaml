@@ -2,14 +2,4 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - quast
-  - perl
-  - python
-  - openjdk >=8
-  - simplejson
-  - blast
-  - glimmerHMM
-  - circos
-  - minimap2 >=2.10
-  - bedtools
-  - bwa
+  - quast=5.2.0
