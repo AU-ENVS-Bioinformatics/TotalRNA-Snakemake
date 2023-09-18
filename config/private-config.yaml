@@ -22,6 +22,6 @@ RFAM_DATABASE: "/Databases/TotalRNA-Snakemake/rfam/Rfam_v14.9.cm"
 CREST4_DIR: "/Databases/CREST4_DB/"
 
 # EMIRGE database for rRNA gene reconstruction
-- EM_REF : "/Databases/TotalRNA-Snakemake/emirge/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta"
+EM_REF : "/Databases/TotalRNA-Snakemake/emirge/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta"
 # EMIRGE reference index prefix
-- EM_BT_PREFIX : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed"
+EM_BT_PREFIX : "/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed"

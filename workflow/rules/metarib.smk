@@ -1,12 +1,6 @@
 from collections import ChainMap
 
 metarib_params = dict(ChainMap(*config.get("metarib")))
-private_metarib_params = dict(
-    ChainMap(
-        *config.get("PRIVATE_METARIB"),
-    )
-)
-
 
 rule decompress_rrna:
     input:
