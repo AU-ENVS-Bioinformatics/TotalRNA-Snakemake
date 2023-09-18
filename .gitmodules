@@ -1,9 +1,0 @@
-[submodule "workflow/scripts/MetaRib"]
-	path = workflow/scripts/MetaRib
-	url = https://github.com/yxxue/MetaRib
-[submodule "workflow/scripts/BBMap"]
-	path = workflow/scripts/BBMap
-	url = https://github.com/BioInfoTools/BBMap
-[submodule "workflow/scripts/CoMW"]
-	path = workflow/scripts/CoMW
-	url = https://github.com/currocam/CoMW
