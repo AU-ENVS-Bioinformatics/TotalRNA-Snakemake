@@ -15,6 +15,7 @@ rule CREST4:
     log:
         "logs/crest4/crest4.log",
     threads: config["threads"]["crest4"]
+    # Crest4 sends an error signal, that's why we use || true
     shell:
         "export CREST4_DIR={params.CREST4_DIR} ; "
         "crest4 -f {input.fasta} "
@@ -23,7 +24,6 @@ rule CREST4:
         "-o results/crest4_results "
         "{params.extra} "
         "> {log} 2>&1 || true"
-        # Crest4 sends an error signal
 
 
 rule add_taxa_to_mapped_contigs:
