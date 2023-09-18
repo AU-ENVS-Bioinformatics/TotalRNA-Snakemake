@@ -25,7 +25,7 @@ rule all:
         "qc/trim_galore_multiqc.html",
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
-        "qc/quast/report.html",
+        "qc/quast/MetaRib/report.txt",
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
         "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
 

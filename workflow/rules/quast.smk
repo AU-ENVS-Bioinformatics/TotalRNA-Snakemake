@@ -1,44 +1,24 @@
 rule quast:
     input:
         fasta="results/MetaRib/all.dedup.filtered.fasta",
-        pe1="results/MetaRib/data/all.1.fq",
-        pe2="results/MetaRib/data/all.2.fq",
+        R1="results/MetaRib/data/all.1.fq",
+        R2="results/MetaRib/data/all.2.fq",
     output:
-        multiext(
-            "qc/quast/all.dedup.filtered.fasta/report.",
-            "html",
-            "tex",
-            "txt",
-            "pdf",
-            "tsv",
-        ),
-        multiext(
-            "qc/quast/all.dedup.filtered.fasta/transposed_report.", "tex", "txt", "tsv"
-        ),
-        multiext(
-            "qc/quast/all.dedup.filtered.fasta/basic_stats/",
-            "cumulative_plot.pdf",
-            "GC_content_plot.pdf",
-            "gc.icarus.txt",
-            "genome_GC_content_plot.pdf",
-            "NGx_plot.pdf",
-            "Nx_plot.pdf",
-        ),
-        multiext(
-            "qc/quast/all.dedup.filtered.fasta/contigs_reports/",
-            "all_alignments_genome.tsv",
-            "contigs_report_genome.mis_contigs.info",
-            "contigs_report_genome.stderr",
-            "contigs_report_genome.stdout",
-        ),
-        "qc/quast/all.dedup.filtered.fasta/contigs_reports/minimap_output/genome.coords_tmp",
-        "qc/quast/all.dedup.filtered.fasta/icarus.html",
-        "qc/quast/all.dedup.filtered.fasta/icarus_viewers/contig_size_viewer.html",
-        "qc/quast/all.dedup.filtered.fasta/quast.log",
+        outdir=directory("qc/quast/MetaRib"),
+        report_txt="qc/quast/MetaRib/report.txt",
+        report_tsv="qc/quast/MetaRib/report.tsv",
+        report_html="qc/quast/MetaRib/report.html",
     log:
-        "logs/rrna/quast.log",
-    threads: config["threads"]["quast"]
+        "logs/quast-MetaRib.log",
+    conda:
+        "../envs/quast.yaml"
     params:
         extra=" ".join(config.get("quast", "")),
-    wrapper:
-        "v2.6.0/bio/quast"
+    threads: config["threads"]["quast"]
+    shell:
+        "quast {params.extra} "
+        "--threads {threads} "
+        "-1 {input.R1} -2 {input.R2} "
+        "-o {output.outdir} "
+        "{input.fasta} "
+        ">> {log} 2>&1 "
