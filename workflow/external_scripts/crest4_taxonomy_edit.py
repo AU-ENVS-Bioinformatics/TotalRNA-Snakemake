@@ -1,4 +1,9 @@
-"Add taxonomic prefix to mapped reads to contigs."
+"""
+Add taxonomic prefixes to crest4 output." 
+Usage: python3 crest4_taxonomy_edit.py <input_file> <output_file>
+Curro Campuzano Jiménez, 2022
+campuzanocurro[at]gmail.com
+"""
 import sys
 from typing import List
 import argparse
