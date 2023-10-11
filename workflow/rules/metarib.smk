@@ -28,7 +28,7 @@ rule data_preparation:
             sample=unique_samples,
         ),
         R2=expand(
-            "results/MetaRib/data/{sample}.1.fq",
+            "results/MetaRib/data/{sample}.2.fq",
             sample=unique_samples,
         ),
     output:
@@ -55,7 +55,7 @@ rule config_file_metarib:
     output:
         f"results/MetaRib/MetaRib.cfg",
     params:
-        PROJECT_DIR="results/MetaRib/",
+        PROJECT_DIR="results/MetaRib",
         SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000"),
         EM_PARA=metarib_params.get("EM_PARA", ""),
         EM_REF=config.get("EM_REF", ""),
