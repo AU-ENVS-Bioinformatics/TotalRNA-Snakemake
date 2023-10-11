@@ -58,7 +58,7 @@ threads:
   quast: 50
   pigz: 50
   trinity: 50
-  cmsearch: 16
+  cmsearch: 50
   bwamem: 50
   samtools: 50
   crest4: 50
