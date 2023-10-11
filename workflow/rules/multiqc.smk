@@ -7,6 +7,7 @@ rule multiqc_trim_galore:
         ),
     output:
         "qc/trim_galore_multiqc.html",
+    priority: 50
     params:
         extra="",  # Optional: extra parameters for multiqc.
     log:
@@ -23,6 +24,7 @@ rule multiqc_sortmerna_SSU:
         ),
     output:
         "qc/sortmerna_SSU_multiqc.html",
+    priority: 50
     params:
         extra="",  # Optional: extra parameters for multiqc.
     log:
@@ -39,6 +41,7 @@ rule multiqc_sortmerna_LSU:
         ),
     output:
         "qc/sortmerna_LSU_multiqc.html",
+    priority: 50
     params:
         extra="",  # Optional: extra parameters for multiqc.
     log:
