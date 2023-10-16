@@ -1,4 +1,9 @@
-"Add taxonomic prefix to mapped reads to contigs."
+"""
+Add taxonomic prefixes to crest4 output." 
+Usage: python3 crest4_taxonomy_edit.py <input_file> <output_file>
+Curro Campuzano Jiménez, 2022
+campuzanocurro[at]gmail.com
+"""
 import sys
 from typing import List
 import argparse
@@ -53,7 +58,7 @@ def edit_line(line: str) -> str:
     return result
 
 
-def create_argument_parser() -> argparse.ArgumentParser:
+def argument_parser() -> argparse.ArgumentParser:
     argparser = argparse.ArgumentParser(
         description="Add taxonomic prefix to mapped reads to contigs."
     )
@@ -75,7 +80,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    argparser = create_argument_parser()
+    argparser = argument_parser()
     args = argparser.parse_args()
     args.outfile.write(next(args.infile).replace("classification", "taxonomy") + "\n")
     for line in args.infile:

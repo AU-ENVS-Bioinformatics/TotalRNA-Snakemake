@@ -2,8 +2,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - pip
-  - pandas
-  - pip:
-    - biopython
+  - biopython=1.81

@@ -2,9 +2,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - pip
-  - r-vegan
-  - r-base
-  - pip:
-    - biopython
+  - r-vegan=2.6_4
