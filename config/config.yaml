@@ -62,6 +62,7 @@ threads:
   bwamem: 50
   samtools: 50
   crest4: 50
+  diamond: 50
 
 memory:
   trinity: 500 #Gb
