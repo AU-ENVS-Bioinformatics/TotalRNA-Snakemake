@@ -49,6 +49,8 @@ rule edit_taxonomy:
         "logs/crest4/edit_taxonomy.log",
     conda:
         "../envs/base_python.yaml"
+    params:
+        script="workflow/external_scripts/crest4_taxonomy_edit.py"
     shell:
-        "python3 workflow/external_scripts/crest4_taxonomy_edit.py "
+        "python3 {params.script} "
         "{input} {output} >> {log} 2>&1"
