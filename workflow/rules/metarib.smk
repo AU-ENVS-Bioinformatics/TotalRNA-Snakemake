@@ -2,6 +2,7 @@ from collections import ChainMap
 
 metarib_params = dict(ChainMap(*config.get("metarib")))
 
+
 rule decompress_rrna:
     input:
         fwd="results/rrna/{sample}_fwd.fq.gz",
@@ -53,9 +54,9 @@ rule data_preparation:
 
 rule config_file_metarib:
     output:
-        f"results/MetaRib/MetaRib.cfg",
+        "results/MetaRib/MetaRib.cfg",
     params:
-        PROJECT_DIR="results/MetaRib",
+        PROJECT_DIR= lambda wildcards, output: output[0][:-12],
         SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000"),
         EM_PARA=metarib_params.get("EM_PARA", ""),
         EM_REF=config.get("EM_REF", ""),
