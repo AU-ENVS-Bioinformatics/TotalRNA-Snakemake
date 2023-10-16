@@ -7,6 +7,16 @@
 
 A Snakemake workflow for TotalRNA analysis from the Department of Environmental Science of Aarhus University. 
 
+## TLDR
+
+```bash
+conda activate snakemake
+git clone https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake
+cd TotalRNA-Snakemake
+snakemake -c1 skip_rename # or snakemake -n rename
+snakemake -c100 --use-conda --keep-going
+```
+
 ## Introduction
 
 #### Overview
@@ -17,9 +27,11 @@ This pipeline manages large-scale TotalRNA meta-transcriptomic data for taxonomi
 2. Filtering SSU and LSU reads using [sormerna](https://github.com/biocore/sortmerna) and [SILVA](https://www.arb-silva.de/).
 3. Reconstructing ribosomal genes using [Metarib](https://github.com/yxxue/MetaRib).
 4. Checking the quality of the ribosomal assembly using [QUAST](https://quast.sourceforge.net/).
-5. Mapping RNA contigs to reads using [CoMW](https://github.com/anwarMZ/CoMW).
+5. Mapping RNA contigs to reads using [BWA](https://bio-bwa.sourceforge.net/) and [samtools](https://github.com/samtools/).
 6. Classifying reads taxonomically using [BLAST](https://blast.ncbi.nlm.nih.gov/), [SILVA](https://www.arb-silva.de/) and [CREST](https://github.com/lanzen/CREST).
-7. Assembling non-rRNA reads, filtering noncoding RNA, mapping mRNA reads to contigs and aligning contigs to [SWORD](https://academic.oup.com/bioinformatics/article/32/17/i680/2450775) using [CoMW](https://github.com/anwarMZ/CoMW).
+7. Assembling non-rRNA reads ([Trinity](https://github.com/trinityrnaseq/trinityrnaseq)) and filtering noncoding RNA using the [RFam database](https://rfam.org/). 
+8. Mapping mRNA contigs to reads using [BWA](https://bio-bwa.sourceforge.net/) and [samtools](https://github.com/samtools/).
+9. Functional annotation of mRNA contigs using [Diamond](https://github.com/bbuchfink/diamond) and [AnnoTree](http://annotree.uwaterloo.ca/annotree/), which includes KEGG, Pfam and Tigrfam annotations for over 30,000 bacterial and 1600 archaeal genomes. 
 
 ## Getting started
 
@@ -39,13 +51,13 @@ Activating conda environment:
 conda activate snakemake
 ```
 
-Clone this git repository to the location where you want to run your analysis. Notice that you will need the flag --recurse-submodules in order to clone other repositories as dependencies. 
+Clone this git repository to the location where you want to run your analysis. 
 ```bash
-git clone --recurse-submodules -j8 https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake
-cd TotalRNA-Snakemake
+git clone https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake TotalRNA-Snakemake-Project
+cd TotalRNA-Snakemake-Project
 ```
 
-Copy raw fastq files into the ´reads´ directory. See [reads/README.md](reads/README.md) for more information. Now, we are going to rename those files and made symlinks to the `results/renamed` directory.
+Copy or symlink raw fastq files into the ´reads´ directory. See [reads/README.md](reads/README.md) for more information. Now, we are going to rename those files and made symlinks to the `results/renamed` directory. To skip this step, just copy your files into `results/renamed` and skip the next step. Alternatively, you can run `snakemake -c1 skip_rename` to symlink your files without renaming them.
 
 ```bash
 snakemake -n rename
@@ -64,7 +76,7 @@ Check that the pipeline will behave as expected by running a dry run and check t
 snakemake -n --use-conda
 ```
 
-Finally, run the whole pipeline. A useful flag to add is `--keep-going` to prevent the pipeline to stop if an error occurs.
+Finally, run the whole pipeline. A useful flag to add is `--keep-going` to prevent the pipeline to stop if an error occurs. If you are running this in a shared environment, you can have all the conda environments in a shared location by adding `--conda-prefix /path/to/shared/conda/envs`. 
 
 ```bash
 snakemake -c100 --use-conda --keep-going
