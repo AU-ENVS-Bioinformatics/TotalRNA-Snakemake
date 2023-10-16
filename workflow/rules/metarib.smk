@@ -56,7 +56,7 @@ rule config_file_metarib:
     output:
         "results/MetaRib/MetaRib.cfg",
     params:
-        PROJECT_DIR= lambda wildcards, output: output[0][:-12],
+        PROJECT_DIR=lambda wildcards, output: output[0][:-12],
         SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000"),
         EM_PARA=metarib_params.get("EM_PARA", ""),
         EM_REF=config.get("EM_REF", ""),
