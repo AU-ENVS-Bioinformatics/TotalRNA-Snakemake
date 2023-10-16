@@ -9,33 +9,44 @@ configfile: "config/config.yaml"
 configfile: "config/private-config.yaml"
 
 
-# Define global wildcards for input data after renaming
 regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
 sample, read = glob_wildcards(regex_raw_illumina_files)
 unique_samples = sorted(set(sample))
-if len(unique_samples) == 0:
-    print("There are no samples name detected. Did you rename files?")
 shell.prefix("set -o pipefail; ")
 
 
-# Define rule all
+onstart:
+    print("#### Total-RNA workflow")
+    print("Checking for required software...")
+    shell("type usearch || {{ echo 'usearch not found'; }}")
+    if len(unique_samples) == 0:
+        print("There are no samples name detected. Did you rename files?")
+        exit(1)
+    print(f"Detected {len(unique_samples)} samples: {unique_samples}")
+    print("Reading samples and config files...")
+
+
 rule all:
     input:
-        "results/quast/",
-        "results/CREST_Results/mapped_reads_to_contigs.tsv.edited",
-        "results/mRNA/mapped_reads_to_contigs_AbundanceFiltered.tsv",
-        "results/mRNA/contigs_ncrna_filtered_AbundanceFiltered.fasta",
+        "qc/trim_galore_multiqc.html",
+        "qc/sortmerna_SSU_multiqc.html",
+        "qc/sortmerna_LSU_multiqc.html",
+        "qc/quast/MetaRib/report.txt",
+        "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
+        "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
 
 
 # Include rules
-include: "rules/rename.smk"
+include: "rules/rename_input.smk"
 include: "rules/trim_galore.smk"
 include: "rules/sortmerna.smk"
+include: "rules/multiqc.smk"
+include: "rules/trinity.smk"
+include: "rules/non_coding_RNA.smk"
+include: "rules/map_reads_to_trinity_contigs.smk"
+include: "rules/filter_mRNA_abundance.smk"
 include: "rules/metarib.smk"
+include: "rules/map_reads_to_metarib_contigs.smk"
+include: "rules/crest4.smk"
 include: "rules/quast.smk"
-include: "rules/annotate_rrna.smk"
-include: "rules/mapping_rrna.smk"
-include: "rules/taxonomy_edit.smk"
-include: "rules/assembling_reads.smk"
-include: "rules/common.smk"
-include: "rules/filter_non_coding_rna.smk"
+include: "rules/diamond.smk"

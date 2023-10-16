@@ -1,5 +1,8 @@
 qc/**
 results/**
+qc/**
+.*
+workflow2/**
 resources/**
 benchmarks/**
 logs/**

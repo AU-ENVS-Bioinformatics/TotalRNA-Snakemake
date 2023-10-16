@@ -1,35 +1,20 @@
-AVAILABLE_THREADS = int(config.get("QUAST-THREADS", 50))
-
-
 rule quast:
     input:
-        fasta=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
-        R1=f"results/MetaRib/data/all.1.fq",
-        R2=f"results/MetaRib/data/all.2.fq",
+        fasta="results/MetaRib/all.dedup.filtered.fasta",
+        R1="results/MetaRib/data/all.1.fq",
+        R2="results/MetaRib/data/all.2.fq",
     output:
-        outdir=directory(f"results/quast/"),
-        report_txt=report(
-            f"results/quast/report.txt",
-            category="Genome assembly",
-        ),
-        report_tsv=report(
-            f"results/quast/report.tsv",
-            category="Genome assembly",
-        ),
-        report_html=report(
-            f"results/quast/report.html",
-            caption="report/quast_html.rst",
-            category="Genome assembly",
-        ),
+        outdir=directory("qc/quast/MetaRib"),
+        report_txt="qc/quast/MetaRib/report.txt",
+        report_tsv="qc/quast/MetaRib/report.tsv",
+        report_html="qc/quast/MetaRib/report.html",
     log:
-        "logs/quast.log",
-    benchmark:
-        "benchmarks/quast.log"
+        "logs/quast-MetaRib.log",
     conda:
         "../envs/quast.yaml"
     params:
         extra=" ".join(config.get("quast", "")),
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["quast"]
     shell:
         "quast {params.extra} "
         "--threads {threads} "

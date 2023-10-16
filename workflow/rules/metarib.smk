@@ -1,103 +1,75 @@
-import subprocess
 from collections import ChainMap
 
-AVAILABLE_THREADS = int(config.get("METARIB-THREADS", 50))
 metarib_params = dict(ChainMap(*config.get("metarib")))
-private_metarib_params = dict(
-    ChainMap(
-        *config.get("PRIVATE_METARIB"),
-    )
-)
 
 
-rule prepare_metarib:
+rule decompress_rrna:
+    input:
+        fwd="results/rrna/{sample}_fwd.fq.gz",
+        rev="results/rrna/{sample}_rev.fq.gz",
+    output:
+        fwd=temp("results/MetaRib/data/{sample}.1.fq"),
+        rev=temp("results/MetaRib/data/{sample}.2.fq"),
+    log:
+        "logs/rrna/decompress_{sample}.log",
+    conda:
+        "../envs/pigz.yaml"
+    threads: config["threads"]["pigz"]
+    shell:
+        "pigz -dkf -p{threads} < {input.fwd} > {output.fwd} && "
+        "echo 'Forward file was successfully decompressed' >> {log} && "
+        "pigz -dkf -p{threads} < {input.rev} > {output.rev} && "
+        "echo 'Reverse file was successfully decompressed' >> {log} "
+
+
+rule data_preparation:
     input:
         R1=expand(
-            f"results/rrna/{{sample}}_fwd.fq.gz",
+            "results/MetaRib/data/{sample}.1.fq",
             sample=unique_samples,
         ),
         R2=expand(
-            f"results/rrna/{{sample}}_rev.fq.gz",
+            "results/MetaRib/data/{sample}.2.fq",
             sample=unique_samples,
         ),
     output:
-        R1=temp(f"results/MetaRib/data/all.1.fq"),
-        R2=temp(f"results/MetaRib/data/all.2.fq"),
-        sample_list=report(
-            f"results/MetaRib/data/samples.list.txt",
-            caption="report/prepare_metarib.rst",
-        ),
+        R1=temp("results/MetaRib/data/all.1.fq"),
+        R2=temp("results/MetaRib/data/all.2.fq"),
+        sample_list="results/MetaRib/data/samples.list.txt",
     log:
-        "logs/metarib/prepare_metarib.log",
-    benchmark:
-        "benchmarks/metarib/prepare_metarib.log"
+        "logs/metarib/data_preparation.log",
     conda:
-        "../envs/base_python.yaml"
-    threads: AVAILABLE_THREADS
+        "../envs/pigz.yaml"
+    threads: config["threads"]["pigz"]
     params:
         samples_names="\n".join(unique_samples),
     shell:
-        "cat {input.R1} | pigz -d -k -p{threads} > {output.R1} && "
+        "cat {input.R1} > {output.R1} && "
         "echo 'Forward files were successfully concatenated' >> {log} && "
-        "cat {input.R2} | pigz -d -k -p{threads} > {output.R2} && "
+        "cat {input.R2} > {output.R2} && "
         "echo 'Reverse files were successfully concatenated' >> {log} && "
         "echo '{params.samples_names}' > {output.sample_list} && "
         "echo 'Copy samples names into samples_list.txt' >> {log} "
 
 
-rule move_files_to_metarib:
-    input:
-        R1=expand(
-            f"results/rrna/{{sample}}_fwd.fq.gz",
-            sample=unique_samples,
-        ),
-        R2=expand(
-            f"results/rrna/{{sample}}_rev.fq.gz",
-            sample=unique_samples,
-        ),
-    output:
-        R1=expand(
-            f"results/MetaRib/data/{{sample}}.1.fq",
-            sample=unique_samples,
-        ),
-        R2=expand(
-            f"results/MetaRib/data/{{sample}}.2.fq",
-            sample=unique_samples,
-        ),
-    conda:
-        "../envs/base_python.yaml"
-    log:
-        "logs/metarib/move_files_to_metarib.log",
-    benchmark:
-        "benchmarks/metarib/move_files_to_metarib.log"
-    script:
-        "../scripts/cp_metarib.py"
-
-
 rule config_file_metarib:
     output:
-        f"results/MetaRib/MetaRib.cfg",
+        "results/MetaRib/MetaRib.cfg",
     params:
         PROJECT_DIR=lambda wildcards, output: output[0][:-12],
-        DATA_DIR=f"results/MetaRib/data",
-        SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000")
-        if metarib_params
-        else "1000000",
+        SAMPLING_NUM=metarib_params.get("SAMPLING_NUM", "1000000"),
         EM_PARA=metarib_params.get("EM_PARA", ""),
-        EM_REF=private_metarib_params.get("EM_REF", ""),
-        EM_BT=private_metarib_params.get("EM_BT", ""),
+        EM_REF=config.get("EM_REF", ""),
+        EM_BT=config.get("EM_BT_PREFIX", ""),
         MAP_PARA=metarib_params.get("MAP_PARA", ""),
         CLS_PARA=metarib_params.get("CLS_PARA", ""),
         MIN_COV=metarib_params.get("MIN_COV", "2"),
         MIN_PER=metarib_params.get("MIN_PER", "80"),
-        BBTOOL="workflow/scripts/BBMap/sh",
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["metarib"]
     conda:
         "../envs/metarib.yaml"
     log:
         "logs/metarib/config_file.log",
-    benchmark:
-        "benchmarks/metarib/config_file.log"
     shell:
         "echo [BASE] > {output} && "
         "echo PROJECT_DIR : $(pwd)/{params.PROJECT_DIR} >> {output} && "
@@ -121,26 +93,29 @@ rule config_file_metarib:
 
 rule MetaRib:
     input:
-        config=f"results/MetaRib/MetaRib.cfg",
-        R1=f"results/MetaRib/data/all.1.fq",
-        R2=f"results/MetaRib/data/all.2.fq",
-        samples=f"results/MetaRib/data/samples.list.txt",
+        R1="results/MetaRib/data/all.1.fq",
+        R2="results/MetaRib/data/all.2.fq",
+        sample_list="results/MetaRib/data/samples.list.txt",
+        config="results/MetaRib/MetaRib.cfg",
         R1_samples=expand(
-            f"results/MetaRib/data/{{sample}}.1.fq",
+            "results/MetaRib/data/{sample}.1.fq",
+            sample=unique_samples,
+        ),
+        R2_samples=expand(
+            "results/MetaRib/data/{sample}.2.fq",
             sample=unique_samples,
         ),
     output:
-        outdir=directory(f"results/MetaRib/MetaRib"),
-        filtered_fasta=f"results/MetaRib/MetaRib/Abundance/all.dedup.filtered.fasta",
-    params:
-        outdir=f"results/MetaRib/Iteration/",
+        outdir=directory("results/MetaRib/MetaRib"),
+        filtered_fasta="results/MetaRib/all.dedup.filtered.fasta",
     log:
         "logs/metarib.log",
-    benchmark:
-        "benchmarks/metarib/metarib.log"
     conda:
         "../envs/metarib.yaml"
-    threads: AVAILABLE_THREADS
+    threads: config["threads"]["metarib"]
+    params:
+        script="workflow/external_scripts/run_MetaRib.py",
     shell:
-        "python2 workflow/scripts/MetaRib/run_MetaRib.py -cfg {input.config}"
-        ">> {log} 2>&1 "
+        "python2 {params.script} -cfg {input.config} "
+        ">> {log} 2>&1 && "
+        "mv {output.outdir}/Abundance/all.dedup.filtered.fasta {output.filtered_fasta} "

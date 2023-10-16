@@ -1,0 +1,13 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - xapple
+dependencies:
+  - autopaths==1.5.0
+  - optmagic==1.1.0
+  - plumbing==2.10.4
+  - fasta==2.2.11
+  - seqsearch==2.1.6
+  - crest4
+  - blast=2.14.1

@@ -1,2 +1,3 @@
-Describe how to configure the workflow (using config.yaml and maybe additional files).
-All of them need to be present with example entries inside of the config folder.
+1. Configure the extra parameters of each program in the config.yaml file. 
+2. Change the number of threads & memory in the config.yaml file to each program's requirements. Notice that, if the number of threads exceeds the number of cores indicated in snakemake --cores, the pipeline will downscale the number of threads. 
+3. All data files should be placed according to the private-config.yaml file. 
