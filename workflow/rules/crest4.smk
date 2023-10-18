@@ -50,7 +50,8 @@ rule edit_taxonomy:
     conda:
         "../envs/base_python.yaml"
     params:
-        script="workflow/external_scripts/crest4_taxonomy_edit.py"
+        script="workflow/external_scripts/crest4_taxonomy_edit.py",
+    priority: 10
     shell:
         "python3 {params.script} "
         "{input} {output} >> {log} 2>&1"
