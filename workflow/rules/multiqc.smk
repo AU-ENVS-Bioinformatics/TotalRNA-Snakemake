@@ -13,7 +13,7 @@ rule multiqc_trim_galore:
     log:
         "logs/multiqc/multiqc_trim_galore.log",
     wrapper:
-        "v2.6.0/bio/multiqc"
+        "v2.7.0/bio/multiqc"
 
 
 rule multiqc_sortmerna_SSU:
@@ -30,7 +30,7 @@ rule multiqc_sortmerna_SSU:
     log:
         "logs/multiqc/sortmerna_SSU_multiqc.log",
     wrapper:
-        "v2.6.0/bio/multiqc"
+        "v2.7.0/bio/multiqc"
 
 
 rule multiqc_sortmerna_LSU:
@@ -47,4 +47,4 @@ rule multiqc_sortmerna_LSU:
     log:
         "logs/multiqc/sortmerna_LSU_multiqc.log",
     wrapper:
-        "v2.6.0/bio/multiqc"
+        "v2.7.0/bio/multiqc"
