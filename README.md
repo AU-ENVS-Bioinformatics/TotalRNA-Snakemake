@@ -33,6 +33,8 @@ This pipeline manages large-scale TotalRNA meta-transcriptomic data for taxonomi
 8. Mapping mRNA contigs to reads using [BWA](https://bio-bwa.sourceforge.net/) and [samtools](https://github.com/samtools/).
 9. Functional annotation of mRNA contigs using [Diamond](https://github.com/bbuchfink/diamond) and [AnnoTree](http://annotree.uwaterloo.ca/annotree/), which includes KEGG, Pfam and Tigrfam annotations for over 30,000 bacterial and 1600 archaeal genomes. 
 
+Check the wiki for more information: https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake/wiki
+
 ## Getting started
 
 #### Requirements:
