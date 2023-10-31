@@ -7,9 +7,7 @@ rule annotree:
         brite=config["BRITE"],
     output:
         diamond="results/mRNA/diamond/annotree.tsv",
-        brite_ann="results/mRNA/diamond/annotree_brite_ann.tsv",
-        taxonomy="results/mRNA/diamond/annotree_taxonomy_ann.tsv",
-        metabolism="results/mRNA/diamond/annotree_metabolism_ann.tsv",
+        annotated="results/mRNA/diamond/annotree_ann.tsv",
     log:
         notebook="notebooks/annotree.ipynb",
     threads: config["threads"]["diamond"]

@@ -33,6 +33,7 @@ rule all:
         "qc/quast/MetaRib/report.txt",
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
         "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
+        "results/mRNA/diamond/annotree_ann.tsv",
 
 
 # Include rules
