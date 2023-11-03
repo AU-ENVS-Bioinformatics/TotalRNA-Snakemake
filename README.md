@@ -31,9 +31,9 @@ This pipeline manages large-scale TotalRNA meta-transcriptomic data for taxonomi
 6. Classifying reads taxonomically using [BLAST](https://blast.ncbi.nlm.nih.gov/), [SILVA](https://www.arb-silva.de/) and [CREST](https://github.com/lanzen/CREST).
 7. Assembling non-rRNA reads ([Trinity](https://github.com/trinityrnaseq/trinityrnaseq)) and filtering noncoding RNA using the [RFam database](https://rfam.org/). 
 8. Mapping mRNA contigs to reads using [BWA](https://bio-bwa.sourceforge.net/) and [samtools](https://github.com/samtools/).
-9. Functional annotation of mRNA contigs using [Diamond](https://github.com/bbuchfink/diamond) and [AnnoTree](http://annotree.uwaterloo.ca/annotree/), which includes KEGG, Pfam and Tigrfam annotations for over 30,000 bacterial and 1600 archaeal genomes. 
+9. Functional (best-hit) and taxonomic (LCA) annotation of mRNA contigs using [Diamond](https://github.com/bbuchfink/diamond) and [AnnoTree](http://annotree.uwaterloo.ca/annotree/), which includes KEGG, Pfam and Tigrfam annotations for over 30,000 bacterial and 1600 archaeal genomes. 
 
-Check the wiki for more information: https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake/wiki
+Check the [Wiki of the project](https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake/wiki) for more information. 
 
 ## Getting started
 
@@ -84,6 +84,8 @@ Finally, run the whole pipeline. A useful flag to add is `--keep-going` to preve
 snakemake -c100 --use-conda --keep-going
 ```
 
-## Glossary
+You should consider re-running the AnnoTree notebook with custom parameters interactively (notebook/annotree.ipynb)
 
-Please find a glossary with the main generated files in the [Wiki of the project](https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake).
+## Documentation
+
+Please find more information in the [Wiki of the project](https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake/wiki).
