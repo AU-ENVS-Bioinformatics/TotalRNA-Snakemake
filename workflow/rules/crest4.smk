@@ -26,32 +26,32 @@ rule CREST4:
         "> {log} 2>&1 || true"
 
 
-rule add_taxa_to_mapped_contigs:
+rule process_crest4:
     input:
-        taxa="results/crest4_results/assignments.txt",
-        otu="results/rrna/mapped_reads_to_contigs.tsv",
+        infile_assignments="results/crest4_results/assignments.txt",
+        infile_counts="results/rrna/mapped_reads_to_contigs.tsv",
     output:
-        "results/crest4_results/mapped_reads_to_contigs.tsv",
+        outfile_otu="results/crest4_results/mapped_reads_to_contigs.tsv",
+        outfile_gg="results/crest4_results/mapped_reads_to_contigs_gg.tsv",
+        outphyseq="results/crest4_results/physeq.Rds",
     conda:
-        "../envs/pandas.yaml"
+        "../envs/phyloseq.yaml"
     log:
-        "logs/crest4/pandas.log",
+        "logs/crest4/process.log",
     script:
-        "../scripts/add_taxa_mapped_contigs.py"
+        "../scripts/process_crest4_phyloseq.R"
 
 
 rule edit_taxonomy:
     input:
-        "results/crest4_results/mapped_reads_to_contigs.tsv",
+        "results/crest4_results/mapped_reads_to_contigs_gg.tsv",
     output:
         "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
     log:
         "logs/crest4/edit_taxonomy.log",
     conda:
         "../envs/base_python.yaml"
-    params:
-        script="workflow/external_scripts/crest4_taxonomy_edit.py",
     priority: 10
     shell:
-        "python3 {params.script} "
-        "{input} {output} >> {log} 2>&1"
+        "cp {input} {output} && "
+        "echo 'Just a copy of {input} to keep consistency with previous versions' > {log}"
