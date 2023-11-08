@@ -31,9 +31,9 @@ rule process_crest4:
         infile_assignments="results/crest4_results/assignments.txt",
         infile_counts="results/rrna/mapped_reads_to_contigs.tsv",
     output:
-        outfile_otu = "results/crest4_results/mapped_reads_to_contigs.tsv",
-        outfile_gg = "results/crest4_results/mapped_reads_to_contigs_gg.tsv",
-        outphyseq = "results/crest4_results/physeq.Rds",
+        outfile_otu="results/crest4_results/mapped_reads_to_contigs.tsv",
+        outfile_gg="results/crest4_results/mapped_reads_to_contigs_gg.tsv",
+        outphyseq="results/crest4_results/physeq.Rds",
     conda:
         "../envs/phyloseq.yaml"
     log:
