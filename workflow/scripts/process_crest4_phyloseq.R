@@ -70,7 +70,7 @@ green_genes_rRNA <- rRNA |>
     column_to_rownames("ContigID") |>
     phyloseq::otu_table(taxa_are_rows = TRUE)
   tax <- rRNA |>
-    filter(Genome == "Main genome")
+    filter(Genome == "Main genome") |>
     select(ContigID, any_of(green_genes_ranks)) |>
     rename("Kingdom" = "Superkingdom") |>
     column_to_rownames("ContigID") |>
