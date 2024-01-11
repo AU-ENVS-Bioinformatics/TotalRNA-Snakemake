@@ -40,7 +40,6 @@ write_tsv(rRNA, file = outfile_otu)
 
 green_genes_ranks <-  c(
   'Superkingdom',
-  'Kingdom',        # 4 (This is also called Superphylum)
   'Phylum',         # 5
   'Class',          # 6
   'Order',          # 7
