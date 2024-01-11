@@ -39,6 +39,7 @@ rRNA <- select(rRNA, -all_of(empty_ranks))
 write_tsv(rRNA, file = outfile_otu)
 
 green_genes_ranks <-  c(
+  'Superkingdom',
   'Kingdom',        # 4 (This is also called Superphylum)
   'Phylum',         # 5
   'Class',          # 6
@@ -53,7 +54,7 @@ green_genes_rRNA <- rRNA |>
   mutate_at(green_genes_ranks, str_replace_na, replacement = "") |>
   mutate(
     taxonomy = paste0(
-      "k__", Kingdom, "; p__", Phylum,
+      "k__", Superkingdom, "; p__", Phylum,
       "; c__", Class, "; o__", Order,
       "; f__", Family, "; g__", Genus,
       "; s__", Species
@@ -64,11 +65,14 @@ green_genes_rRNA <- rRNA |>
   green_genes_rRNA |> write_tsv(outfile_gg)
 
   otu <- rRNA |>
+    filter(Genome == "Main genome") |>
     select(-any_of(tax_levels)) |>
     column_to_rownames("ContigID") |>
     phyloseq::otu_table(taxa_are_rows = TRUE)
   tax <- rRNA |>
-    select(ContigID, any_of(tax_levels)) |>
+    filter(Genome == "Main genome")
+    select(ContigID, any_of(green_genes_ranks)) |>
+    rename("Kingdom" = "Superkingdom") |>
     column_to_rownames("ContigID") |>
     as.matrix() |>
     phyloseq::tax_table()
