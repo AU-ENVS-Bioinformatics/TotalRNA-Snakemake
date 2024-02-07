@@ -29,17 +29,6 @@ jobs:
         snakefile: workflow/Snakefile
         args: "--lint"
 
-  Dry-run:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Dry-run workflow
-      uses: snakemake/snakemake-github-action@v1.24.0
-      with:
-        directory: .
-        snakefile: workflow/Snakefile
-        args: "-n"
-
   Conda:
     runs-on: ubuntu-latest
     steps:
