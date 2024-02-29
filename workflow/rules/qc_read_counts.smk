@@ -31,8 +31,12 @@ rule count_reads:
         rRNA="results/MetaRib/all.dedup.filtered.fasta",
         mRNA="results/mRNA/trinity.Trinity.fasta",
         filtered_mRNA="results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
+    conda:
+        "../envs/base_python.yaml"
     output:
         "qc/counts/nsequences_file.csv",
+    log:
+        "logs/qc/count_sequences.log",
     threads: 8
     script:
         "../scripts/qc_read_counts.py"
@@ -43,6 +47,8 @@ rule plot_n_sequences:
         "qc/counts/nsequences_file.csv",
     conda:
         "../envs/phyloseq.yaml"
+    log:
+        "logs/qc/plot_count_sequences.log",
     output:
         plot1="qc/counts/reads.pdf",
         plot2="qc/counts/sequences_main_steps.pdf",
