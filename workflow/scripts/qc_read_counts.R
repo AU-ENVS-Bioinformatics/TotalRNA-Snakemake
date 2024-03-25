@@ -38,6 +38,7 @@ p2 <- agg |>
   ylab("") +
   scale_x_continuous(labels = function(x) format(x, scientific = TRUE), trans = "sqrt") + 
   theme_classic() +
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  labs(title = "# sequences for quality control", subtitle = "The plot shows the number of reads & contigs of each assembly")
 
 ggsave(snakemake@output[[2]], plot = p2, device = "pdf", width = 11, height = 8.5, units = "in", dpi = 300)
