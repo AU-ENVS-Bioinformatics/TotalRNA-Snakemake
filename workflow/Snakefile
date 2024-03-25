@@ -31,6 +31,7 @@ rule all:
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
         "qc/quast/MetaRib/report.txt",
+        "qc/counts/sequences_main_steps.pdf",
         "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
         "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/diamond/annotree_ann.tsv",
