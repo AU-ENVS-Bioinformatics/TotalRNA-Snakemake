@@ -1,5 +1,7 @@
+name: pandas
 channels:
   - conda-forge
   - defaults
 dependencies:
   - pandas=2.0.3
+  - duckdb
