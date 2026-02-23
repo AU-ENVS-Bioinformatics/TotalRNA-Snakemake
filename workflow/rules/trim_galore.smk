@@ -6,14 +6,14 @@ trim_galore_params.append(f"--cores {trim_galore_threads}")
 rule trim_galore_pe:
     input:
         [
-            "results/renamed_raw_reads/{sample}_R1.fastq.gz",
-            "results/renamed_raw_reads/{sample}_R2.fastq.gz",
+            lambda wc: samples_dict[wc.sample].r1,
+            lambda wc: samples_dict[wc.sample].r2,
         ],
     output:
-        fasta_fwd="results/trimmed/{sample}_R1.fq.gz",
-        report_fwd="results/trimmed/reports/{sample}_R1_trimming_report.txt",
-        fasta_rev="results/trimmed/{sample}_R2.fq.gz",
-        report_rev="results/trimmed/reports/{sample}_R2_trimming_report.txt",
+        fasta_fwd="results/trim_galore/{sample}_R1.fq.gz",
+        report_fwd="results/trim_galore/reports/{sample}_R1_trimming_report.txt",
+        fasta_rev="results/trim_galore/{sample}_R2.fq.gz",
+        report_rev="results/trim_galore/reports/{sample}_R2_trimming_report.txt",
     threads: trim_galore_threads
     params:
         extra=" ".join(trim_galore_params),
