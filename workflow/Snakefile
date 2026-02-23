@@ -9,46 +9,135 @@ configfile: "config/config.yaml"
 configfile: "config/private-config.yaml"
 
 
-regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
-sample, read = glob_wildcards(regex_raw_illumina_files)
-unique_samples = sorted(set(sample))
 shell.prefix("set -o pipefail; ")
 
 
-onstart:
-    print("#### Total-RNA workflow")
-    print("Checking for required software...")
-    shell("type usearch || {{ echo 'usearch not found'; }}")
-    if len(unique_samples) == 0:
-        print("There are no samples name detected. Did you rename files?")
-    print(f"Detected {len(unique_samples)} samples: {unique_samples}")
-    print("Reading samples and config files...")
+module databases:
+    snakefile:
+        github(
+            "AU-ENVS-Bioinformatics/TotalRNA-Snakemake-databases",
+            path="workflow/Snakefile",
+            branch="main",
+        )
+    config:
+        config
 
 
-rule all:
+use rule * from databases as databases_*
+
+
+# ================================================================================
+"""Data Preparation Module
+=======================
+Handles initial data preparation steps:
+- Trimming with Trim Galore
+- rRNA filtering with SortMeRNA
+"""
+
+
+include: "rules/init.smk"
+
+
+# ================================================================================
+"""
+Reconstruction Module and Asssembly
+=======================
+Handles assembly and reconstruction of both mRNA and rRNA:
+- MetaRib reconstruction
+- Trinity assembly
+"""
+
+
+rule reconstruction:
     input:
-        "qc/trim_galore_multiqc.html",
-        "qc/sortmerna_SSU_multiqc.html",
-        "qc/sortmerna_LSU_multiqc.html",
-        "qc/quast/MetaRib/report.txt",
-        "qc/counts/sequences_main_steps.pdf",
-        "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
+        "results/metarib/final_contigs.fasta",
+        "results/trinity/trinity.Trinity.fasta",
+
+
+include: "rules/metarib.smk"
+include: "rules/trinity.smk"
+
+
+# ================================================================================
+"""
+Mapping Module
+=======================
+Handles mapping of reads to contigs for both mRNA and rRNA:
+- SAMTOOLS mapping
+- BWA mapping
+- DuckDB database creation for mapped reads
+"""
+
+
+rule mapping:
+    input:
+        "results/rRNA/database.db",
+        "results/mRNA/database.db",
+
+
+include: "rules/contigs_stats.smk"
+
+
+# ================================================================================
+
+"""
+Non-coding RNA Module
+======================
+Handles non-coding RNA filtering and processing
+"""
+
+
+rule non_coding_rna_filtering:
+    input:
+        "results/cmsearch/RFAM_cmsearch_names.txt",
+
+
+include: "rules/non_coding_RNA.smk"
+
+
+# ================================================================================
+
+"""
+Annotation Module
+======================
+Handles annotation of contigs:
+- CREST4 annotation
+- Diamond annotation
+"""
+
+
+rule annotation:
+    input:
         "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
         "results/mRNA/diamond/annotree_ann.tsv",
 
 
-# Include rules
-include: "rules/rename_input.smk"
-include: "rules/trim_galore.smk"
-include: "rules/sortmerna.smk"
-include: "rules/multiqc.smk"
-include: "rules/trinity.smk"
-include: "rules/non_coding_RNA.smk"
-include: "rules/map_reads_to_trinity_contigs.smk"
-include: "rules/filter_mRNA_abundance.smk"
-include: "rules/metarib.smk"
-include: "rules/map_reads_to_metarib_contigs.smk"
 include: "rules/crest4.smk"
-include: "rules/quast.smk"
 include: "rules/diamond.smk"
+
+
+# ================================================================================
+
+
+"""
+Quality Control Module
+=======================
+Handles quality control and reporting:
+- MultiQC reports
+- QUAST assembly quality
+- Read count tracking
+"""
+
+
+rule all_qc:
+    input:
+        "qc/trim_galore_multiqc.html",
+        "qc/sortmerna_SSU_multiqc.html",
+        "qc/sortmerna_LSU_multiqc.html",
+        "qc/quast/metarib/report.txt",
+        "qc/counts/sequences_main_steps.pdf",
+
+
+include: "rules/multiqc.smk"  # workflow error currently
+include: "rules/quast.smk"
 include: "rules/qc_read_counts.smk"
