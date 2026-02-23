@@ -1,3 +1,4 @@
+name: metarib
 channels:
   - bioconda
   - conda-forge

@@ -1,3 +1,4 @@
+name: vegan
 channels:
   - conda-forge
   - defaults

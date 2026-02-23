@@ -1,3 +1,4 @@
+name: infernal
 channels:
   - conda-forge
   - bioconda

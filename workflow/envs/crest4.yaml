@@ -1,3 +1,4 @@
+name: crest4
 channels:
   - conda-forge
   - bioconda

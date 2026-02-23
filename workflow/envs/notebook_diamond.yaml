@@ -1,3 +1,4 @@
+name: notebook_diamond
 channels:
   - conda-forge
   - bioconda

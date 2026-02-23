@@ -1,3 +1,4 @@
+name: phyloseq
 channels:
   - conda-forge
   - bioconda
