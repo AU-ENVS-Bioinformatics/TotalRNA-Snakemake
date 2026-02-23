@@ -1,10 +1,10 @@
 rule infernal_cmsearch:
     input:
-        fasta="results/mRNA/trinity.Trinity.fasta",
+        fasta="results/trinity/trinity.Trinity.fasta",
         database=config.get("RFAM_DATABASE"),
     output:
-        out="results/mRNA/non_coding_rna/RFAM_cmsearch.out",
-        tbl="results/mRNA/non_coding_rna/RFAM_cmsearch.tbl",
+        out="results/cmsearch/RFAM_cmsearch.out",
+        tbl="results/cmsearch/RFAM_cmsearch.tbl",
     log:
         "logs/cmsearch.log",
     threads: config["threads"]["cmsearch"]
@@ -17,9 +17,9 @@ rule infernal_cmsearch:
 
 rule processing_cmsearch_tbl:
     input:
-        "results/mRNA/non_coding_rna/RFAM_cmsearch.tbl",
+        "results/cmsearch/RFAM_cmsearch.tbl",
     output:
-        "results/mRNA/non_coding_rna/RFAM_cmsearch.tbl.processed.tsv",
+        "results/cmsearch/RFAM_cmsearch.tbl.processed.tsv",
     log:
         "logs/processing_cmsearch_tbl.log",
     conda:
@@ -32,9 +32,9 @@ rule processing_cmsearch_tbl:
 
 rule non_coding_fasta_names:
     input:
-        "results/mRNA/non_coding_rna/RFAM_cmsearch.tbl.processed.tsv",
+        "results/cmsearch/RFAM_cmsearch.tbl.processed.tsv",
     output:
-        "results/mRNA/non_coding_rna/RFAM_cmsearch_names.txt",
+        "results/cmsearch/RFAM_cmsearch_names.txt",
     log:
         "logs/non_coding_headers.log",
     conda:
@@ -46,10 +46,10 @@ rule non_coding_fasta_names:
 
 rule exclude_non_coding_rna:
     input:
-        fasta="results/mRNA/trinity.Trinity.fasta",
-        exclude="results/mRNA/non_coding_rna/RFAM_cmsearch_names.txt",
+        fasta="results/trinity/trinity.Trinity.fasta",
+        exclude="results/cmsearch/RFAM_cmsearch_names.txt",
     output:
-        "results/mRNA/Trinity_contigs_ncrna_filtered.fasta",
+        "results/mRNA/Trinity_contigs_cmsearch_filtered.fasta",
     log:
         "logs/exclude_non_coding.log",
     conda:
