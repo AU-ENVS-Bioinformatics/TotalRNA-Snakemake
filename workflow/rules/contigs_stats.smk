@@ -89,7 +89,7 @@ rule sample_mapped_read_length:
     conda:
         "../envs/pysam.yaml"
     script:
-        "../scripts/sample_mapped_read_length.py"
+        "../scripts/get_read_length.py"
 
 
 rule create_database:
