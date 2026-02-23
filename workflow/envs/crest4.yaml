@@ -2,13 +2,14 @@ name: crest4
 channels:
   - conda-forge
   - bioconda
+  - biobuilds
   - defaults
   - xapple
 dependencies:
-  - autopaths==1.5.0
-  - optmagic==1.1.0
+  - autopaths
+  - optmagic==1.1.1
   - plumbing==2.10.4
-  - fasta==2.2.11
-  - seqsearch==2.1.6
-  - crest4
+  - fasta==36.3.8e
+  - seqsearch==2.2.1
+  - crest4==4.3.7
   - blast=2.14.1
