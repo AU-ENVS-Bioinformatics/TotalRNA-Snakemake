@@ -1,59 +1,48 @@
-idx_SSU_directory = config.get("SORTMERNA_SSU_DATABASE_INDEX")
-idx_LSU_directory = config.get("SORTMERNA_LSU_DATABASE_INDEX")
+def get_sortmerna_input(wildcards):
+    """Get input based on rRNA type"""
+    if wildcards.rrna_type == "SSU":
+        return {
+            "fasta": [
+                "results/trim_galore/{sample}_R1.fq.gz",
+                "results/trim_galore/{sample}_R2.fq.gz",
+            ]
+        }
+    else:  # LSU
+        return {
+            "fasta": [
+                "results/sortmerna/not_SSU/{sample}_fwd.fq.gz",
+                "results/sortmerna/not_SSU/{sample}_rev.fq.gz",
+            ]
+        }
 
 
-rule sortmerna_ssu:
+rule sortmerna:
     input:
-        fasta=["results/trimmed/{sample}_R1.fq.gz", "results/trimmed/{sample}_R2.fq.gz"],
-        database=ancient(config.get("SORTMERNA_SSU_REF_DATABASE")),
-        database_index=idx_SSU_directory,
+        unpack(get_sortmerna_input),
+        database=lambda wc: config.get(
+            f"SORTMERNA_{wc.rrna_type}_REF_DATABASE",
+            rules.databases_sortmerna_idx.output.fasta.format(RNA_TYPE=wc.rrna_type),
+        ),
+        database_index=lambda wc: config.get(
+            f"SORTMERNA_{wc.rrna_type}_DATABASE_INDEX",
+            rules.databases_sortmerna_idx.output.idx_dir.format(RNA_TYPE=wc.rrna_type),
+        ),
     shadow:
         "minimal"
     output:
         aligned=[
-            protected("results/rrna/{sample}_fwd.fq.gz"),
-            protected("results/rrna/{sample}_rev.fq.gz"),
+            ("results/sortmerna/{rrna_type}/{sample}_fwd.fq.gz"),
+            ("results/sortmerna/{rrna_type}/{sample}_rev.fq.gz"),
         ],
         not_aligned=[
-            protected("results/sortmerna/not_SSU/{sample}_fwd.fq.gz"),
-            protected("results/sortmerna/not_SSU/{sample}_rev.fq.gz"),
+            ("results/sortmerna/not_{rrna_type}/{sample}_fwd.fq.gz"),
+            ("results/sortmerna/not_{rrna_type}/{sample}_rev.fq.gz"),
         ],
-        stats="results/rrna/{sample}.log",
+        stats="results/sortmerna/{rrna_type}/{sample}.log",
     params:
-        extra=" ".join(config.get("sortmerna", "")),
+        extra=" ".join(config.get("sortmerna", [])),
     log:
-        "logs/sortmerna/{sample}_SSU.log",
-    conda:
-        "../envs/sortmerna.yaml"
-    threads: config["threads"]["sortmerna"]
-    script:
-        "../scripts/sortmerna.py"
-
-
-rule sortmerna_lsu:
-    input:
-        fasta=[
-            "results/sortmerna/not_SSU/{sample}_fwd.fq.gz",
-            "results/sortmerna/not_SSU/{sample}_rev.fq.gz",
-        ],
-        database=ancient(config.get("SORTMERNA_LSU_REF_DATABASE")),
-        database_index=idx_LSU_directory,
-    shadow:
-        "minimal"
-    output:
-        aligned=[
-            protected("results/sortmerna/LSU/{sample}_fwd.fq.gz"),
-            protected("results/sortmerna/LSU/{sample}_rev.fq.gz"),
-        ],
-        not_aligned=[
-            protected("results/sortmerna/not_LSU/{sample}_fwd.fq.gz"),
-            protected("results/sortmerna/not_LSU/{sample}_rev.fq.gz"),
-        ],
-        stats="results/sortmerna/LSU/{sample}.log",
-    params:
-        extra=" ".join(config.get("sortmerna", "")),
-    log:
-        "logs/sortmerna/{sample}_LSU.log",
+        "logs/sortmerna/{rrna_type}/{sample}.log",
     conda:
         "../envs/sortmerna.yaml"
     threads: config["threads"]["sortmerna"]
