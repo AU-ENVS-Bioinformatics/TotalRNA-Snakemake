@@ -1,0 +1,7 @@
+name: duckdb
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - duckdb=1.4.4
+  - setuptools
