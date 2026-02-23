@@ -1,15 +1,15 @@
 rule quast:
     input:
-        fasta="results/MetaRib/all.dedup.filtered.fasta",
-        R1="results/MetaRib/data/all.1.fq",
-        R2="results/MetaRib/data/all.2.fq",
+        fasta="results/metarib/all.dedup.filtered.fasta",
+        R1="results/metarib/data/all.1.fq",
+        R2="results/metarib/data/all.2.fq",
     output:
-        outdir=directory("qc/quast/MetaRib"),
-        report_txt="qc/quast/MetaRib/report.txt",
-        report_tsv="qc/quast/MetaRib/report.tsv",
-        report_html="qc/quast/MetaRib/report.html",
+        outdir=directory("qc/quast/metarib"),
+        report_txt="qc/quast/metarib/report.txt",
+        report_tsv="qc/quast/metarib/report.tsv",
+        report_html="qc/quast/metarib/report.html",
     log:
-        "logs/quast-MetaRib.log",
+        "logs/quast-metarib.log",
     conda:
         "../envs/quast.yaml"
     params:
