@@ -1,0 +1,13 @@
+name: emirge
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - emirge=0.61.1=py27h30f897e_7
+  - vsearch=2.29.1
+  - bowtie=1.2.3
+  - samtools=1.9
+  - numpy=1.16.5
+  - scipy=1.2.1
+  - seqtk
+  - bbmap=38.18
