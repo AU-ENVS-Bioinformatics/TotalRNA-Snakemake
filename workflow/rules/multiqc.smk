@@ -24,7 +24,7 @@ rule multiqc:
         "qc/{qc_type}_multiqc.html",
     priority: 50
     params:
-        extra="",  # Optional: extra parameters for multiqc.
+        extra="",
     log:
         "logs/multiqc/{qc_type}_multiqc.log",
     wrapper:

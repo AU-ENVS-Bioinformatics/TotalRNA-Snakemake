@@ -53,7 +53,6 @@ def build_samples(raw_dir, pattern=None, normalize_fn=None):
 
 samples_dict = build_samples("reads/")
 unique_samples = sorted(samples_dict.keys())
-unique_samples = unique_samples[:2]  # Limit to first 10 samples for testing
 
 
 onstart:
