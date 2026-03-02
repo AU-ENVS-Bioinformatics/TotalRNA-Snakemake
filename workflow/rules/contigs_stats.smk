@@ -1,4 +1,4 @@
-_bwa_index_ext = ["", ".amb", ".ann", ".bwt", ".pac", ".sa"]
+_bwa_index_ext = [".amb", ".ann", ".bwt", ".pac", ".sa"]
 
 
 rule bwa_index:
@@ -16,7 +16,7 @@ rule bwa_index:
 
 _contig_reads_config = {
     "rRNA": {
-        "contig": "metarib/all.dedup.filtered.fasta",
+        "contig": "metarib/final_contigs.fasta",
         "read_dir": "sortmerna/SSU",
     },
     "mRNA": {
@@ -29,7 +29,7 @@ _contig_reads_config = {
 rule bwa_map_to_contigs:
     input:
         contig=lambda wc: multiext(
-            f"results/{_contig_reads_config[wc.folder]['contig']}", *_bwa_index_ext
+            f"results/{_contig_reads_config[wc.folder]['contig']}", "", *_bwa_index_ext
         ),
         read=lambda wc: f"results/{_contig_reads_config[wc.folder]['read_dir']}/{wc.sample_dir}.fq.gz",
     output:
@@ -79,7 +79,7 @@ rule samtools_idxstats_contigs:
         """
 
 
-rule sample_mapped_read_length:
+rule mapped_read_length:
     input:
         bam="results/{folder}/bwa/{sample_dir}_sorted.bam",
     output:
@@ -112,3 +112,22 @@ rule create_database:
         "../envs/duckdb.yaml"
     script:
         "../scripts/create_database_table.py"
+
+
+rule export_abundance:
+    input:
+        db="results/{folder}/database.db",
+    output:
+        "results/{folder}/mapped_reads_to_contigs.tsv",
+    params:
+        table="abundance",
+    conda:
+        "../envs/pandas.yaml"
+    log:
+        "logs/{folder}/export_abundance.log",
+    script:
+        "../scripts/abundance2tsv.py"
+
+
+# filtered="results/mRNA/filter_contigs.done",
+# "awk '{{print $1}}' {input.filtered} | seqtk subseq {input.fasta} - > temp.fasta 2> {log}"
