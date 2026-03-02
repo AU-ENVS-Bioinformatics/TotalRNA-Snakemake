@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import pandas as pd
+from lib.utils import regex_filename
 
 files = snakemake.input
 log = snakemake.log[0]
@@ -8,16 +9,6 @@ params = snakemake.params
 
 extension_fwd = params.extension_fwd
 extension_rev = params.extension_rev
-
-
-def regex_filename(filename):
-    # Get filename
-    filename = Path(filename).name
-    # Remove everything after either extension_fwd or extension_rev
-    filename = filename.split(extension_fwd)[0]
-    filename = filename.split(extension_rev)[0]
-    return filename
-
 
 def read_samtools_idxstats(idxstats_file):
     df = pd.read_csv(idxstats_file, sep="\t", header=None, comment="*")
