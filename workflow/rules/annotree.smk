@@ -3,9 +3,9 @@ rule diamond:
         fasta="results/trinity/trinity.Trinity.fasta",
         database=config["ANNOTREE"]["DATABASE"],
     output:
-        "results/diamond/annotree.tsv",
+        "results/annotree/annotree.tsv",
     log:
-        "logs/diamond/run_diamond.log",
+        "logs/annotree/run_diamond.log",
     threads: config["threads"]["diamond"]
     conda:
         "../envs/annotree.yaml"
@@ -36,16 +36,16 @@ rule export_mrna_abundance_tsv:
 
 rule annotate_and_func_ann:
     input:
-        tsv="results/diamond/annotree.tsv",
+        tsv="results/annotree/annotree.tsv",
         mapping=config["ANNOTREE"]["MAPPING"],
         counts="results/mRNA/mapped_reads_to_contigs.tsv",
         brite=config["BRITE"],
     output:
-        annotated="results/diamond/annotree_ann.tsv",
-        brite="results/diamond/annotree_brite.tsv",
-        meta="results/diamond/annotree_meta.tsv",
+        annotated="results/annotree/annotated.tsv",
+        brite="results/annotree/brite.tsv",
+        meta="results/annotree/metabolism.tsv",
     log:
-        "logs/diamond/annotate_and_func_ann.log",
+        "logs/annotree/annotate_and_func_ann.log",
     params:
         min_score_threshold=100,
         threshold=0.95,
