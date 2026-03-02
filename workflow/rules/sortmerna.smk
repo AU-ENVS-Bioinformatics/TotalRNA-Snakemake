@@ -7,13 +7,15 @@ def get_sortmerna_input(wildcards):
                 "results/trim_galore/{sample}_R2.fq.gz",
             ]
         }
-    else:  # LSU
+    elif wildcards.rrna_type == "LSU":
         return {
             "fasta": [
                 "results/sortmerna/not_SSU/{sample}_fwd.fq.gz",
                 "results/sortmerna/not_SSU/{sample}_rev.fq.gz",
             ]
         }
+    else:
+        raise ValueError(f"Unknown rRNA type: {wildcards.rrna_type}")
 
 
 rule sortmerna:
@@ -31,14 +33,13 @@ rule sortmerna:
         "minimal"
     output:
         aligned=[
-            ("results/sortmerna/{rrna_type}/{sample}_fwd.fq.gz"),
-            ("results/sortmerna/{rrna_type}/{sample}_rev.fq.gz"),
+            "results/sortmerna/{rrna_type}/{sample}_fwd.fq.gz",
+            "results/sortmerna/{rrna_type}/{sample}_rev.fq.gz",
         ],
         not_aligned=[
-            ("results/sortmerna/not_{rrna_type}/{sample}_fwd.fq.gz"),
-            ("results/sortmerna/not_{rrna_type}/{sample}_rev.fq.gz"),
+            "results/sortmerna/not_{rrna_type}/{sample}_fwd.fq.gz",
+            "results/sortmerna/not_{rrna_type}/{sample}_rev.fq.gz",
         ],
-        stats="results/sortmerna/{rrna_type}/{sample}.log",
     params:
         extra=" ".join(config.get("sortmerna", [])),
     log:
@@ -46,5 +47,23 @@ rule sortmerna:
     conda:
         "../envs/sortmerna.yaml"
     threads: config["threads"]["sortmerna"]
-    script:
-        "../scripts/sortmerna.py"
+    shell:
+        """
+        sortmerna -ref {input.database} \
+        --idx-dir {input.database_index} \
+        --workdir . \
+        --threads {threads} \
+        {params.extra} --log \
+        --aligned aligned \
+        --other not_aligned \
+        --reads {input.fasta[0]} --reads {input.fasta[1]} \
+        > {log} 2>&1
+        
+        mkdir -p $(dirname {output.aligned[0]})
+        mkdir -p $(dirname {output.not_aligned[0]})
+
+        cp aligned_fwd.fq.gz {output.aligned[0]} > {log} 2>&1
+        cp aligned_rev.fq.gz {output.aligned[1]} > {log} 2>&1
+        cp not_aligned_fwd.fq.gz {output.not_aligned[0]} > {log} 2>&1
+        cp not_aligned_rev.fq.gz {output.not_aligned[1]} > {log} 2>&1
+        """
