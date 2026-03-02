@@ -1,22 +1,13 @@
 import sys
+import pysam
+import pandas as pd
 from collections import defaultdict
 from typing import Dict
-
-import pandas as pd
-import pysam
-from pathlib import Path
+from lib.utils import regex_filename
 
 files = snakemake.input.bam
 output = snakemake.output.tsv
 log = snakemake.log
-
-def regex_filename(filename):
-    # Get filename
-    filename = Path(filename).name
-    # Remove everything after either extension_fwd or extension_rev
-    filename = filename.split("_fwd")[0]
-    filename = filename.split("_rev")[0]
-    return filename
 
 def contig_mapped_read_length(bam_path: str) -> pd.DataFrame:
     """Compute total mapped read length per contig from a BAM file."""
@@ -33,6 +24,7 @@ def contig_mapped_read_length(bam_path: str) -> pd.DataFrame:
         [(contig, total) for contig, total in contig_totals.items()],
         columns=["contig", "read_length"],
     )
+    print(f"Finished processing BAM file: {bam_path}", file=sys.stderr)
     df["sample"] = regex_filename(bam_path)
 
     return df[["sample", "contig", "read_length"]]
