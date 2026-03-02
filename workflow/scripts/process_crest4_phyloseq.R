@@ -1,5 +1,6 @@
 log <- file(snakemake@log[[1]], open="wt")
 sink(log)
+sink(log, type = "message")
 
 library(tidyverse)
 library(phyloseq)
@@ -48,9 +49,16 @@ green_genes_ranks <-  c(
   'Species'        # 10
 )
 
+# Add missing taxonomic rank columns as empty strings
+for (rank in green_genes_ranks) {
+  if (!rank %in% names(rRNA)) {
+    rRNA[[rank]] <- ""
+  }
+}
+
 green_genes_rRNA <- rRNA |>
   filter(Genome == "Main genome") |>
-  mutate_at(green_genes_ranks, str_replace_na, replacement = "") |>
+  mutate(across(all_of(green_genes_ranks), ~str_replace_na(., replacement = ""))) |>
   mutate(
     taxonomy = paste0(
       "k__", Superkingdom, "; p__", Phylum,
@@ -87,3 +95,7 @@ run(
   snakemake@output$outfile_gg, 
   snakemake@output$outphyseq
 )
+
+sink(type = "message")
+sink()
+close(log)
