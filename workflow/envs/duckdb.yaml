@@ -5,3 +5,4 @@ channels:
 dependencies:
   - duckdb=1.4.4
   - setuptools
+  - pandas
