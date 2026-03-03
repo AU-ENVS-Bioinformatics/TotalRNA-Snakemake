@@ -49,19 +49,19 @@ rule bwa_map_and_sort:
 
 rule samtools_idxstats_contigs:
     input:
-        bam="results/{folder}/bwa/{sample}_{dir}_sorted.bam",
+        "results/{folder}/bwa/{sample}_sorted.bam",
     output:
-        idx="results/{folder}/bwa/{sample}_{dir}_sorted.bam.bai",
-        idxstats="results/{folder}/bwa/{sample}_{dir}_sorted.bam.idxstats",
-        idxstats_tsv="results/{folder}/bwa/{sample}_{dir}_sorted.bam.idxstats.tsv",
+        idx="results/{folder}/bwa/{sample}_sorted.bam.bai",
+        idxstats="results/{folder}/bwa/{sample}_sorted.bam.idxstats",
+        idxstats_tsv="results/{folder}/bwa/{sample}_sorted.bam.idxstats.tsv",
     log:
-        "logs/samtools/idxstats/{folder}_{sample}_{dir}.log",
+        "logs/samtools/idxstats/{folder}_{sample}.log",
     conda:
-        "../envs/samtools.yaml"
+        "../envs/bwa_samtools.yaml"
     shell:
         """
-        samtools index {input.bam} 2> {log}
-        samtools idxstats {input.bam} > {output.idxstats} 2>> {log}
+        samtools index {input} 2> {log}
+        samtools idxstats {input} > {output.idxstats} 2>> {log}
         awk -v sample="{wildcards.sample}" 'BEGIN{{OFS="\\t"; print "sample", "contig", "mapped_reads"}} {{print sample, $1, $3}}' {output.idxstats} > {output.idxstats_tsv}
         """
 
