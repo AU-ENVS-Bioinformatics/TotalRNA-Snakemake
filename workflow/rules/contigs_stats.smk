@@ -26,37 +26,24 @@ _contig_reads_config = {
 }
 
 
-rule bwa_map_to_contigs:
+rule bwa_map_and_sort:
     input:
         contig=lambda wc: multiext(
             f"results/{_contig_reads_config[wc.folder]['contig']}", "", *_bwa_index_ext
         ),
-        read=lambda wc: f"results/{_contig_reads_config[wc.folder]['read_dir']}/{wc.sample_dir}.fq.gz",
+        r1=lambda wc: f"results/{_contig_reads_config[wc.folder]['read_dir']}/{wc.sample}_fwd.fq.gz",
+        r2=lambda wc: f"results/{_contig_reads_config[wc.folder]['read_dir']}/{wc.sample}_rev.fq.gz",
     output:
-        temp("results/{folder}/bwa/{sample_dir}.sam"),
+        "results/{folder}/bwa/{sample}_sorted.bam",
     log:
-        "logs/bwa/{folder}_{sample_dir}.log",
+        "logs/bwa/{folder}_{sample}.log",
     threads: config["threads"]["bwamem"]
     conda:
-        "../envs/bwa.yaml"
+        "../envs/bwa_samtools.yaml"
     shell:
         """
-        bwa mem -t {threads} {input.contig[0]} {input.read} > {output} 2> {log}
-        """
-
-
-rule sort_bwa_contigs:
-    input:
-        "results/{folder}/bwa/{sample_dir}.sam",
-    output:
-        "results/{folder}/bwa/{sample_dir}_sorted.bam",
-    log:
-        "logs/samtools/{folder}_{sample_dir}_sort.log",
-    conda:
-        "../envs/samtools.yaml"
-    shell:
-        """
-        samtools view -b -S {input} | samtools sort -o {output} - 2> {log}
+        bwa mem -t {threads} {input.contig[0]} {input.r1} {input.r2} 2> {log} \
+        | samtools sort -o {output}
         """
 
 
