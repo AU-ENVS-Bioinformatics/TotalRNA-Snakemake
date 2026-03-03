@@ -68,11 +68,11 @@ rule samtools_idxstats_contigs:
 
 rule mapped_read_length:
     input:
-        bam="results/{folder}/bwa/{sample_dir}_sorted.bam",
+        bam="results/{folder}/bwa/{sample}_sorted.bam",
     output:
-        tsv="results/{folder}/bwa/{sample_dir}_reads.tsv",
+        tsv="results/{folder}/bwa/{sample}_reads.tsv",
     log:
-        "logs/{folder}/bwa/{sample_dir}_reads.log",
+        "logs/{folder}/bwa/{sample}_reads.log",
     conda:
         "../envs/pysam.yaml"
     script:
@@ -81,15 +81,13 @@ rule mapped_read_length:
 
 rule create_database:
     input:
-        single_sample=lambda wc: f"results/{wc.folder}/bwa/{unique_samples[0]}_fwd_sorted.bam.idxstats",
+        single_sample=lambda wc: f"results/{wc.folder}/bwa/{unique_samples[0]}_sorted.bam.idxstats",
         counts_length_tsv=lambda wc: expand(
             [
-                "results/{folder}/bwa/{sample}_{dir}_sorted.bam.idxstats.tsv",
-                "results/{folder}/bwa/{sample}_{dir}_reads.tsv",
+                f"results/{wc.folder}/bwa/{{sample}}_sorted.bam.idxstats.tsv",
+                f"results/{wc.folder}/bwa/{{sample}}_reads.tsv",
             ],
-            folder=wc.folder,
             sample=unique_samples,
-            dir=["rev", "fwd"],
         ),
     output:
         database="results/{folder}/database.db",
