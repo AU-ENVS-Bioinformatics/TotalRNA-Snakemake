@@ -102,18 +102,18 @@ Annotation Module
 ======================
 Handles annotation of contigs:
 - CREST4 annotation
-- Diamond annotation
+- AnnoTree annotation
 """
 
 
 rule annotation:
     input:
-        "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
-        "results/mRNA/diamond/annotree_ann.tsv",
+        "results/crest4/mapped_reads_to_contigs.tsv.edited",
+        "results/annotree/annotated.tsv",
 
 
 include: "rules/crest4.smk"
-include: "rules/diamond.smk"
+include: "rules/annotree.smk"
 
 
 # ================================================================================
@@ -134,10 +134,10 @@ rule all_qc:
         "qc/trim_galore_multiqc.html",
         "qc/sortmerna_SSU_multiqc.html",
         "qc/sortmerna_LSU_multiqc.html",
-        "qc/quast/metarib/report.txt",
+        "qc/quast/report.txt",
         "qc/counts/sequences_main_steps.pdf",
 
 
-include: "rules/multiqc.smk"  # workflow error currently
+include: "rules/multiqc.smk"
 include: "rules/quast.smk"
 include: "rules/qc_read_counts.smk"
