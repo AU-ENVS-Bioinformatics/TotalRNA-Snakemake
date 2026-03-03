@@ -29,8 +29,6 @@ rule sortmerna:
             f"SORTMERNA_{wc.rrna_type}_DATABASE_INDEX",
             rules.databases_sortmerna_idx.output.idx_dir.format(RNA_TYPE=wc.rrna_type),
         ),
-    shadow:
-        "minimal"
     output:
         aligned=[
             "results/sortmerna/{rrna_type}/{sample}_fwd.fq.gz",
@@ -40,8 +38,12 @@ rule sortmerna:
             "results/sortmerna/not_{rrna_type}/{sample}_fwd.fq.gz",
             "results/sortmerna/not_{rrna_type}/{sample}_rev.fq.gz",
         ],
+        stats="results/sortmerna/{rrna_type}/{sample}.log",
     params:
         extra=" ".join(config.get("sortmerna", [])),
+        workdir="results/sortmerna/{rrna_type}/{sample}",
+        aligned_prefix="results/sortmerna/{rrna_type}/{sample}",
+        not_aligned_prefix="results/sortmerna/not_{rrna_type}/{sample}",
     log:
         "logs/sortmerna/{rrna_type}/{sample}.log",
     conda:
@@ -51,19 +53,12 @@ rule sortmerna:
         """
         sortmerna -ref {input.database} \
         --idx-dir {input.database_index} \
-        --workdir . \
+        --workdir {params.workdir} \
         --threads {threads} \
-        {params.extra} --log \
-        --aligned aligned \
-        --other not_aligned \
+        {params.extra} \
+        --aligned {params.aligned_prefix} \
+        --other {params.not_aligned_prefix} \
         --reads {input.fasta[0]} --reads {input.fasta[1]} \
-        > {log} 2>&1
-        
-        mkdir -p $(dirname {output.aligned[0]})
-        mkdir -p $(dirname {output.not_aligned[0]})
-
-        cp aligned_fwd.fq.gz {output.aligned[0]} > {log} 2>&1
-        cp aligned_rev.fq.gz {output.aligned[1]} > {log} 2>&1
-        cp not_aligned_fwd.fq.gz {output.not_aligned[0]} > {log} 2>&1
-        cp not_aligned_rev.fq.gz {output.not_aligned[1]} > {log} 2>&1
+        2> {log} 1>&2
+        rm -rf {params.workdir}
         """
