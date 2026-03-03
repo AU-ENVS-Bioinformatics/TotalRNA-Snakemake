@@ -1,13 +1,13 @@
 from Bio import SeqIO
+import pandas as pd
 
-log = snakemake.log_fmt_shell(stdout=True, stderr=True)
-
-exclude_ids = snakemake.input.exclude
+exclude_tsv = snakemake.input.exclude
 infasta = snakemake.input.fasta
 outfile = snakemake.output[0]
-# Read the exclude ids from file. There's one header per line.
 
-exclude_ids = [line.strip() for line in open(exclude_ids, "r")]
+# Read target names from TSV
+df = pd.read_csv(exclude_tsv, sep='\t')
+exclude_ids = set(df['target_name'].tolist())
 
 acc = 0
 with open(infasta, "r") as fasta, open(outfile, "w") as out:

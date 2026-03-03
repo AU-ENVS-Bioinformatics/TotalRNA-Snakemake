@@ -30,24 +30,10 @@ rule processing_cmsearch_tbl:
         "../scripts/processing_cmsearch_tbl.py"
 
 
-rule non_coding_fasta_names:
-    input:
-        "results/cmsearch/RFAM_cmsearch.tbl.processed.tsv",
-    output:
-        "results/cmsearch/RFAM_cmsearch_names.txt",
-    log:
-        "logs/non_coding_headers.log",
-    conda:
-        "../envs/base_python.yaml"
-    shell:
-        # Remove first line and print first column
-        "grep 'target_name' -v < {input} | cut -f 1 > {output} 2> {log}"
-
-
 rule exclude_non_coding_rna:
     input:
         fasta="results/trinity/trinity.Trinity.fasta",
-        exclude="results/cmsearch/RFAM_cmsearch_names.txt",
+        exclude="results/cmsearch/RFAM_cmsearch.tbl.processed.tsv",
     output:
         "results/mRNA/Trinity_contigs_cmsearch_filtered.fasta",
     log:
