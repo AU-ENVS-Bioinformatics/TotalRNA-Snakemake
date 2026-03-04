@@ -1,3 +1,7 @@
+log <- file(snakemake@log[[1]], open="wt")
+sink(log)
+sink(log, type = "message")
+
 library(tidyverse)
 
 data <- read_csv(snakemake@input[[1]])
@@ -42,3 +46,7 @@ p2 <- agg |>
   labs(title = "# sequences for quality control", subtitle = "The plot shows the number of reads & contigs of each assembly")
 
 ggsave(snakemake@output[[2]], plot = p2, device = "pdf", width = 11, height = 8.5, units = "in", dpi = 300)
+
+sink(type = "message")
+sink()
+close(log)
