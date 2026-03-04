@@ -3,9 +3,9 @@ rule diamond:
         fasta="results/trinity/trinity.Trinity.fasta",
         database=config["ANNOTREE"]["DATABASE"],
     output:
-        "results/annotree/annotree.tsv",
+        "results/annotree/diamond_output.tsv",
     log:
-        "logs/annotree/run_diamond.log",
+        "logs/annotree/diamond.log",
     threads: config["threads"]["diamond"]
     conda:
         "../envs/annotree.yaml"
@@ -21,7 +21,7 @@ rule diamond:
 
 rule annotree:
     input:
-        tsv="results/annotree/annotree.tsv",
+        tsv="results/annotree/diamond_output.tsv",
         mapping=config["ANNOTREE"]["MAPPING"],
         counts="results/mRNA/mapped_reads_to_contigs.tsv",
         brite=config["BRITE"],
