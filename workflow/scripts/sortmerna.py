@@ -15,9 +15,9 @@ shell(
     "--idx-dir {database_index} "
     "--threads {snakemake.threads} "
     "--workdir {workdir_prefix} "
-    "{snakemake.params.extra} --log "
+    "{snakemake.params.extra} "
     "--aligned {aligned_prefix} "
     "--other {not_aligned_prefix} "
     "--reads {input_fasta[0]} --reads {input_fasta[1]} "
-    "2> {snakemake.output.stats} 1>&2"
+    "2> {log} 1>&2"
 )
