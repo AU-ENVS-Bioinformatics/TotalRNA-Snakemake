@@ -2,7 +2,16 @@ name: metarib
 channels:
   - bioconda
   - conda-forge
+  - agbiome
 dependencies:
-  - bbmap=38.18
+  - python=2.7
   - emirge=0.61.1=py27h30f897e_7
-  - pandas
+  - vsearch
+  - bowtie
+  - samtools
+  - numpy
+  - scipy
+  - seqtk
+  - bbtools
+  - bwa
+  
