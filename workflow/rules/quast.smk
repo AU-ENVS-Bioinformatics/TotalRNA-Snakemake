@@ -1,24 +1,25 @@
 rule quast:
     input:
-        fasta="results/metarib/all.dedup.filtered.fasta",
-        R1="results/metarib/data/all.1.fq",
-        R2="results/metarib/data/all.2.fq",
+        fasta="results/metarib/final_contigs.fasta",
+        bam=expand("results/rRNA/bwa/{sample}_sorted.bam", sample=unique_samples),
     output:
-        outdir=directory("qc/quast/metarib"),
-        report_txt="qc/quast/metarib/report.txt",
-        report_tsv="qc/quast/metarib/report.tsv",
-        report_html="qc/quast/metarib/report.html",
+        report_txt="qc/quast/report.txt",
+        report_tsv="qc/quast/report.tsv",
+        report_html="qc/quast/report.html",
+        outdir=directory("qc/quast"),
     log:
-        "logs/quast-metarib.log",
+        "logs/quast/final.log",
     conda:
         "../envs/quast.yaml"
     params:
         extra=" ".join(config.get("quast", "")),
+        comma_bam=lambda wildcards, input: ",".join(input.bam),
+        space_fasta=lambda wildcards, input: " ".join([input.fasta] * len(input.bam)),
     threads: config["threads"]["quast"]
     shell:
         "quast {params.extra} "
         "--threads {threads} "
-        "-1 {input.R1} -2 {input.R2} "
+        "--bam {params.comma_bam} "
         "-o {output.outdir} "
-        "{input.fasta} "
-        ">> {log} 2>&1 "
+        "{params.space_fasta} "
+        "> {log} 2>&1 "
