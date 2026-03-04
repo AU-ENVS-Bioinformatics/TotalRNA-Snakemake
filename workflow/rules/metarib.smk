@@ -38,61 +38,83 @@ ITER_DIR = f"{WORK_DIR}/iter.{{iter}}"
 ITER0_DIR = f"{WORK_DIR}/iter.0"
 
 
-rule iteration_0:
+ruleorder: metarib_step0 > metarib_step
+
+
+rule metarib_step0:
     input:
-        fwd="results/metarib/data/all.1.fq",
-        rev="results/metarib/data/all.2.fq",
+        r1=expand("results/metarib/data/{sample}.1.fq", sample=unique_samples),
+        r2=expand("results/metarib/data/{sample}.2.fq", sample=unique_samples),
     output:
-        folder=directory(ITER0_DIR),
-        r1=f"{ITER0_DIR}/unmapped_R1_next.fastq",
-        r2=f"{ITER0_DIR}/unmapped_R2_next.fastq",
+        r1=expand(f"{ITER0_DIR}/unmapped_data/{{sample}}.1.fq", sample=unique_samples),
+        r2=expand(f"{ITER0_DIR}/unmapped_data/{{sample}}.2.fq", sample=unique_samples),
         contigs=f"{ITER0_DIR}/contigs_derep_next.fasta",
         report=f"{ITER0_DIR}/iteration_report.txt",
         done=f"{ITER0_DIR}/.done",
+        output_dir=directory(ITER0_DIR),
+        data_dir=directory(f"{ITER0_DIR}/unmapped_data"),
     log:
         f"{LOG_DIR}/iter0_init.log",
-    shell:
-        """
-        mkdir -p {output.folder} && 
-        ln -sf $(pwd)/{input.fwd} {output.r1} && 
-        ln -sf $(pwd)/{input.rev} {output.r2} &&
-        touch {output.contigs} &&
-        echo "0" >> {output.report} &&
-        r1_reads=$(( $(wc -l < {output.r1}) / 4 )) 
-        echo "$r1_reads" >> {output.report} && 
-        echo "False" > {output.done} >> {log} 2>&1
-        """
+    run:
+        import os
+
+        os.makedirs(output.output_dir, exist_ok=True)
+        os.makedirs(output.data_dir, exist_ok=True)
+
+        for i in range(len(unique_samples)):
+            os.symlink(os.path.abspath(input.r1[i]), output.r1[i])
+            os.symlink(os.path.abspath(input.r2[i]), output.r2[i])
+
+        with open(output.contigs, "w") as f:
+            pass
+        with open(output.report, "w") as f:
+            pass
+        with open(output.done, "w") as f:
+            f.write("False")
 
 
 rule metarib_step:
     input:
-        r1=lambda wc: f"{prev_iter_dir(wc)}/unmapped_R1_next.fastq",
-        r2=lambda wc: f"{prev_iter_dir(wc)}/unmapped_R2_next.fastq",
+        r1=lambda wc: expand(
+            f"{prev_iter_dir(wc)}/unmapped_data/{{sample}}.1.fq",
+            sample=unique_samples,
+        ),
+        r2=lambda wc: expand(
+            f"{prev_iter_dir(wc)}/unmapped_data/{{sample}}.2.fq",
+            sample=unique_samples,
+        ),
         contigs=lambda wc: f"{prev_iter_dir(wc)}/contigs_derep_next.fasta",
         prev_report=lambda wc: f"{prev_iter_dir(wc)}/iteration_report.txt",
     output:
         contigs_next=f"{ITER_DIR}/contigs_derep_next.fasta",
-        r1_next=f"{ITER_DIR}/unmapped_R1_next.fastq",
-        r2_next=f"{ITER_DIR}/unmapped_R2_next.fastq",
         report=f"{ITER_DIR}/iteration_report.txt",
-        dups=f"{ITER_DIR}/contigs.duplicates.fasta",
     log:
         f"{LOG_DIR}/iter.{{iter}}_step.log",
-    # shadow:
-    #     "full"
-    threads: 8
+    threads: config["threads"]["metarib"]
     conda:
-        "../envs/emirge.yaml"
+        "../envs/metarib.yaml"
     params:
-        n=emirge_cfg["SAMPLING_NUM"],
+        nreads=emirge_cfg["SAMPLING_NUM"],
         ref_db=emirge_cfg["EM_REF"],
         bt_idx=emirge_cfg["EM_BT"],
         EM_PARA=emirge_cfg["EM_PARA"],
         MAP_PARA=bbtool_cfg["MAP_PARA"],
         CLS_PARA=bbtool_cfg["CLS_PARA"],
-        output_dir=ITER_DIR,
+        data_dir=f"{ITER_DIR}",
     shell:
-        "workflow/scripts/metarib_step.sh --r1 {input.r1} --r2 {input.r2} --contigs {input.contigs} --output-dir {params.output_dir} --num-reads {params.n} --em-para '{params.EM_PARA}' --map-para '{params.MAP_PARA}' --cls-para '{params.CLS_PARA}' --ref-db {params.ref_db} --bt-idx {params.bt_idx} >> {log} 2>&1"
+        """
+        workflow/scripts/metarib_step.sh \
+            --r1 {input.r1} \
+            --r2 {input.r2} \
+            --contigs {input.contigs} \
+            --output-dir {params.data_dir} \
+            --num-reads {params.nreads} \
+            --em-para '{params.EM_PARA}' \
+            --map-para '{params.MAP_PARA}' \
+            --cls-para '{params.CLS_PARA}' \
+            --ref-db {params.ref_db} \
+            --bt-idx {params.bt_idx}  >> {log} 2>&1 
+        """
 
 
 checkpoint iteration_check:
@@ -125,15 +147,11 @@ def run_iteration(wildcards):
     while True:
         ck = checkpoints.iteration_check.get(iter=iter)
         done_file = ck.output[0]
-
         with open(done_file, "r") as f:
             stop = f.read().strip()
-
         if stop == "True":
             return f"{WORK_DIR}/iter.{iter}/contigs_derep_next.fasta"
-
         iter += 1
-
         if iter > max_iter:
             warnings.warn(
                 f"Exceeded maximum iterations ({max_iter}) without convergence. Forcing to stop. Check logs for details."
@@ -143,6 +161,7 @@ def run_iteration(wildcards):
 
 rule metarib:
     input:
+        f"{ITER0_DIR}/.done",
         run_iteration,
     output:
         "results/metarib/final_contigs.fasta",
@@ -151,9 +170,9 @@ rule metarib:
     threads: 1
     shell:
         "touch {output} && "
-        "cat {input} > {output} && "
-        "echo 'Final contigs copied to {output}' >> {log} 2>&1 && "
+        "cat {input[1]} > {output} && "
+        "echo 'Final contigs copied to {output}' > {log} 2>&1 && "
         "echo 'All MetaRib reconstructions completed' >> {log} &&"
-        "echo 'Final contigs for all samples are available in results/metarib/final_contigs/' >> {log} &&"
-        "echo 'Cleaning up intermediate files...' >> {log} && "
-        "rm -rf {WORK_DIR}"
+        "echo 'Final contigs for all samples are available in results/metarib/final_contigs/' >> {log}"
+        # "echo 'Cleaning up intermediate files...' >> {log} && "
+        # "rm -rf {WORK_DIR}"
