@@ -32,7 +32,7 @@ rule count_reads:
         mRNA="results/mRNA/trinity.Trinity.fasta",
         filtered_mRNA="results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
     conda:
-        "../envs/base_python.yaml"
+        "../envs/pandas.yaml"
     output:
         "qc/counts/nsequences_file.csv",
     log:
