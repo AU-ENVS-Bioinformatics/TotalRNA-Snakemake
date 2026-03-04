@@ -24,11 +24,11 @@ ITER=0
 # Function to display usage
 usage() {
     cat << EOF
-Usage: $0 -1 <r1_file> -2 <r2_file> -c <contigs_file> -o <output_dir> -f <ref_db> -b <bt_idx> [options]
+Usage: $0 -1 <r1_file1> <r1_file2> ... -2 <r2_file1> <r2_file2> ... [options]
 
 Required arguments:
-  -1, --r1              Path to forward (R1) reads fastq file
-  -2, --r2              Path to reverse (R2) reads fastq file
+  -1, --r1              One or more R1 reads fastq files (space-separated)
+  -2, --r2              One or more R2 reads fastq files (space-separated)
   -c, --contigs         Path to input contigs fasta file
   -o, --output-dir      Output directory for results
   -f, --ref-db          Reference database for EMIRGE (FASTA file)
@@ -49,9 +49,9 @@ EOF
     exit 1
 }
 
-# Parse arguments
-R1=""
-R2=""
+# Parse arguments - collect multiple files for -1 and -2
+R1=()
+R2=()
 CONTIGS=""
 OUTPUT_DIR=""
 REF_DB=""
@@ -59,8 +59,20 @@ BT_IDX=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -1|--r1) R1="$2"; shift 2 ;;
-        -2|--r2) R2="$2"; shift 2 ;;
+        -1|--r1) 
+            shift
+            while [[ $# -gt 0 && "$1" != -* ]]; do
+                R1+=("$1")
+                shift
+            done
+            ;;
+        -2|--r2) 
+            shift
+            while [[ $# -gt 0 && "$1" != -* ]]; do
+                R2+=("$1")
+                shift
+            done
+            ;;
         -c|--contigs) CONTIGS="$2"; shift 2 ;;
         -o|--output-dir) OUTPUT_DIR="$2"; shift 2 ;;
         -f|--ref-db) REF_DB="$2"; shift 2 ;;
@@ -78,17 +90,28 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required arguments
-if [[ -z "$R1" || -z "$R2" || -z "$CONTIGS" || -z "$OUTPUT_DIR" || -z "$REF_DB" || -z "$BT_IDX" ]]; then
+if [[ ${#R1[@]} -eq 0 || ${#R2[@]} -eq 0 || -z "$CONTIGS" || -z "$OUTPUT_DIR" || -z "$REF_DB" || -z "$BT_IDX" ]]; then
     echo "Error: Missing required arguments" >&2
     usage
+fi
+
+# Check R1 and R2 have same number of files
+if [[ ${#R1[@]} -ne ${#R2[@]} ]]; then
+    echo "Error: Number of R1 and R2 files must be equal" >&2
+    exit 1
 fi
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
+dirname=$(realpath "$(dirname "${R1[0]}")")
+
 # Convert relative paths to absolute paths before changing directory
-R1=$(realpath "$R1")
-R2=$(realpath "$R2")
+for i in "${!R1[@]}"; do
+    R1[$i]=$(realpath "${R1[$i]}")
+    R2[$i]=$(realpath "${R2[$i]}")
+done
+
 CONTIGS=$(realpath "$CONTIGS")
 REF_DB=$(realpath "$REF_DB")
 # BT_IDX is a prefix, so we need to handle it specially
@@ -100,14 +123,6 @@ OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 CONTIGS_NEXT="$OUTPUT_DIR/contigs_derep_next.fasta"
 R1_NEXT="$OUTPUT_DIR/unmapped_R1_next.fastq"
 R2_NEXT="$OUTPUT_DIR/unmapped_R2_next.fastq"
-
-# Verify input files exist
-for file in "$R1" "$R2" "$CONTIGS" "$REF_DB"; do
-    if [[ ! -f "$file" ]]; then
-        echo "Error: Input file not found: $file" >&2
-        exit 1
-    fi
-done
 
 # Parsing EMIRGE parameters into individual variables for clarity
 # EM_PARA format: "--phred33 -l 125 -i 250 -s 50 -a 20 -n 20"
@@ -133,57 +148,97 @@ echo "Step 1: Running EMIRGE on $N subsampled reads..."
 cd "$OUTPUT_DIR"
 
 seed=$(( (RANDOM << 15 | RANDOM) % 999999 + 1 ))
-seqtk sample -s"$seed" "$R1" "$N" > subsample_R1.fastq 2>&1
-seqtk sample -s"$seed" "$R2" "$N" > subsample_R2.fastq 2>&1
+
+cat "$dirname"/*.1.fq | seqtk sample -s"$seed" - "$N" > subsample_R1.fastq 2>&1
+cat "$dirname"/*.2.fq | seqtk sample -s"$seed" - "$N" > subsample_R2.fastq 2>&1
 
 
-# awk 'NR%4==2 {print length($0)}' results/metarib/work/iter.1/subsample_R1.fastq | sort -n | tail
+max_read_length=$(awk 'NR%4==2 {print length($0)}' subsample_R1.fastq | sort -n | tail -1)
 
+vsearch \
+  --fastq_mergepairs subsample_R1.fastq \
+  --reverse subsample_R2.fastq \
+  --fastqout merged.fastq \
+  --fastq_minovlen 20
+
+awk 'NR%4==2 {print length($0)}' merged.fastq > merged_lengths.txt
+
+mean_dist=$(awk '{sum+=$1} END {printf "%.0f\n", sum/NR}' merged_lengths.txt)
+
+stddev_dist=$(awk '{
+  sum+=$1; 
+  sumsq+=$1*$1
+} END {
+  mean=sum/NR;
+  stddev=sqrt(sumsq/NR - mean*mean);
+  printf "%.0f\n", stddev
+}' merged_lengths.txt)
 
 emirge_amplicon.py emirge_subset \
     -1 subsample_R1.fastq -2 subsample_R2.fastq \
-    --max_read_length "$EM_PARA_l" --insert_mean "$EM_PARA_i" --insert_stddev "$EM_PARA_s" --processors "$EM_PARA_a" --iterations "$EM_PARA_n" \
-    "$EM_PARA_phred" --fasta_db "$REF_DB" --bowtie_db "$BT_IDX" \
-    2>&1
+    --max_read_length "$max_read_length" --insert_mean "$mean_dist" --insert_stddev "$stddev_dist" --processors "$EM_PARA_a" --iterations "$EM_PARA_n" \
+    "$EM_PARA_phred" --fasta_db "$REF_DB" --bowtie_db "$BT_IDX" 2>&1
 
-# emirge_amplicon.py emirge_subset \
-#     -1 subsample_R1.fastq -2 subsample_R2.fastq \
-#     --phred33 -l 125 -i 250 -s 50 -a 20 -n 10 \
-#     --fasta_db "$REF_DB" --bowtie_db "$BT_IDX" 2>&1
 
- 
 # Step 2: Dereplication
 echo ""
 echo "Step 2: Deduplicating contigs..."
 
-cat emirge_subset/iter.*/*.fasta "$CONTIGS" > contigs.combined 2>&1
+cat emirge_subset/iter.*/*.fasta "$CONTIGS" > contigs.combined.fasta
 
-sortbyname.sh in=contigs.combined out=contigs.sorted length descending 2>&1
-reformat.sh in=contigs.sorted out=contigs.formatted uniquenames 2>&1
-dedupe.sh in=contigs.formatted out="$CONTIGS_NEXT" outd=contigs.duplicates.fasta $CLS_PARA 2>&1
+# sortbyname.sh in=contigs.combined.fasta out=contigs.sorted.fasta length descending 2>&1
+# reformat.sh in=contigs.sorted.fasta out=contigs.formatted.fasta uniquenames 2>&1
+# dedupe.sh in=contigs.formatted.fasta out="$CONTIGS_NEXT" outd=contigs.duplicates.fasta $CLS_PARA 2>&1
+
+# Deduplicate and keep size info
+vsearch --fasta_width 0 \
+  --derep_fulllength contigs.combined.fasta \
+  --output temp_derep.fasta \
+  --relabel contig_
+
+vsearch --sortbysize temp_derep.fasta \
+  --output "$CONTIGS_NEXT"
 
 contig_count=$(grep -c '^>' "$CONTIGS_NEXT" || echo 0)
 echo "$contig_count" > iteration_report.txt
 echo "Assembled contigs: $contig_count"
 
-# Step 3: Map reads and extract unmapped
+# Map reads and extract unmapped in parallel
 echo ""
 echo "Step 3: Mapping reads to assembled contigs..."
+bbmap.sh ref="$CONTIGS_NEXT" 2>&1
 
-bbmap.sh ref="$CONTIGS_NEXT" in1="$R1" in2="$R2" \
-    threads=$THREADS $MAP_PARA outu=unmapped.fq ow=t \
-    statsfile=bbmap.stats.txt sortscafs=t \
-    scafstats=bbmap.scafstats.txt covstats=bbmap.covstats.txt 2>&1
+mkdir -p "$OUTPUT_DIR"/unmapped_data
 
-reformat.sh in=unmapped.fq out1="$R1_NEXT" out2="$R2_NEXT" 2>&1
+# Handle both single files and multiple input reads
+r1_files=($R1)
+r2_files=($R2)
+num_samples=${#r1_files[@]}
+threads_per_sample=$(( THREADS / num_samples ))
+[ "$threads_per_sample" -lt 1 ] && threads_per_sample=1
 
-r1_reads=$(( $(wc -l < "$R1_NEXT") / 4 ))
-echo "$r1_reads" >> iteration_report.txt
-echo "Unmapped reads remaining: $r1_reads"
+for i in "${!r1_files[@]}"; do
+    r1="${r1_files[$i]}"
+    r2="${r2_files[$i]}"
+    sample=$(basename "$r1" .1.fq)
+    bbmap.sh in="$r1" in2="$r2" \
+        outu=unmapped_data/${sample}.1.fq \
+        outu2=unmapped_data/${sample}.2.fq \
+        ref="$CONTIGS_NEXT" \
+        # threads=2 2>&1 &
+        threads=$threads_per_sample 2>&1 &
+done
 
-echo ""
+
+# Sum lines from all files
+total_lines=$(wc -l unmapped_data/*.fq | tail -1 | awk '{print $1}')
+total_reads=$(( total_lines / 4 / 2 ))  # Divide by 4 (FASTQ) and 2 (paired files)
+echo "$total_reads" >> iteration_report.txt
+echo "Unmapped reads remaining: $total_reads"
+
+
 echo "Iteration complete at: $(date)"
-echo "Summary: $contig_count contigs assembled, $r1_reads reads remain unmapped"
+echo "Summary: $contig_count contigs assembled"
 echo "========================================"
 
 # Create output summary
@@ -191,11 +246,11 @@ echo ""
 echo "=========================================="
 echo "Step completed successfully!"
 echo "Output directory: $OUTPUT_DIR"
-echo "Contigs: $CONTIGS"
-echo "Unmapped R1: $R1"
+echo "Contigs: $CONTIGS_NEXT"
+echo "Unmapped R1: $R1_NEXT"
 echo "Unmapped R2: $R2"
 echo "Duplicates: contigs.duplicates.fasta"
 echo "Report: iteration_report.txt"
-echo "=========================================="
+echo "========================================"
 
 exit 0
