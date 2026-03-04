@@ -3,45 +3,18 @@ rule decompress_rrna:
         fwd="results/sortmerna/SSU/{sample}_fwd.fq.gz",
         rev="results/sortmerna/SSU/{sample}_rev.fq.gz",
     output:
-        fwd="results/metarib/data/{sample}.1.fq",
-        rev="results/metarib/data/{sample}.2.fq",
+        r1="results/metarib/data/{sample}.1.fq",
+        r2="results/metarib/data/{sample}.2.fq",
     log:
-        "logs/metarib/decompress_{sample}.log",
+        "logs/metarib/decompress/{sample}.log",
     conda:
         "../envs/pigz.yaml"
     threads: config["threads"]["pigz"]
     shell:
-        "pigz -dkf -p{threads} < {input.fwd} > {output.fwd} && "
+        "pigz -dkf -p{threads} < {input.fwd} > {output.r1} && "
         "echo 'Forward file was successfully decompressed' >> {log} && "
-        "pigz -dkf -p{threads} < {input.rev} > {output.rev} && "
+        "pigz -dkf -p{threads} < {input.rev} > {output.r2} && "
         "echo 'Reverse file was successfully decompressed' >> {log} "
-
-
-rule data_preparation:
-    input:
-        R1=expand(
-            "results/metarib/data/{sample}.1.fq",
-            sample=unique_samples,
-        ),
-        R2=expand(
-            "results/metarib/data/{sample}.2.fq",
-            sample=unique_samples,
-        ),
-    output:
-        R1=("results/metarib/data/all.1.fq"),
-        R2=("results/metarib/data/all.2.fq"),
-    log:
-        "logs/metarib/data_preparation.log",
-    conda:
-        "../envs/pigz.yaml"
-    threads: config["threads"]["pigz"]
-    params:
-        samples_names="\n".join(unique_samples),
-    shell:
-        "cat {input.R1} > {output.R1} && "
-        "echo 'Forward files were successfully concatenated' >> {log} && "
-        "cat {input.R2} > {output.R2} && "
-        "echo 'Reverse files were successfully concatenated' >> {log} "
 
 
 emirge_cfg = config["metarib"]["EMIRGE"]
