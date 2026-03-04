@@ -110,6 +110,8 @@ rule annotation:
     input:
         "results/crest4/mapped_reads_to_contigs.tsv.edited",
         "results/annotree/annotated.tsv",
+    output:
+        touch("results/annotation.done")
 
 
 include: "rules/crest4.smk"
@@ -136,8 +138,16 @@ rule all_qc:
         "qc/sortmerna_LSU_multiqc.html",
         "qc/quast/report.txt",
         "qc/counts/sequences_main_steps.pdf",
+    output:
+        touch("results/all_qc.done")
 
 
 include: "rules/multiqc.smk"
 include: "rules/quast.smk"
 include: "rules/qc_read_counts.smk"
+
+
+rule all:
+    input:
+        rules.annotation.output,
+        rules.all_qc.output
