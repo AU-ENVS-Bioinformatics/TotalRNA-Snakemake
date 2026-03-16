@@ -119,10 +119,6 @@ BT_IDX_DIR=$(dirname "$BT_IDX")
 BT_IDX_BASE=$(basename "$BT_IDX")
 BT_IDX="$(realpath "$BT_IDX_DIR")/$BT_IDX_BASE"
 OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
-# Output next
-CONTIGS_NEXT="$OUTPUT_DIR/contigs_derep_next.fasta"
-R1_NEXT="$OUTPUT_DIR/unmapped_R1_next.fastq"
-R2_NEXT="$OUTPUT_DIR/unmapped_R2_next.fastq"
 
 # Parsing EMIRGE parameters into individual variables for clarity
 # EM_PARA format: "--phred33 -l 125 -i 250 -s 50 -a 20 -n 20"
@@ -147,68 +143,33 @@ echo "Step 1: Running EMIRGE on $N subsampled reads..."
 
 cd "$OUTPUT_DIR"
 
-seed=$(( (RANDOM << 15 | RANDOM) % 999999 + 1 ))
-
-cat "$dirname"/*.1.fq | seqtk sample -s"$seed" - "$N" > subsample_R1.fastq 2>&1
-cat "$dirname"/*.2.fq | seqtk sample -s"$seed" - "$N" > subsample_R2.fastq 2>&1
-
-
-max_read_length=$(awk 'NR%4==2 {print length($0)}' subsample_R1.fastq | sort -n | tail -1)
-
-vsearch \
-  --fastq_mergepairs subsample_R1.fastq \
-  --reverse subsample_R2.fastq \
-  --fastqout merged.fastq \
-  --fastq_minovlen 20
-
-awk 'NR%4==2 {print length($0)}' merged.fastq > merged_lengths.txt
-
-mean_dist=$(awk '{sum+=$1} END {printf "%.0f\n", sum/NR}' merged_lengths.txt)
-
-stddev_dist=$(awk '{
-  sum+=$1; 
-  sumsq+=$1*$1
-} END {
-  mean=sum/NR;
-  stddev=sqrt(sumsq/NR - mean*mean);
-  printf "%.0f\n", stddev
-}' merged_lengths.txt)
-
 emirge_amplicon.py emirge_subset \
     -1 subsample_R1.fastq -2 subsample_R2.fastq \
-    --max_read_length "$max_read_length" --insert_mean "$mean_dist" --insert_stddev "$stddev_dist" --processors "$EM_PARA_a" --iterations "$EM_PARA_n" \
+    --max_read_length "$EM_PARA_l" --insert_mean "$EM_PARA_i" --insert_stddev "$EM_PARA_s" --processors "$EM_PARA_a" --iterations "$EM_PARA_n" \
     "$EM_PARA_phred" --fasta_db "$REF_DB" --bowtie_db "$BT_IDX" 2>&1
 
 
 # Step 2: Dereplication
 echo ""
 echo "Step 2: Deduplicating contigs..."
+cat emirge_subset/iter.*/iter.*.cons.fasta "$CONTIGS" > contigs.combined.fasta
 
-cat emirge_subset/iter.*/*.fasta "$CONTIGS" > contigs.combined.fasta
-
-# sortbyname.sh in=contigs.combined.fasta out=contigs.sorted.fasta length descending 2>&1
-# reformat.sh in=contigs.sorted.fasta out=contigs.formatted.fasta uniquenames 2>&1
-# dedupe.sh in=contigs.formatted.fasta out="$CONTIGS_NEXT" outd=contigs.duplicates.fasta $CLS_PARA 2>&1
-
-# Deduplicate and keep size info
-vsearch --fasta_width 0 \
+# Deduplicate info - keep original labels and add ;size= suffix
+vsearch \
   --derep_fulllength contigs.combined.fasta \
-  --output temp_derep.fasta \
-  --relabel contig_
+  --output contigs_derep_next.fasta  \
+  --sizeout 2>&1
 
-vsearch --sortbysize temp_derep.fasta \
-  --output "$CONTIGS_NEXT"
+sed -i 's/;size=/_/g' contigs_derep_next.fasta 
 
-contig_count=$(grep -c '^>' "$CONTIGS_NEXT" || echo 0)
+contig_count=$(grep -c '^>' contigs_derep_next.fasta || echo 0)
 echo "$contig_count" > iteration_report.txt
 echo "Assembled contigs: $contig_count"
 
 # Map reads and extract unmapped in parallel
 echo ""
 echo "Step 3: Mapping reads to assembled contigs..."
-bbmap.sh ref="$CONTIGS_NEXT" 2>&1
-
-mkdir -p "$OUTPUT_DIR"/unmapped_data
+bbmap.sh -Xmx5g ref=contigs_derep_next.fasta 2>&1
 
 # Handle both single files and multiple input reads
 r1_files=($R1)
@@ -221,12 +182,13 @@ for i in "${!r1_files[@]}"; do
     r1="${r1_files[$i]}"
     r2="${r2_files[$i]}"
     sample=$(basename "$r1" .1.fq)
-    bbmap.sh in="$r1" in2="$r2" \
+    bbmap.sh -Xmx5g in="$r1" in2="$r2" \
         outu=unmapped_data/${sample}.1.fq \
         outu2=unmapped_data/${sample}.2.fq \
-        ref="$CONTIGS_NEXT" \
-        # threads=2 2>&1 &
-        threads=$threads_per_sample 2>&1 &
+        ref=contigs_derep_next.fasta \
+        "$MAP_PARA" \
+        ow=t \
+        threads=$threads_per_sample 2>&1
 done
 
 
@@ -246,10 +208,7 @@ echo ""
 echo "=========================================="
 echo "Step completed successfully!"
 echo "Output directory: $OUTPUT_DIR"
-echo "Contigs: $CONTIGS_NEXT"
-echo "Unmapped R1: $R1_NEXT"
-echo "Unmapped R2: $R2"
-echo "Duplicates: contigs.duplicates.fasta"
+echo "Contigs: contigs_derep_next.fasta"
 echo "Report: iteration_report.txt"
 echo "========================================"
 

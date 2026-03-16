@@ -103,13 +103,19 @@ rule metarib_step:
         data_dir=f"{ITER_DIR}",
     shell:
         """
+        dirname=$(realpath "$(dirname "{input.r1[0]}")") && \
+        source workflow/scripts/subsampling.sh --dirname "$dirname" --num_reads {params.nreads} >> {log} 2>&1
+
+        mv "$dirname"/subsample_R1.fastq {params.data_dir}/subsample_R1.fastq
+        mv "$dirname"/subsample_R2.fastq {params.data_dir}/subsample_R2.fastq
+
         workflow/scripts/metarib_step.sh \
             --r1 {input.r1} \
             --r2 {input.r2} \
             --contigs {input.contigs} \
             --output-dir {params.data_dir} \
             --num-reads {params.nreads} \
-            --em-para '{params.EM_PARA}' \
+            --em-para "$EM_PARA" \
             --map-para '{params.MAP_PARA}' \
             --cls-para '{params.CLS_PARA}' \
             --ref-db {params.ref_db} \
@@ -174,5 +180,5 @@ rule metarib:
         "echo 'Final contigs copied to {output}' > {log} 2>&1 && "
         "echo 'All MetaRib reconstructions completed' >> {log} &&"
         "echo 'Final contigs for all samples are available in results/metarib/final_contigs/' >> {log}"
-        # "echo 'Cleaning up intermediate files...' >> {log} && "
-        # "rm -rf {WORK_DIR}"
+        "echo 'Cleaning up intermediate files...' >> {log} && "
+        "rm -rf {WORK_DIR}"
