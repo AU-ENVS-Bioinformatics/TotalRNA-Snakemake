@@ -1,75 +1,128 @@
 import sys
 import duckdb
-import re
-import pandas as pd
 
 database = snakemake.output.database
 log = snakemake.log
-single_sample = snakemake.input.single_sample
-idxstats = snakemake.input.counts_length_tsv[0]
-reads = snakemake.input.counts_length_tsv[-1]
-counts_tsv = re.sub(r"GP\d{3}_(rev|fwd)", "*", idxstats)
-length_tsv = re.sub(r"GP\d{3}_(rev|fwd)", "*", reads)
-table_name = ["abundance", "total_read_length"]
+single_sample = snakemake.input.idxstats[0]
+dir_path = snakemake.params.dir_path
+
+INPUT_PATTERNS = f"{dir_path}/*_sorted.bam.idxstats"
 
 
-value = ["mapped_reads", "read_length"]
-input = [counts_tsv, length_tsv]
+def log_message(message):
+    print(message, file=sys.stderr)
 
-def write_to_table(database, table_name, value, input):
+
+def table_read_csv(input_pattern):
+    return f"""
+        FROM read_csv(
+        '{input_pattern}',
+        delim='\t',
+        header=False,
+        columns={{
+            'contig': 'TEXT',
+            'contig_length': 'INTEGER',
+            'mapped': 'INTEGER',
+            'unmapped': 'INTEGER'
+        }},
+        ignore_errors=True,
+        filename=True
+    )
+    """
+
+
+def write_contig_length_table(conn, bam_file):
+    log_message("[contig_length] Building insert query")
     query = f"""
-    SELECT sample AS sample, contig AS contig, SUM({value}) as {value}
-    FROM read_csv_auto('{input}')
-    GROUP BY sample, contig
-    HAVING SUM({value}) > 0"""
-    print("Connecting to database and writing table...", file=sys.stderr)
+    SELECT contig, contig_length
+    {table_read_csv(bam_file)}
+    WHERE contig_length > 0
+    GROUP BY contig, contig_length
+    """
+    log_message(f"[contig_length] Inserting rows from pattern: {bam_file}")
+    conn.execute(f"INSERT INTO contig_length {query}")
+    log_message("[contig_length] Insert completed")
+
+
+def write_mapped_reads_table(conn, mapped_pattern):
+    log_message("[mapped_reads] Building insert query")
+    query = f"""
+    SELECT contig,regexp_replace(
+    regexp_extract(filename, '[^/]+$'),
+    '_sorted\\.bam\\.idxstats$', '') AS sample, mapped AS mapped_reads
+    {table_read_csv(mapped_pattern)}
+    WHERE mapped > 0
+    GROUP BY contig, sample, mapped_reads
+    """
+    log_message(f"[mapped_reads] Inserting rows from pattern: {mapped_pattern}")
+    conn.execute(f"INSERT INTO mapped_reads {query}")
+    log_message("[mapped_reads] Insert completed")
+
+
+def init_database(database):
+    log_message(f"Initializing DuckDB database: {database}")
     conn = duckdb.connect(database)
-    conn.execute(f"INSERT INTO {table_name} {query}")
-    conn.commit()
+
+    log_message("Dropping old tables if they exist")
+    conn.execute("DROP TABLE IF EXISTS mapped_reads")
+    conn.execute("DROP TABLE IF EXISTS read_length")
+    conn.execute("DROP TABLE IF EXISTS contig_length")
+
+    log_message("Creating table: contig_length")
+    conn.execute("""
+    CREATE TABLE contig_length (
+        contig TEXT,
+        contig_length INT
+    )
+    """)
+
+    log_message("Creating table: mapped_reads")
+    conn.execute("""
+    CREATE TABLE mapped_reads (
+        contig TEXT,
+        sample TEXT,
+        mapped_reads INT
+    )
+    """)
+
+    log_message("Creating table: read_length")
+    conn.execute("""
+    CREATE TABLE read_length (
+        contig TEXT,
+        sample TEXT,
+        read_length INT
+    )
+    """)
+
+    log_message("Database initialization complete")
+
     return conn
 
 
-def init_database_sample_contig(database, table_name, value):
-    with duckdb.connect(database) as conn:
-        conn.execute(f"""
-            DROP TABLE IF EXISTS {table_name};
-        """)
-        conn.commit()
-        conn.execute(f"""
-        CREATE TABLE IF NOT EXISTS {table_name} (
-            sample TEXT,
-            contig TEXT,
-            {value} INT
-        )
-    """)
-        conn.commit()
-        
-def init_database_contig(database, table_name):
-    with duckdb.connect(database) as conn:
-        conn.execute(f"""
-            DROP TABLE IF EXISTS {table_name};
-        """)
-        conn.commit()
-        conn.execute(f"""
-        CREATE TABLE IF NOT EXISTS {table_name} (
-            contig TEXT,
-            contig_length INT
-        )
-    """)
-        conn.commit()
-
 with open(log[0], "w") as f:
     sys.stderr = sys.stdout = f
-    print("Processing mapped reads to contigs...", file=sys.stderr)
+    log_message("Starting database table creation script")
+    log_message(f"Output database: {database}")
+    log_message(f"Input contig pattern: {single_sample}")
+    log_message(f"Input mapped pattern: {INPUT_PATTERNS}")
+    log_message(f"Log file: {log[0]}")
 
-    for tbl, val, inp in zip(table_name, value, input):
-        init_database_sample_contig(database, tbl, val)
-        conn = write_to_table(database, tbl, val, inp)
-        print(f"Done writing table {tbl}", file=sys.stderr)
-        conn.close()
-    print("Finished processing mapped reads to contigs.", file=sys.stderr)
-    print("Processing contig lengths...", file=sys.stderr)
-    init_database_contig(database, "contig_length")
-    df = pd.read_csv(single_sample, sep="\t", header=None, usecols=[0, 1], names=["contig", "contig_length"])
-    df.to_sql("contig_length", duckdb.connect(database), if_exists="replace", index=False)
-    print("Finished writing contig_length table.", file=sys.stderr)
+    conn = None
+    try:
+        log_message("Opening database connection and preparing schema")
+        conn = init_database(database)
+
+        log_message("Writing contig_length data")
+        write_contig_length_table(conn, single_sample)
+
+        log_message("Writing mapped_reads data")
+        write_mapped_reads_table(conn, INPUT_PATTERNS)
+
+        log_message("Committing transaction")
+        conn.commit()
+        log_message("Commit completed successfully")
+    finally:
+        if conn is not None:
+            log_message("Closing database connection")
+            conn.close()
+        log_message("Database table creation script finished")

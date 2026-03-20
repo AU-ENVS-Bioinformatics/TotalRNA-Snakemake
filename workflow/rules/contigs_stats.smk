@@ -53,7 +53,6 @@ rule samtools_idxstats_contigs:
     output:
         idx="results/{folder}/bwa/{sample}_sorted.bam.bai",
         idxstats="results/{folder}/bwa/{sample}_sorted.bam.idxstats",
-        idxstats_tsv="results/{folder}/bwa/{sample}_sorted.bam.idxstats.tsv",
     log:
         "logs/samtools/idxstats/{folder}_{sample}.log",
     conda:
@@ -62,56 +61,58 @@ rule samtools_idxstats_contigs:
         """
         samtools index {input} 2> {log}
         samtools idxstats {input} > {output.idxstats} 2>> {log}
-        awk -v sample="{wildcards.sample}" 'BEGIN{{OFS="\\t"; print "sample", "contig", "mapped_reads"}} {{print sample, $1, $3}}' {output.idxstats} > {output.idxstats_tsv}
         """
 
 
-rule mapped_read_length:
-    input:
-        bam="results/{folder}/bwa/{sample}_sorted.bam",
-    output:
-        tsv="results/{folder}/bwa/{sample}_reads.tsv",
-    log:
-        "logs/{folder}/bwa/{sample}_reads.log",
-    conda:
-        "../envs/pysam.yaml"
-    script:
-        "../scripts/get_read_length.py"
+
 
 
 rule create_database:
     input:
-        single_sample=lambda wc: f"results/{wc.folder}/bwa/{unique_samples[0]}_sorted.bam.idxstats",
-        counts_length_tsv=lambda wc: expand(
-            [
-                f"results/{wc.folder}/bwa/{{sample}}_sorted.bam.idxstats.tsv",
-                f"results/{wc.folder}/bwa/{{sample}}_reads.tsv",
-            ],
+        idxstats=lambda wc: expand(
+            f"results/{wc.folder}/bwa/{{sample}}_sorted.bam.idxstats",
             sample=unique_samples,
         ),
     output:
         database="results/{folder}/database.db",
     log:
         "logs/{folder}/create_database.log",
+    params:
+        dir_path=lambda wc: f"results/{wc.folder}/bwa",
     conda:
         "../envs/duckdb.yaml"
     script:
         "../scripts/create_database_table.py"
 
 
-rule export_abundance:
+rule mapped_read_length:
+    input:
+        bam=lambda wc: expand(f"results/{wc.folder}/bwa/{{sample}}_sorted.bam", sample=unique_samples),
+        database="results/{folder}/database.db",
+    output:
+        touch("results/{folder}/read_length.done"),
+    log:
+        "logs/{folder}/bwa/read_length.log",
+    conda:
+        "../envs/pysam.yaml"
+    script:
+        "../scripts/get_read_length.py"
+
+
+rule export_tsv:
     input:
         db="results/{folder}/database.db",
+        reads_done="results/{folder}/read_length.done",
     output:
-        "results/{folder}/mapped_reads_to_contigs.tsv",
-    params:
-        table="abundance",
+        "results/{folder}/mapped_reads_exported.tsv",
+        "results/{folder}/read_length_exported.tsv",
+        "results/{folder}/contig_length_exported.tsv"
     conda:
         "../envs/pandas.yaml"
     log:
-        "logs/{folder}/export_abundance.log",
+        "logs/{folder}/export_tsv.log",
     script:
-        "../scripts/abundance2tsv.py"
+        "../scripts/export_tsv.py"
 
 
 # filtered="results/mRNA/filter_contigs.done",
