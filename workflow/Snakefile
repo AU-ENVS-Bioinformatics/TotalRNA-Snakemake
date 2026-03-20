@@ -71,8 +71,10 @@ Handles mapping of reads to contigs for both mRNA and rRNA:
 
 rule mapping:
     input:
-        "results/rRNA/database.db",
-        "results/mRNA/database.db",
+        expand(["results/{folder}/database.db",
+        "results/{folder}/tsv/mapped_reads_exported.tsv",
+        "results/{folder}/tsv/read_length_exported.tsv",
+        "results/{folder}/tsv/contig_length_exported.tsv"], folder=["mRNA", "rRNA"])
 
 
 include: "rules/contigs_stats.smk"
@@ -110,12 +112,15 @@ rule annotation:
     input:
         "results/crest4/mapped_reads_to_contigs.tsv.edited",
         "results/annotree/annotated.tsv",
+        "results/trinity/eggnog/{file}_eggnog.emapper.annotations"
+
     output:
         touch("results/annotation.done")
 
 
 include: "rules/crest4.smk"
 include: "rules/annotree.smk"
+include: "rules/eggnog.smk"
 
 
 # ================================================================================
@@ -133,11 +138,11 @@ Handles quality control and reporting:
 
 rule all_qc:
     input:
-        "qc/trim_galore_multiqc.html",
-        "qc/sortmerna_SSU_multiqc.html",
-        "qc/sortmerna_LSU_multiqc.html",
-        "qc/quast/report.txt",
-        "qc/counts/sequences_main_steps.pdf",
+        "results/qc/trim_galore_multiqc.html",
+        "results/qc/sortmerna_SSU_multiqc.html",
+        "results/qc/sortmerna_LSU_multiqc.html",
+        "results/qc/quast/report.txt",
+        "results/qc/counts/sequences_main_steps.pdf",
     output:
         touch("results/all_qc.done")
 

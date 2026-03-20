@@ -20,9 +20,9 @@ rule count_reads:
         mRNA="results/trinity/trinity.Trinity.fasta",
         filtered_mRNA="results/mRNA/Trinity_contigs_cmsearch_filtered.fasta",
     conda:
-        "../envs/base_python.yaml"
+        "../envs/pandas.yaml"
     output:
-        "qc/counts/nsequences_file.csv",
+        "results/qc/counts/nsequences_file.csv",
     log:
         "logs/qc/count_sequences.log",
     threads: 8
@@ -32,13 +32,13 @@ rule count_reads:
 
 rule plot_n_sequences:
     input:
-        "qc/counts/nsequences_file.csv",
+        "results/qc/counts/nsequences_file.csv",
     conda:
         "../envs/phyloseq.yaml"
     log:
         "logs/qc/plot_count_sequences.log",
     output:
-        plot1="qc/counts/reads.pdf",
-        plot2="qc/counts/sequences_main_steps.pdf",
+        plot1="results/qc/counts/reads.pdf",
+        plot2="results/qc/counts/sequences_main_steps.pdf",
     script:
         "../scripts/qc_read_counts.R"

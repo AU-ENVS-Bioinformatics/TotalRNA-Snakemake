@@ -79,7 +79,7 @@ rule trim_files:
         ),
 
 
-rule sortmerna_rRNA:
+rule sortmerna_SSU:
     input:
         expand(
             "results/sortmerna/SSU/{sample}_{dir}.fq.gz",
@@ -88,10 +88,10 @@ rule sortmerna_rRNA:
         ),
 
 
-rule sortmerna_mRNA:
+rule sortmerna_LSU:
     input:
         expand(
-            "results/sortmerna/not_LSU/{sample}_{dir}.fq.gz",
+            "results/sortmerna/LSU/{sample}_{dir}.fq.gz",
             sample=unique_samples,
             dir=["fwd", "rev"],
         ),

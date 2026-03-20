@@ -21,7 +21,7 @@ rule multiqc:
     input:
         multiqc_input,
     output:
-        "qc/{qc_type}_multiqc.html",
+        "results/qc/{qc_type}_multiqc.html",
     priority: 50
     params:
         extra="",
