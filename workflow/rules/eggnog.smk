@@ -1,35 +1,34 @@
+fasta_file="trinity.Trinity"
+
 rule transdecoder:
     input:
-        fasta="{folder}/{file}.fasta",
+        fasta=f"results/trinity/{fasta_file}.fasta",
     output:
-        pep="{folder}/transdecoder/{file}.fasta.transdecoder.pep",
+        pep=f"results/eggnog/{fasta_file}.fasta.transdecoder.pep",
     log:
-        "logs/{folder}/transdecoder/{file}.log",
+        f"logs/eggnog/transdecoder_{fasta_file}.log",
     shadow:
         "minimal"
     conda:
         "../envs/transdecoder.yaml"
     shell:
         """
-        cp {input.fasta} {wildcards.file}.fasta
-
-        TransDecoder.LongOrfs -t {wildcards.file}.fasta &>> {log}
-
-        TransDecoder.Predict -t {wildcards.file}.fasta &>> {log}
-
-        mv {wildcards.file}.fasta.transdecoder.pep {output.pep}
+        TransDecoder.LongOrfs -t {input.fasta} &> {log}
+        TransDecoder.Predict -t {input.fasta} &>> {log}
+        
+        cp {fasta_file}.fasta.transdecoder.pep {output.pep}
         """
 
 
 rule annotation_eggnog:
     input:
-        pep="results/{folder}/transdecoder/{file}.fasta.transdecoder.pep",
+        pep=f"results/eggnog/{fasta_file}.fasta.transdecoder.pep",
     output:
-        hits="results/{folder}/eggnog/{file}_eggnog.emapper.hits",
-        annotations="results/{folder}/eggnog/{file}_eggnog.emapper.annotations",
-        seed_orthologs="results/{folder}/eggnog/{file}_eggnog.emapper.seed_orthologs",
+        hits=f"results/eggnog/{fasta_file}_eggnog.emapper.hits",
+        annotations=f"results/eggnog/{fasta_file}_eggnog.emapper.annotations",
+        seed_orthologs=f"results/eggnog/{fasta_file}_eggnog.emapper.seed_orthologs",
     log:
-        "logs/{folder}/eggnog/{file}_annotation.log",
+        f"logs/eggnog/{fasta_file}_annotation.log",
     shadow:
         "minimal"
     threads: config["threads"]["eggnog"]
@@ -39,25 +38,24 @@ rule annotation_eggnog:
         "../envs/eggnogmapper.yaml"
     shell:
         """
-        emapper.py -i {input.pep} -o {wildcards.file}_eggnog --cpu {threads} -m \
+        emapper.py -i {input.pep} -o {fasta_file}_eggnog --cpu {threads} -m \
         diamond --itype proteins --data_dir {params.EGGNOG_DIR} &> {log}
 
-        mv {wildcards.file}_eggnog.emapper.hits {output.hits}
-        mv {wildcards.file}_eggnog.emapper.annotations {output.annotations}
-        mv {wildcards.file}_eggnog.emapper.seed_orthologs {output.seed_orthologs}
-
+        cp {fasta_file}_eggnog.emapper.hits {output.hits}
+        cp {fasta_file}_eggnog.emapper.annotations {output.annotations}
+        cp {fasta_file}_eggnog.emapper.seed_orthologs {output.seed_orthologs}
         """
 
 
 rule eggnog_database:
     input:
-        eggnog="results/{folder}/eggnog/{file}_eggnog.emapper.annotations",
-        database="results/{folder}/database.db",
+        eggnog=f"results/eggnog/{fasta_file}_eggnog.emapper.annotations",
+        database="results/mRNA/database.db",
     output:
-        touch("results/{folder}/eggnog/{file}.done"),
+        touch(f"results/eggnog/{fasta_file}_eggnog.done"),
     log:
-        "logs/{folder}/eggnog/{file}_database.log",
+        f"logs/eggnog/{fasta_file}_database.log",
     conda:
-        "../envs/pandas.yaml"
+        "../envs/duckdb.yaml"
     script:
         "../scripts/eggnog_database.py"
