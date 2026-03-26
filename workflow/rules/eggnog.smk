@@ -52,7 +52,9 @@ rule eggnog_database:
         eggnog=f"results/eggnog/{fasta_file}_eggnog.emapper.annotations",
         database="results/mRNA/database.db",
     output:
-        touch(f"results/eggnog/{fasta_file}_eggnog.done"),
+        KO_file="results/eggnog/deseq2_KO_counts.tsv",
+        gene_file="results/eggnog/deseq2_gene_counts.tsv",
+        eggnog_output_file="results/eggnog/eggnog_output.tsv",
     log:
         f"logs/eggnog/{fasta_file}_database.log",
     conda:

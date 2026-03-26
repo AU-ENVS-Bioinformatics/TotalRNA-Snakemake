@@ -1,6 +1,7 @@
 """
 Process eggNOG annotations and populate DuckDB database with gene and KO counts.
 """
+
 import pandas as pd
 import duckdb
 import re
@@ -13,6 +14,10 @@ log = snakemake.log
 params = snakemake.params
 output = snakemake.output
 
+KO_file = output.KO_file
+gene_file = output.gene_file
+eggnog_output_file = output.eggnog_output_file
+
 EGGNOG = input.eggnog
 DB = input.database
 
@@ -20,10 +25,10 @@ DB = input.database
 def normalize_gene(gene_name: str) -> str:
     """
     Normalize gene names by removing isoform and protein suffixes.
-    
+
     Args:
         gene_name: Raw gene identifier
-        
+
     Returns:
         Normalized gene identifier
     """
@@ -35,10 +40,10 @@ def normalize_gene(gene_name: str) -> str:
 def load_and_filter_eggnog(eggnog_file: str) -> pd.DataFrame:
     """
     Load eggNOG annotation file and filter by quality thresholds.
-    
+
     Args:
         eggnog_file: Path to eggNOG annotation file
-        
+
     Returns:
         Filtered DataFrame with eggNOG annotations
     """
@@ -46,125 +51,30 @@ def load_and_filter_eggnog(eggnog_file: str) -> pd.DataFrame:
         eggnog = pd.read_csv(
             eggnog_file,
             sep="\t",
-            comment="#",
-            header=None,
-            usecols=[0, 2, 3, 5, 6, 7, 8, 10, 11],
-            names=["gene", "evalue", "score", "taxonomy", "cog_category", 
-                   "function", "preferred_name", "ec", "kegg_ko"]
+            skiprows=4,
+            header=0,
+            skipfooter=3,
         )
-        
+
+        eggnog.rename(
+            columns={
+                "#query": "gene",
+                "max_annot_lvl": "taxonomy",
+                "Description": "function",
+            },
+            inplace=True,
+        )
+
         # Normalize gene names
         eggnog["gene"] = eggnog["gene"].map(normalize_gene)
-        
+
         # Filter by quality thresholds
         eggnog = eggnog.query("evalue <= 1e-10 and score >= 80")
-        
+
         return eggnog
     except Exception as e:
         print(f"Error loading eggNOG file: {e}", file=sys.stderr)
         raise
-
-
-def initialize_database(con: duckdb.DuckDBPyConnection) -> None:
-    """
-    Create database tables and clear existing data.
-    
-    Args:
-        con: DuckDB database connection
-    """
-    con.execute(
-        """
-        CREATE TABLE IF NOT EXISTS deseq2_KO_counts (
-            kegg_ko VARCHAR,
-            sample VARCHAR,
-            mapped_reads INTEGER
-        );
-        """
-    )
-    con.execute(
-        """
-        CREATE TABLE IF NOT EXISTS deseq2_gene_counts (
-            gene VARCHAR,
-            sample VARCHAR,
-            mapped_reads INTEGER
-        );
-        """
-    )
-    con.execute("DELETE FROM deseq2_KO_counts")
-    con.execute("DELETE FROM deseq2_gene_counts")
-
-
-def populate_eggnog_table(eggnog_df: pd.DataFrame, con: duckdb.DuckDBPyConnection) -> None:
-    """
-    Populate the eggnog_output table with filtered annotations.
-    
-    Args:
-        eggnog_df: Filtered eggNOG DataFrame
-        con: DuckDB database connection
-    """
-    con.register("eggnog_input", eggnog_df)
-    con.execute("CREATE OR REPLACE TABLE eggnog_output AS SELECT * FROM eggnog_input")
-
-def aggregate_counts(con: duckdb.DuckDBPyConnection) -> None:
-    """
-    Aggregate gene and KO counts from abundance data and eggNOG annotations.
-    
-    Creates a temporary table joining abundance data with best eggNOG matches,
-    then populates the final count tables.
-    
-    Args:
-        con: DuckDB database connection
-    """
-    con.execute("""
-        DROP TABLE IF EXISTS final_long;
-    """)
-    
-    con.execute("""
-        CREATE TEMP TABLE final_long AS
-        WITH
-        counts_gene AS (
-            SELECT
-                REPLACE(a.contig, substr(a.contig, instr(a.contig, '_i')), '') AS gene,
-                a.sample,
-                SUM(a.mapped_reads) AS mapped_reads
-            FROM abundance a
-            GROUP BY gene, sample
-        ),
-        eggnog_best AS (
-            SELECT gene, kegg_ko
-            FROM (
-                SELECT *,
-                       ROW_NUMBER() OVER (
-                           PARTITION BY gene
-                           ORDER BY evalue ASC, score DESC
-                       ) rn
-                FROM eggnog_output
-            )
-            WHERE rn = 1
-        )
-        SELECT
-            c.gene,
-            c.sample,
-            c.mapped_reads,
-            COALESCE(e.kegg_ko, 'NA') AS kegg_ko
-        FROM counts_gene c
-        LEFT JOIN eggnog_best e
-        ON c.gene = e.gene;
-    """)
-
-    con.execute("""
-        INSERT INTO deseq2_gene_counts (gene, sample, mapped_reads)
-        SELECT gene, sample, mapped_reads
-        FROM final_long;
-    """)
-
-    con.execute("""
-        INSERT INTO deseq2_KO_counts (kegg_ko, sample, mapped_reads)
-        SELECT kegg_ko, sample, SUM(mapped_reads) AS mapped_reads
-        FROM final_long
-        WHERE kegg_ko NOT IN ('NA', '-', '')
-        GROUP BY kegg_ko, sample;
-    """)
 
 
 def main():
@@ -175,25 +85,87 @@ def main():
             # Connect to database
             con = duckdb.connect(DB)
             print(f"Connected to database: {DB}", file=sys.stderr)
-            
-            # Initialize database schema
-            initialize_database(con)
-            print("Database tables initialized", file=sys.stderr)
-            
+
             # Load and filter eggNOG annotations
             eggnog_df = load_and_filter_eggnog(EGGNOG)
-            print(f"Loaded {len(eggnog_df)} filtered eggNOG annotations", file=sys.stderr)
-            
+            print(
+                f"Loaded {len(eggnog_df)} filtered eggNOG annotations", file=sys.stderr
+            )
+
             # Populate eggnog_output table
-            populate_eggnog_table(eggnog_df, con)
+            con.execute(
+                "CREATE OR REPLACE TABLE eggnog_output AS SELECT * FROM eggnog_df"
+            )
             print("eggNOG annotations loaded to database", file=sys.stderr)
-            
-            # Aggregate counts and populate final tables
-            aggregate_counts(con)
+
+            con.execute(
+                """DROP VIEW IF EXISTS eggnog_best; CREATE VIEW eggnog_best AS
+                        SELECT gene, function, Preferred_name, KEGG_ko, taxonomy
+            FROM (
+                SELECT *,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY gene
+                           ORDER BY evalue ASC, score DESC
+                       ) rn
+                FROM eggnog_output
+            )
+            WHERE rn = 1"""
+            )
+
+            ko_gene_data = con.execute(
+                f"""
+                SELECT
+                    c.gene,
+                    c.sample,
+                    c.mapped_reads,
+                    COALESCE(e.KEGG_ko, 'NA') AS KEGG_ko,
+                    COALESCE(e.function, 'NA') AS function,
+                    COALESCE(e.Preferred_name, 'NA') AS Preferred_name,
+                    COALESCE(e.taxonomy, 'NA') AS taxonomy
+                FROM (
+                    SELECT
+                        REPLACE(contig, substr(contig, instr(contig, '_i')), '') AS gene,
+                        sample,
+                        mapped_reads
+                    FROM mapped_reads
+                ) c
+                LEFT JOIN eggnog_best e
+                ON c.gene = e.gene
+                WHERE e.KEGG_ko IS NOT NULL AND e.KEGG_ko NOT IN ('NA', '-', '')
+                """
+            ).fetchdf()
+
+            df = ko_gene_data.pivot_table(
+                index="KEGG_ko",
+                columns="sample",
+                values="mapped_reads",
+                aggfunc="sum",
+                fill_value=0,
+            ).reset_index()
+            df.to_csv(KO_file, sep="\t", index=False)
+
+            df = ko_gene_data.pivot_table(
+                index="gene",
+                columns="sample",
+                values="mapped_reads",
+                aggfunc="sum",
+                fill_value=0,
+            ).reset_index()
+            df.to_csv(gene_file, sep="\t", index=False)
             print("Gene and KO counts aggregated successfully", file=sys.stderr)
-            
+
+            df = (
+                ko_gene_data.groupby(
+                    ["gene", "function", "Preferred_name", "KEGG_ko", "taxonomy"]
+                )
+                .first()
+                .reset_index()
+                .drop(columns=["sample", "mapped_reads"])
+            )
+            df.to_csv(eggnog_output_file, sep="\t", index=False)
+
             con.close()
-            
+
         except Exception as e:
             print(f"Error processing eggNOG data: {e}", file=sys.stderr)
             sys.exit(1)
