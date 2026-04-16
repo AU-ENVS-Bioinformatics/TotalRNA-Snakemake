@@ -33,7 +33,7 @@ def normalize_gene(gene_name: str) -> str:
         Normalized gene identifier
     """
     gene_name = re.sub(r"\.p\d+$", "", gene_name)
-    gene_name = re.sub(r"_i\d+$", "", gene_name)
+    # gene_name = re.sub(r"_i\d+$", "", gene_name)
     return gene_name
 
 
@@ -126,7 +126,7 @@ def main():
                     COALESCE(e.score, 0) AS score
                 FROM (
                     SELECT
-                        REPLACE(contig, substr(contig, instr(contig, '_i')), '') AS gene,
+                        contig AS gene,
                         sample,
                         mapped_reads
                     FROM mapped_reads
