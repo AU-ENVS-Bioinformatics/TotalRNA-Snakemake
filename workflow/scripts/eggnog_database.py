@@ -100,7 +100,7 @@ def main():
 
             con.execute(
                 """DROP VIEW IF EXISTS eggnog_best; CREATE VIEW eggnog_best AS
-                        SELECT gene, function, Preferred_name, KEGG_ko, taxonomy
+                        SELECT gene, function, Preferred_name, KEGG_ko, taxonomy, evalue, score
             FROM (
                 SELECT *,
                        ROW_NUMBER() OVER (
@@ -121,7 +121,9 @@ def main():
                     COALESCE(e.KEGG_ko, 'NA') AS KEGG_ko,
                     COALESCE(e.function, 'NA') AS function,
                     COALESCE(e.Preferred_name, 'NA') AS Preferred_name,
-                    COALESCE(e.taxonomy, 'NA') AS taxonomy
+                    COALESCE(e.taxonomy, 'NA') AS taxonomy,
+                    COALESCE(e.evalue, 1.0) AS evalue,
+                    COALESCE(e.score, 0) AS score
                 FROM (
                     SELECT
                         REPLACE(contig, substr(contig, instr(contig, '_i')), '') AS gene,
@@ -156,7 +158,15 @@ def main():
 
             df = (
                 ko_gene_data.groupby(
-                    ["gene", "function", "Preferred_name", "KEGG_ko", "taxonomy"]
+                    [
+                        "gene",
+                        "function",
+                        "Preferred_name",
+                        "KEGG_ko",
+                        "taxonomy",
+                        "evalue",
+                        "score",
+                    ]
                 )
                 .first()
                 .reset_index()
