@@ -40,6 +40,8 @@ with open(log[0], "w") as f:
 
     conn = duckdb.connect(database)
 
+    conn.execute("TRUNCATE TABLE IF EXISTS read_length")
+
     conn.execute("INSERT INTO read_length SELECT contig, sample, read_length FROM df WHERE read_length > 0")
 
     conn.close()
