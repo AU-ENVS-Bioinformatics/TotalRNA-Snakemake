@@ -71,10 +71,7 @@ Handles mapping of reads to contigs for both mRNA and rRNA:
 
 rule mapping:
     input:
-        expand(["results/{folder}/database.db",
-        "results/{folder}/tsv/mapped_reads_exported.tsv",
-        "results/{folder}/tsv/read_length_exported.tsv",
-        "results/{folder}/tsv/contig_length_exported.tsv"], folder=["mRNA", "rRNA"])
+        expand("results/{folder}/database.db", folder=["rRNA", "mRNA"]),
 
 
 include: "rules/contigs_stats.smk"
@@ -110,14 +107,13 @@ Handles annotation of contigs:
 
 rule annotation:
     input:
-        "results/crest4/mapped_reads_to_contigs.tsv.edited",
+        "results/crest4/mapped_reads_exported_gg.tsv",
         "results/annotree/annotated.tsv",
-        "results/trinity/eggnog/{file}_eggnog.emapper.annotations"
-
+        "results/eggnog/eggnog_output.tsv",
     output:
         touch("results/annotation.done")
 
-
+include: "rules/export_tables.smk"
 include: "rules/crest4.smk"
 include: "rules/annotree.smk"
 include: "rules/eggnog.smk"
