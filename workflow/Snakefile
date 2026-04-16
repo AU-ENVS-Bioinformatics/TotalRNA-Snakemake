@@ -1,54 +1,105 @@
-from collections import ChainMap
+import pandas as pd
+import os
+
+configfile: "workflow/config/config.yaml"
+
+# --------------------------
+# Load samplesheet
+# --------------------------
+samplesheet = pd.read_csv(
+    config["samples_file"],
+    sep=r"\s+",
+    dtype=str,
+    engine="python"
+)
+
+samplesheet.columns = samplesheet.columns.str.strip()
+samplesheet = samplesheet.set_index("sample_id")
+
+# --------------------------
+# Normalize FASTQ paths ONCE
+# --------------------------
+samplesheet["input_files"] = (
+    samplesheet["input_files"]
+    .str.split(",")
+    .apply(lambda xs: [x.strip() for x in xs])
+)
+
+SAMPLES = samplesheet.index.tolist()
+rRNA_SAMPLES = samplesheet[samplesheet["module"] == "rRNA"].index.tolist()
+
+# --------------------------
+# Shared helper functions
+# --------------------------
+
+def fastqs(sample: str) -> list[str]:
+    return samplesheet.loc[sample, "input_files"]
+
+def clean_fq_name(fq: str) -> str:
+    base = os.path.basename(fq)
+    for ext in (".fastq.gz", ".fq.gz", ".fastq", ".fq"):
+        if base.endswith(ext):
+            return base[:-len(ext)]
+    return base
+
+def sample_root(sample: str) -> str:
+    row = samplesheet.loc[sample]
+    return f"{row['output_dir']}/{sample}"
+
+def fastqc_input_path(sample: str, readtag: str) -> str:
+    fqs = fastqs(sample)
+
+    if len(fqs) == 1:
+        if readtag != "SE":
+            raise ValueError(f"{sample} is SE but readtag={readtag}")
+        return fqs[0]
+
+    if len(fqs) == 2:
+        if readtag == "R1":
+            return fqs[0]
+        if readtag == "R2":
+            return fqs[1]
+        raise ValueError(f"Invalid readtag {readtag} for {sample}")
+
+    raise ValueError(f"{sample} has {len(fqs)} FASTQs")
+
+def fastqc_outdir(sample: str) -> str:
+    return f"{sample_root(sample)}/QC/fastqc"
+
+def fastqc_html(sample: str, readtag: str) -> str:
+    fq = fastqc_input_path(sample, readtag)
+    return f"{fastqc_outdir(sample)}/{clean_fq_name(fq)}_fastqc.html"
+
+def fastqc_zip(sample: str, readtag: str) -> str:
+    fq = fastqc_input_path(sample, readtag)
+    return f"{fastqc_outdir(sample)}/{clean_fq_name(fq)}_fastqc.zip"
+
+def fastqc_log(sample: str, readtag: str) -> str:
+    return f"{sample_root(sample)}/logs/fastqc_{readtag}.log"
+
+def fastqc_benchmark(sample: str, readtag: str) -> str:
+    return f"{sample_root(sample)}/benchmarks/fastqc_{readtag}.txt"
 
 
-# Main entrypoint of the workflow.
-# Please follow the best practices:
-# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there.
-configfile: "config/config.yaml"
-configfile: "config/private-config.yaml"
+def fastqc_targets():
+    for sample, row in samplesheet.iterrows():
+        if len(row["input_files"]) == 1:
+            yield f"{row['output_dir']}/{sample}/QC/fastqc/SE"
+        else:
+            yield f"{row['output_dir']}/{sample}/QC/fastqc/R1"
+            yield f"{row['output_dir']}/{sample}/QC/fastqc/R2"
 
 
-regex_raw_illumina_files = f"results/renamed_raw_reads/{{sample}}_{{read}}.fastq.gz"
-sample, read = glob_wildcards(regex_raw_illumina_files)
-unique_samples = sorted(set(sample))
-shell.prefix("set -o pipefail; ")
 
 
-onstart:
-    print("#### Total-RNA workflow")
-    print("Checking for required software...")
-    shell("type usearch || {{ echo 'usearch not found'; }}")
-    if len(unique_samples) == 0:
-        print("There are no samples name detected. Did you rename files?")
-    print(f"Detected {len(unique_samples)} samples: {unique_samples}")
-    print("Reading samples and config files...")
+# --------------------------
+# Modules
+# --------------------------
+include: "qc/rules/fastqc.smk"
 
-
-rule all:
+# --------------------------
+# Aggregate QC rule
+# --------------------------
+rule QC_all:
     input:
-        "qc/trim_galore_multiqc.html",
-        "qc/sortmerna_SSU_multiqc.html",
-        "qc/sortmerna_LSU_multiqc.html",
-        "qc/quast/MetaRib/report.txt",
-        "qc/counts/sequences_main_steps.pdf",
-        "results/mRNA/abundance_filtered/Trinity_contigs_ncrna_filtered.fasta",
-        "results/crest4_results/mapped_reads_to_contigs.tsv.edited",
-        "results/mRNA/diamond/annotree_ann.tsv",
-
-
-# Include rules
-include: "rules/rename_input.smk"
-include: "rules/trim_galore.smk"
-include: "rules/sortmerna.smk"
-include: "rules/multiqc.smk"
-include: "rules/trinity.smk"
-include: "rules/non_coding_RNA.smk"
-include: "rules/map_reads_to_trinity_contigs.smk"
-include: "rules/filter_mRNA_abundance.smk"
-include: "rules/metarib.smk"
-include: "rules/map_reads_to_metarib_contigs.smk"
-include: "rules/crest4.smk"
-include: "rules/quast.smk"
-include: "rules/diamond.smk"
-include: "rules/qc_read_counts.smk"
+        list(fastqc_targets())

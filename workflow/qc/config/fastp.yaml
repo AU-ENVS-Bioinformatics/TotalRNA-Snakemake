@@ -1,0 +1,3 @@
+fastp:
+  options: "--detect_adapter_for_pe --length_required 60 --cut_right --cut_right_window_size 5 --cut_mean_quality 20 --trim_poly_g --trim_poly_x --poly_x_min_len 10"
+  threads: 8

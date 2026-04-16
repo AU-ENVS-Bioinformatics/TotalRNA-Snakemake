@@ -1,0 +1,9 @@
+name: fastqc
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - fastqc>=0.12.1
+  - openjdk>=11
+
+# - multiqc
