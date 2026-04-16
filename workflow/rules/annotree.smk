@@ -23,7 +23,7 @@ rule annotree:
     input:
         tsv="results/annotree/diamond_output.tsv",
         mapping=config["ANNOTREE"]["MAPPING"],
-        counts="results/mRNA/mapped_reads_to_contigs.tsv",
+        counts="results/mRNA/tsv/mapped_reads_exported.tsv",
         brite=config["BRITE"],
     output:
         annotated="results/annotree/annotated.tsv",
@@ -32,9 +32,11 @@ rule annotree:
     log:
         "logs/annotree/annotate_and_func_ann.log",
     params:
-        min_score_threshold=100,
+        min_score_threshold=80,
+        max_evalue_threshold=1e-10,
         threshold=0.95,
     conda:
         "../envs/annotree.yaml"
     script:
         "../scripts/annotate_and_func_ann.py"
+        
