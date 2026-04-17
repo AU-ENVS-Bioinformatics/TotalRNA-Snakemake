@@ -7,6 +7,8 @@ rule decompress_rrna:
         r2="results/metarib/data/{sample}.2.fq",
     log:
         "logs/metarib/decompress/{sample}.log",
+    benchmark:
+        "results/benchmarks/decompress_rrna_{sample}.txt",
     conda:
         "../envs/pigz.yaml"
     threads: config["threads"]["pigz"]
@@ -55,6 +57,8 @@ rule metarib_step0:
         data_dir=directory(f"{ITER0_DIR}/unmapped_data"),
     log:
         f"{LOG_DIR}/iter0_init.log",
+    benchmark:
+        "results/benchmarks/metarib_step0.txt",
     run:
         import os
 
@@ -90,6 +94,8 @@ rule metarib_step:
         report=f"{ITER_DIR}/iteration_report.txt",
     log:
         f"{LOG_DIR}/iter.{{iter}}_step.log",
+    benchmark:
+        "results/benchmarks/metarib_step{iter}.txt",
     threads: config["threads"]["metarib"]
     conda:
         "../envs/metarib.yaml"
@@ -131,6 +137,8 @@ checkpoint iteration_check:
         f"{WORK_DIR}/iter.{{iter}}/.done",
     log:
         f"{LOG_DIR}/iter.{{iter}}_check.log",
+    benchmark:
+        "results/benchmarks/iteration{iter}_check.txt",
     params:
         min_reads_threshold=iteration_cfg["MIN_READS_THRESHOLD"],
         convergence_threshold=iteration_cfg["CONVERGENCE_THRESHOLD"],
@@ -173,6 +181,8 @@ rule metarib:
         "results/metarib/final_contigs.fasta",
     log:
         "logs/metarib/final_assembly.log",
+    benchmark:
+        "results/benchmarks/metarib.txt",
     threads: 1
     shell:
         "touch {output} && "

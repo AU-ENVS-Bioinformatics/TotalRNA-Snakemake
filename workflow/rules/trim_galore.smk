@@ -19,5 +19,7 @@ rule trim_galore_pe:
         extra=" ".join(trim_galore_params),
     log:
         "logs/trim_galore/{sample}.log",
+    benchmark:
+        "results/benchmarks/trim_galore_{sample}.txt",
     wrapper:
         "v2.6.0/bio/trim_galore/pe"

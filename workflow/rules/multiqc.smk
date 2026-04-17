@@ -27,5 +27,7 @@ rule multiqc:
         extra="",
     log:
         "logs/multiqc/{qc_type}_multiqc.log",
+    benchmark:
+        "results/benchmarks/multiqc_{qc_type}.txt",
     wrapper:
         "v2.7.0/bio/multiqc"

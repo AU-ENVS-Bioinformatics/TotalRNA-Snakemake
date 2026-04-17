@@ -25,6 +25,8 @@ rule count_reads:
         "results/qc/counts/nsequences_file.csv",
     log:
         "logs/qc/count_sequences.log",
+    benchmark:
+        "results/benchmarks/count_sequences.txt",
     threads: 8
     script:
         "../scripts/qc_read_counts.py"
@@ -37,6 +39,8 @@ rule plot_n_sequences:
         "../envs/phyloseq.yaml"
     log:
         "logs/qc/plot_count_sequences.log",
+    benchmark:
+        "results/benchmarks/plot_count_sequences.txt",
     output:
         plot1="results/qc/counts/reads.pdf",
         plot2="results/qc/counts/sequences_main_steps.pdf",

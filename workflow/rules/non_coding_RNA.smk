@@ -7,6 +7,8 @@ rule infernal_cmsearch:
         tbl="results/cmsearch/RFAM_cmsearch.tbl",
     log:
         "logs/cmsearch.log",
+    benchmark:
+        "results/benchmarks/cmsearch.txt",
     threads: config["threads"]["cmsearch"]
     conda:
         "../envs/infernal.yaml"
@@ -22,6 +24,8 @@ rule processing_cmsearch_tbl:
         "results/cmsearch/RFAM_cmsearch.tbl.processed.tsv",
     log:
         "logs/processing_cmsearch_tbl.log",
+    benchmark:
+        "results/benchmarks/processing_cmsearch_tbl.txt",
     conda:
         "../envs/pandas.yaml"
     params:
@@ -38,6 +42,8 @@ rule exclude_non_coding_rna:
         "results/mRNA/Trinity_contigs_cmsearch_filtered.fasta",
     log:
         "logs/exclude_non_coding.log",
+    benchmark:
+        "results/benchmarks/exclude_non_coding.txt",
     conda:
         "../envs/biopython.yaml"
     script:

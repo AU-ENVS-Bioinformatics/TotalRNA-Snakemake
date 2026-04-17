@@ -6,6 +6,8 @@ rule diamond:
         "results/annotree/diamond_output.tsv",
     log:
         "logs/annotree/diamond.log",
+    benchmark:
+        "results/benchmarks/diamond.txt",
     threads: config["threads"]["diamond"]
     conda:
         "../envs/annotree.yaml"
@@ -31,6 +33,8 @@ rule annotree:
         meta="results/annotree/metabolism.tsv",
     log:
         "logs/annotree/annotate_and_func_ann.log",
+    benchmark:
+        "results/benchmarks/annotree.txt",
     params:
         min_score_threshold=80,
         max_evalue_threshold=1e-10,

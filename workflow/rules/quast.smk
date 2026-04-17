@@ -9,6 +9,8 @@ rule quast:
         outdir=directory("results/qc/quast"),
     log:
         "logs/quast/quast.log",
+    benchmark:
+        "results/benchmarks/quast.txt",
     conda:
         "../envs/quast.yaml"
     params:

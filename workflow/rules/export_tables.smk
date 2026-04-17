@@ -10,6 +10,8 @@ rule export_tsv:
         "../envs/pandas.yaml"
     log:
         "logs/{folder}/export_tsv.log",
+    benchmark:
+        "results/benchmarks/export_tsv_{folder}.txt",
     script:
         "../scripts/export_tsv.py"
 

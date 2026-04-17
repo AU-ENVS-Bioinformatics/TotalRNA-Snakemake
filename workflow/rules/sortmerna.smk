@@ -46,6 +46,8 @@ rule sortmerna:
         not_aligned_prefix="results/sortmerna/not_{rrna_type}/{sample}",
     log:
         "logs/sortmerna/{rrna_type}/{sample}.log",
+    benchmark:
+        "results/benchmarks/sortmerna_{rrna_type}_{sample}.txt",
     conda:
         "../envs/sortmerna.yaml"
     threads: config["threads"]["sortmerna"]

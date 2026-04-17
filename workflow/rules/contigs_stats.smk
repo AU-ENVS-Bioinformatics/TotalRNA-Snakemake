@@ -8,6 +8,8 @@ rule bwa_index:
         idx=multiext("results/{folder}/{file}.fasta", *_bwa_index_ext),
     log:
         "logs/bwa/index/{folder}/{file}.log",
+    benchmark:
+        "results/benchmarks/bwa_index_{folder}_{file}.txt",
     params:
         algorithm="bwtsw",
     wrapper:
@@ -37,6 +39,8 @@ rule bwa_map_and_sort:
         "results/{folder}/bwa/{sample}_sorted.bam",
     log:
         "logs/bwa/{folder}_{sample}.log",
+    benchmark:
+        "results/benchmarks/bwa_{folder}_{sample}.txt",
     threads: config["threads"]["bwamem"]
     conda:
         "../envs/bwa_samtools.yaml"
@@ -55,6 +59,8 @@ rule samtools_idxstats_contigs:
         idxstats="results/{folder}/bwa/{sample}_sorted.bam.idxstats",
     log:
         "logs/samtools/idxstats/{folder}_{sample}.log",
+    benchmark:
+        "results/benchmarks/samtools_idxstats_{folder}_{sample}.txt",
     conda:
         "../envs/bwa_samtools.yaml"
     shell:
@@ -74,6 +80,8 @@ rule create_database:
         database="results/{folder}/database.db",
     log:
         "logs/{folder}/create_database.log",
+    benchmark:
+        "results/benchmarks/create_database_{folder}.txt",
     params:
         dir_path=lambda wc: f"results/{wc.folder}/bwa",
     conda:
@@ -90,6 +98,8 @@ rule mapped_read_length:
         touch("results/{folder}/read_length.done"),
     log:
         "logs/{folder}/bwa/read_length.log",
+    benchmark:
+        "results/benchmarks/mapped_read_length_{folder}.txt",
     conda:
         "../envs/pysam.yaml"
     script:

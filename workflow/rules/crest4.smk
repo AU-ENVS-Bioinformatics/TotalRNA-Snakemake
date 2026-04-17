@@ -14,6 +14,8 @@ rule CREST4:
         "../envs/crest4.yaml"
     log:
         "logs/crest4/crest4.log",
+    benchmark:
+        "results/benchmarks/crest4.txt",
     threads: config["threads"]["crest4"]
     shell:
         "export CREST4_DIR={params.CREST4_DIR} ; "
@@ -37,5 +39,7 @@ rule process_crest4:
         "../envs/phyloseq.yaml"
     log:
         "logs/crest4/process.log",
+    benchmark:
+        "results/benchmarks/crest4_process.txt",
     script:
         "../scripts/process_crest4_phyloseq.R"

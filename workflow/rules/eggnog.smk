@@ -7,6 +7,8 @@ rule transdecoder:
         pep=f"results/eggnog/{fasta_file}.fasta.transdecoder.pep",
     log:
         f"logs/eggnog/transdecoder_{fasta_file}.log",
+    benchmark:
+        f"results/benchmarks/transdecoder_{fasta_file}.txt",
     shadow:
         "minimal"
     conda:
@@ -32,6 +34,8 @@ rule annotation_eggnog:
     shadow:
         "minimal"
     threads: config["threads"]["eggnog"]
+    benchmark:
+        f"results/benchmarks/annotation_eggnog_{fasta_file}.txt",
     params:
         EGGNOG_DIR=config.get("EGGNOG_DIR", "~/.eggnog/"),
     conda:
@@ -59,5 +63,7 @@ rule eggnog_database:
         f"logs/eggnog/{fasta_file}_database.log",
     conda:
         "../envs/duckdb.yaml"
+    benchmark:
+        f"results/benchmarks/eggnog_database_{fasta_file}.txt",
     script:
         "../scripts/eggnog_database.py"

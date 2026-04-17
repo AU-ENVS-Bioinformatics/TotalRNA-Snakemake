@@ -9,6 +9,8 @@ rule find_contigs_to_keep:
         "../envs/vegan.yaml"
     log:
         "logs/mRNA_abundance_filter/vegan_table.log",
+    benchmark:
+        "results/benchmarks/find_contigs_to_keep.txt",
     script:
         "../scripts/vegan_filter_abundance.R"
 
@@ -23,5 +25,7 @@ rule filter_contigs:
         "../envs/seqtk.yaml"
     log:
         "logs/mRNA_abundance_filter/seqtk_subset.log",
+    benchmark:
+        "results/benchmarks/filter_contigs.txt",
     shell:
         "awk '{{print $1}}' {input.table} | seqtk subseq {input.fasta} - > {output} 2> {log}"

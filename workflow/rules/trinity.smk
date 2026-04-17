@@ -12,6 +12,8 @@ rule trinity:
         map="results/trinity/trinity.Trinity.fasta.gene_trans_map",
     log:
         "logs/trinity/trinity.log",
+    benchmark:
+        "results/benchmarks/trinity.txt",
     params:
         extra=" ".join(config.get("trinity", "")),
     threads: config["threads"]["trinity"]
