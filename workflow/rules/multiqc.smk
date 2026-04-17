@@ -25,9 +25,18 @@ rule multiqc:
     priority: 50
     params:
         extra="",
+        outdir="results/qc"
     log:
         "logs/multiqc/{qc_type}_multiqc.log",
     benchmark:
         "results/benchmarks/multiqc_{qc_type}.txt",
-    wrapper:
-        "v2.7.0/bio/multiqc"
+    conda:
+        "../envs/multiqc.yaml"
+    shell:
+        """
+        multiqc {input} \
+            --outdir {params.outdir} \
+            --filename {wildcards.qc_type}_multiqc.html \
+            {params.extra} \
+            > {log} 2>&1
+        """
