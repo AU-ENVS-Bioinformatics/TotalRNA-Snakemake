@@ -2,29 +2,29 @@ rule fastqc:
     conda:
         "../envs/fastqc.yaml"
     message:
-        "[FastQC] {wildcards.sample} {wildcards.readtag}"
+        "[FastQC] quality check for {wildcards.sample} {wildcards.read}"
     input:
-        fq=lambda wc: fastqc_input_path(wc.sample, wc.readtag)
+        fq=lambda wc: raw_r1(wc) if wc.read == "R1" else raw_r2(wc),
+        outdir=outdir_for_sample
     output:
-        qcdir=directory(
-            "{output_dir}/{sample}/QC/fastqc/{readtag}"
-        )
+        directory("{outdir}/{sample}/QC/fastqc/{read}")
     log:
-        stdout = "{output_dir}/{sample}/logs/fastqc_{readtag}.log"
+        stdout="{outdir}/{sample}/logs/fastqc_{read}.log"
     benchmark:
-        "{output_dir}/{sample}/benchmarks/fastqc_{readtag}.txt"
+        "{outdir}/{sample}/benchmarks/fastqc_{read}.txt"
     threads:
         config["qc"]["fastqc"].get("threads", 2)
     wildcard_constraints:
-        readtag="R1|R2|SE"
+        read="R1|R2",        
+        outdir=".+"
     shell:
         r"""
-        mkdir -p {output.qcdir} \
-                 "$(dirname {log.stdout})"
+        set -euo pipefail
+        mkdir -p {output}
 
         fastqc \
-            --threads {threads} \
-            --outdir {output.qcdir} \
-            "{input.fq}" \
-            > {log.stdout} 2>&1
+          -t {threads} \
+          -o {output} \
+          {input.fq} \
+          > {log.stdout} 2>&1
         """

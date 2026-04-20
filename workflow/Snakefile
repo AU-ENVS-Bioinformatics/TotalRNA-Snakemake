@@ -53,6 +53,15 @@ include: "qc/rules/fastqc.smk"
 # --------------------------
 rule QC_all:
     input:
+        # FastQC read specific report output
+        expand(
+            "{outdir}/{sample}/QC/fastqc/{read}",
+            zip,
+            sample=[s for s in SAMPLES for _ in ("R1", "R2")],
+            outdir=[OUTDIRS[s] for s in SAMPLES for _ in ("R1", "R2")],
+            read=["R1", "R2"] * len(SAMPLES),
+        ),
+        # Fastp trimming outputs
         expand(
             "{outdir}/{sample}/QC/trimmed/final.done",
             zip,
