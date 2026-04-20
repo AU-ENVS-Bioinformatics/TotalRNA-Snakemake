@@ -1,7 +1,7 @@
 import pandas as pd
-import os
+from pathlib import Path
 
-configfile: "workflow/config/config.yaml"
+configfile: "config/config.yaml"
 
 # --------------------------
 # Load samplesheet
@@ -13,93 +13,49 @@ samplesheet = pd.read_csv(
     engine="python"
 )
 
+
 samplesheet.columns = samplesheet.columns.str.strip()
 samplesheet = samplesheet.set_index("sample_id")
 
-# --------------------------
-# Normalize FASTQ paths ONCE
-# --------------------------
-samplesheet["input_files"] = (
-    samplesheet["input_files"]
-    .str.split(",")
-    .apply(lambda xs: [x.strip() for x in xs])
-)
-
 SAMPLES = samplesheet.index.tolist()
-rRNA_SAMPLES = samplesheet[samplesheet["module"] == "rRNA"].index.tolist()
+SAMPLE_OUTDIR = dict(zip(samplesheet.index, samplesheet["output_dir"]))
+
+OUTDIRS = samplesheet["output_dir"].to_dict()
+
+print(f"samples and out {SAMPLE_OUTDIR}")
 
 # --------------------------
-# Shared helper functions
+# Helpers
 # --------------------------
 
-def fastqs(sample: str) -> list[str]:
-    return samplesheet.loc[sample, "input_files"]
+def raw_r1(wc):
+    return samplesheet.loc[wc.sample, "input_files"].split(",")[0]
 
-def clean_fq_name(fq: str) -> str:
-    base = os.path.basename(fq)
-    for ext in (".fastq.gz", ".fq.gz", ".fastq", ".fq"):
-        if base.endswith(ext):
-            return base[:-len(ext)]
-    return base
+def raw_r2(wc):
+    return samplesheet.loc[wc.sample, "input_files"].split(",")[1]
 
-def sample_root(sample: str) -> str:
-    row = samplesheet.loc[sample]
-    return f"{row['output_dir']}/{sample}"
+def sample_out(wc, *paths):
+    """Return an output path under the sample-specific output directory."""
+    return str(Path(SAMPLE_OUTDIR[wc.sample], wc.sample, *paths))
 
-def fastqc_input_path(sample: str, readtag: str) -> str:
-    fqs = fastqs(sample)
-
-    if len(fqs) == 1:
-        if readtag != "SE":
-            raise ValueError(f"{sample} is SE but readtag={readtag}")
-        return fqs[0]
-
-    if len(fqs) == 2:
-        if readtag == "R1":
-            return fqs[0]
-        if readtag == "R2":
-            return fqs[1]
-        raise ValueError(f"Invalid readtag {readtag} for {sample}")
-
-    raise ValueError(f"{sample} has {len(fqs)} FASTQs")
-
-def fastqc_outdir(sample: str) -> str:
-    return f"{sample_root(sample)}/QC/fastqc"
-
-def fastqc_html(sample: str, readtag: str) -> str:
-    fq = fastqc_input_path(sample, readtag)
-    return f"{fastqc_outdir(sample)}/{clean_fq_name(fq)}_fastqc.html"
-
-def fastqc_zip(sample: str, readtag: str) -> str:
-    fq = fastqc_input_path(sample, readtag)
-    return f"{fastqc_outdir(sample)}/{clean_fq_name(fq)}_fastqc.zip"
-
-def fastqc_log(sample: str, readtag: str) -> str:
-    return f"{sample_root(sample)}/logs/fastqc_{readtag}.log"
-
-def fastqc_benchmark(sample: str, readtag: str) -> str:
-    return f"{sample_root(sample)}/benchmarks/fastqc_{readtag}.txt"
-
-
-def fastqc_targets():
-    for sample, row in samplesheet.iterrows():
-        if len(row["input_files"]) == 1:
-            yield f"{row['output_dir']}/{sample}/QC/fastqc/SE"
-        else:
-            yield f"{row['output_dir']}/{sample}/QC/fastqc/R1"
-            yield f"{row['output_dir']}/{sample}/QC/fastqc/R2"
-
-
+def outdir_for_sample(wc):
+    return SAMPLE_OUTDIR[wc.sample]
 
 
 # --------------------------
 # Modules
 # --------------------------
+include: "qc/rules/fastp.smk"
 include: "qc/rules/fastqc.smk"
 
 # --------------------------
-# Aggregate QC rule
+# Final target
 # --------------------------
 rule QC_all:
     input:
-        list(fastqc_targets())
+        expand(
+            "{outdir}/{sample}/QC/trimmed/final.done",
+            zip,
+            sample=SAMPLES,
+            outdir=[OUTDIRS[s] for s in SAMPLES],
+        )

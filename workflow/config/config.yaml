@@ -1,10 +1,11 @@
 samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
 
 databases:
-  human_genome: /data_2/Databases/Human_genome/GRCh38.p13.genome.fa #example
+  human_genome: /data_2/Databases/GRCh38/GCF_000001405.40_GRCh38.p14_genomic.fna #example
   sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
   sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
+  kraken_db: /data_2/Databases/kraken2_dbs/
 
 #######################
 ### Module settings ###
@@ -12,7 +13,18 @@ databases:
 
 qc:
   fastqc:
-    threads: 8
+    threads: 2
   fastp:
     options: "--detect_adapter_for_pe --length_required 60 --cut_right --cut_right_window_size 5 --cut_mean_quality 20 --trim_poly_g --trim_poly_x --poly_x_min_len 10"
     threads: 8
+  kraken2:
+    options: "--confidence 0.1 --use-names"
+    threads: 12
+  kraken2_parse:
+    human_threshold: 10.0
+    taxid: "9606"
+  bwa_decontamination:
+    threads: 12
+  sortmerna:
+    options: "--fastx --other --log"
+    threads: 12
