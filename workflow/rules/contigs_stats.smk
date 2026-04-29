@@ -46,8 +46,8 @@ rule bwa_map_and_sort:
         "../envs/bwa_samtools.yaml"
     shell:
         """
-        bwa mem -t {threads} {input.contig[0]} {input.r1} {input.r2} 2> {log} \
-        | samtools sort -o {output}
+        (bwa mem -t {threads} {input.contig[0]} {input.r1} {input.r2} \
+        | samtools sort -o {output}) 2> {log}
         """
 
 
