@@ -152,15 +152,13 @@ emirge_amplicon.py emirge_subset \
 # Step 2: Dereplication
 echo ""
 echo "Step 2: Deduplicating contigs..."
-cat emirge_subset/iter.*/iter.*.cons.fasta "$CONTIGS" > contigs.combined.fasta
+EM_PARA_n_fmt=$(printf "%02d" "$EM_PARA_n")
+cat emirge_subset/iter."$EM_PARA_n_fmt"/iter."$EM_PARA_n_fmt".cons.fasta "$CONTIGS" > contigs.combined.fasta
 
 # Deduplicate info - keep original labels and add ;size= suffix
 vsearch \
   --derep_fulllength contigs.combined.fasta \
-  --output contigs_derep_next.fasta  \
-  --sizeout 2>&1
-
-sed -i 's/;size=/_/g' contigs_derep_next.fasta 
+  --output contigs_derep_next.fasta  
 
 contig_count=$(grep -c '^>' contigs_derep_next.fasta || echo 0)
 echo "$contig_count" > iteration_report.txt
