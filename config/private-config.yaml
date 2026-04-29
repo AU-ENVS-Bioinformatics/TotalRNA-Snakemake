@@ -32,3 +32,6 @@ ANNOTREE :
   MAPPING : "/data_2/Databases/TotalRNA-Snakemake/annotree/megan-mapping-annotree-June-2021.db"
 # Brite hierachy (optional)
 BRITE : "/data_2/Databases/TotalRNA-Snakemake/brite/ko00001.json"
+
+
+EGGNOG_DIR: "/data_2/Databases/eggnog_mapper/"
