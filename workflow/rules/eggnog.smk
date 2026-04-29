@@ -62,7 +62,7 @@ rule eggnog_database:
     log:
         f"logs/eggnog/{fasta_file}_database.log",
     conda:
-        "../envs/duckdb.yaml"
+        "../envs/pandas.yaml"
     benchmark:
         f"results/benchmarks/eggnog_database_{fasta_file}.txt",
     script:

@@ -85,7 +85,7 @@ rule create_database:
     params:
         dir_path=lambda wc: f"results/{wc.folder}/bwa",
     conda:
-        "../envs/duckdb.yaml"
+        "../envs/pandas.yaml"
     script:
         "../scripts/create_database_table.py"
 
