@@ -20,14 +20,12 @@ class Sample:
     r2: str
 
 
-def build_samples(raw_dir, pattern=None, normalize_fn=None):
+def build_samples(raw_dir, pattern=None):
     files = os.listdir(raw_dir)
     tmp = defaultdict(dict)
 
     if pattern is None:
-        pattern = re.compile(r"(.+?)[-_]?(?:R|read)?([12])\.fastq\.gz$")
-    if normalize_fn is None:
-        normalize_fn = lambda x: x.replace("-", "_")
+        pattern = re.compile(r"(.+?)[-_]?(?:R|read)?([12])\.(fastq|fq)\.gz$")
 
     for f in files:
         match = pattern.match(f)
@@ -36,9 +34,8 @@ def build_samples(raw_dir, pattern=None, normalize_fn=None):
         raw_sample = match.group(1)
         read = match.group(2)
 
-        clean_sample = normalize_fn(raw_sample)
 
-        tmp[clean_sample][f"R{read}"] = os.path.join(raw_dir, f)
+        tmp[raw_sample][f"R{read}"] = os.path.join(raw_dir, f)
 
     samples = {}
 
