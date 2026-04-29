@@ -70,16 +70,17 @@ filter_mRNA_abundance_minimum: 1 # Relative expression in integers
 # You can specify the number of threads for each step of the pipeline
 threads:
   trim_galore: 7
-  sortmerna: 50
-  metarib: 50
-  quast: 50
-  pigz: 50
-  trinity: 50
-  cmsearch: 50
-  bwamem: 50
-  samtools: 50
-  crest4: 50
-  diamond: 50
+  sortmerna: 8
+  metarib: 8
+  quast: 8
+  pigz: 8
+  trinity: 8
+  cmsearch: 8
+  bwamem: 8
+  samtools: 8
+  crest4: 8
+  diamond: 8
+  eggnog: 8
 
 memory:
   trinity: 500 #Gb
