@@ -5,10 +5,4 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - eggnog-mapper=2.1.13
-  - biopython>=1.76
-  - hmmer
-  - diamond
-  - wget
-  - scipy
-  - numpy
+  - eggnog-mapper=2.1.12
