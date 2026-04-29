@@ -41,7 +41,7 @@ rule sortmerna:
         stats="results/sortmerna/{rrna_type}/{sample}.log",
     params:
         extra=" ".join(config.get("sortmerna", [])),
-        workdir="results/sortmerna/{rrna_type}/{sample}",
+        workdir="results/sortmerna",
         aligned_prefix="results/sortmerna/{rrna_type}/{sample}",
         not_aligned_prefix="results/sortmerna/not_{rrna_type}/{sample}",
     log:
@@ -61,6 +61,6 @@ rule sortmerna:
         --aligned {params.aligned_prefix} \
         --other {params.not_aligned_prefix} \
         --reads {input.fasta[0]} --reads {input.fasta[1]} \
-        2> {log} 1>&2
-        rm -rf {params.workdir}
+        > {log} 2>&1
+        rm -rf {params.workdir}/kvdb {params.workdir}/readb
         """
