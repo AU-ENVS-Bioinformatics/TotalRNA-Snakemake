@@ -1,7 +1,0 @@
-name: base_python
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - python=3.7.12
-  - pandas=0.24.2
