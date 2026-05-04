@@ -4,4 +4,4 @@ channels:
   - defaults
 dependencies:
   - biopython=1.81
-  - pandas
+  - pandas=3.0.2

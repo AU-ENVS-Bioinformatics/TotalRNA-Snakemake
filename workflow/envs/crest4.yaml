@@ -5,7 +5,7 @@ channels:
   - defaults
   - xapple
 dependencies:
-  - crest4
-  - pip
+  - crest4=4.4.6
+  - pip=26.0.1
   - pip:
       - ete4>=4.3.0
