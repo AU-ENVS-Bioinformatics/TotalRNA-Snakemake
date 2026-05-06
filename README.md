@@ -57,18 +57,6 @@ git clone https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake TotalRNA-
 cd TotalRNA-Snakemake-Project
 ```
 
-Copy or symlink raw fastq files into the ´reads´ directory. See [reads/README.md](reads/README.md) for more information. Now, we are going to rename those files and made symlinks to the `results/renamed` directory. To skip this step, just copy your files into `results/renamed` and skip the next step. Alternatively, you can run `snakemake -c1 skip_rename` to symlink your files without renaming them.
-
-```bash
-snakemake -n rename
-snakemake -c1 rename
-```
-
-Check that all your samples are in `results/renamed`:
-
-```bash
-ls results/renamed_raw_reads/
-```
 
 Check that the pipeline will behave as expected by running a dry run and check the [configuration file](config/config.yaml) if not.
 
