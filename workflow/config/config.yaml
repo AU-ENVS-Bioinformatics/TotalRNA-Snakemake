@@ -5,8 +5,8 @@ databases:
   sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
   sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
-  kraken_db: /data_2/Databases/kraken2_dbs/
-
+  kraken_db: /data_2/Databases/kraken2_dbs
+ 
 #######################
 ### Module settings ###
 #######################
@@ -19,12 +19,20 @@ qc:
     threads: 8
   kraken2:
     options: "--confidence 0.1 --use-names"
-    threads: 12
+    threads: 10
   kraken2_parse:
-    human_threshold: 10.0
+    human_threshold: 0.05
     taxid: "9606"
-  bwa_decontamination:
-    threads: 12
   sortmerna:
-    options: "--fastx --other --log"
-    threads: 12
+    options: "--fastx --other"
+    threads: 10
+
+rRNA:
+  Metarib
+  .
+  .
+
+nonrRNA:
+  Trinity
+  .
+  .

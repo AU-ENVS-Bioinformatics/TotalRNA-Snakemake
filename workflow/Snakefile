@@ -45,13 +45,14 @@ def outdir_for_sample(wc):
 # --------------------------
 # Modules
 # --------------------------
-include: "qc/rules/fastp.smk"
 include: "qc/rules/fastqc.smk"
+include: "qc/rules/fastp.smk"
+include: "qc/rules/kraken2.smk"
 
 # --------------------------
 # Final target
 # --------------------------
-rule QC_all:
+rule QC_done:
     input:
         # FastQC read specific report output
         expand(
@@ -63,8 +64,42 @@ rule QC_all:
         ),
         # Fastp trimming outputs
         expand(
-            "{outdir}/{sample}/QC/trimmed/final.done",
+            "{outdir}/{sample}/QC/trimmed/{sample}_fastp.html",
             zip,
             sample=SAMPLES,
             outdir=[OUTDIRS[s] for s in SAMPLES],
-        )
+        ),
+        # Kraken2 completion
+        expand(
+            "{outdir}/{sample}/QC/classification/{sample}.kraken",
+            zip,
+            sample=SAMPLES,
+            outdir=[OUTDIRS[s] for s in SAMPLES],
+        ),
+        # Human contamination decision
+        expand(
+            "{outdir}/{sample}/QC/classification/{sample}.human.flag",
+            zip,
+            sample=SAMPLES,
+            outdir=[OUTDIRS[s] for s in SAMPLES],
+        ),
+        # Human decontamination outputs
+        expand(
+            "{outdir}/{sample}/QC/decontamination/{sample}_R1.clean.fastq.gz",
+            zip,
+            sample=SAMPLES,
+            outdir=[OUTDIRS[s] for s in SAMPLES],
+        ),
+    output:
+        flag="QC/QC.done"
+    shell:
+        """
+        mkdir -p QC
+        touch {output.flag}
+        """
+
+rule all:
+    input:
+        "QC/QC.done"
+
+#/usr/bin/time -v seqkit split2 -s 1000000 -e .gz -O split/ -1 trimmed/ANN1_R1_001.fastp.trim.fastq.gz -2 trimmed/ANN1_R2_001.fastp.trim.fastq.gz -j 8 &> split.log

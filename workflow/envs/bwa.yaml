@@ -3,4 +3,5 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - bwa=0.7.17
+  - bwa>=0.7.17
+  - samtools>=1.23.1

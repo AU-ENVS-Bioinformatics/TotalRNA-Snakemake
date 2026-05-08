@@ -12,7 +12,6 @@ rule fastp:
         r2="{outdir}/{sample}/QC/trimmed/{sample}_R2.fastq.gz",
         json="{outdir}/{sample}/QC/trimmed/{sample}_fastp.json",
         html="{outdir}/{sample}/QC/trimmed/{sample}_fastp.html",
-        flag="{outdir}/{sample}/QC/trimmed/final.done"
     log:
         stdout="{outdir}/{sample}/logs/fastp.log"
     benchmark:
@@ -38,5 +37,4 @@ rule fastp:
           --thread {threads} \
           {params.options} > {log.stdout} 2>&1
 
-        touch {output.flag}
         """
