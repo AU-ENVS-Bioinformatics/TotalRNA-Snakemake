@@ -1,12 +1,20 @@
 samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
 
 databases:
-  human_genome: /data_2/Databases/GRCh38/GCF_000001405.40_GRCh38.p14_genomic.fna #example
+  human_GRCh38_genome: /data_2/Databases/GRCh38/GCF_000001405.40_GRCh38.p14_genomic.fna
+  human_T2T_genome: /data_2/Databases/T2T‑CHM13/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna
+  chloroplast_genome: /data_2/Databases/plant_organelle/refseq_chloroplast.fna 
+  mitochondrion_genome: /data_2/Databases/mitochondrion/mitochondrion.1.1.genomic.fna
+  genome_for_decontamination: /data_2/Databases/Contamination/GRCH38genomeMT_mitochondrion_organalle.fna
   sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
+  sortmeRNA_ssu_idx: /data_2/Databases/sortmerna_idx/SSU/
   sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
+  sortmeRNA_lsu_idx: /data_2/Databases/sortmerna_idx/LSU/
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
   kraken_db: /data_2/Databases/kraken2_dbs
- 
+
+# decontamination_sources: #combine human, chloroplast, mitochondrion or somethign
+
 #######################
 ### Module settings ###
 #######################
@@ -20,19 +28,25 @@ qc:
   kraken2:
     options: "--confidence 0.1 --use-names"
     threads: 10
-  kraken2_parse:
-    human_threshold: 0.05
-    taxid: "9606"
+  bwa_contaminants:
+    threads: 16
+  contamination_source_ids:
+    options: -f 2 -q 30 -l 50 -r 0.5
+  decontamination:
+    threads: 8
   sortmerna:
-    options: "--fastx --other"
-    threads: 10
+    options: "--fastx --other --paired_in --out2"
+    threads: 12
+    pipeline:
+      - ssu
+      - lsu
+  
+#rRNA:
+#  Metarib
+#  .
+#  .
 
-rRNA:
-  Metarib
-  .
-  .
-
-nonrRNA:
-  Trinity
-  .
-  .
+#nonrRNA:
+#  Trinity
+#  .
+#  .

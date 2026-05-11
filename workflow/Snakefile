@@ -13,16 +13,15 @@ samplesheet = pd.read_csv(
     engine="python"
 )
 
-
 samplesheet.columns = samplesheet.columns.str.strip()
 samplesheet = samplesheet.set_index("sample_id")
 
 SAMPLES = samplesheet.index.tolist()
 SAMPLE_OUTDIR = dict(zip(samplesheet.index, samplesheet["output_dir"]))
-
+NO_SAMPLES = len(SAMPLES)
 OUTDIRS = samplesheet["output_dir"].to_dict()
 
-print(f"samples and out {SAMPLE_OUTDIR}")
+print(f"{NO_SAMPLES} samples and out {SAMPLE_OUTDIR}")
 
 # --------------------------
 # Helpers
@@ -42,12 +41,67 @@ def outdir_for_sample(wc):
     return SAMPLE_OUTDIR[wc.sample]
 
 
+# Deterministic sortmeRNA stage expansion 
+def sortmerna_stages():
+    """
+    ['ssu', 'lsu'] -> ['ssu', 'ssu_lsu']
+    """
+    base = config["qc"]["sortmerna"]["pipeline"]
+    return ["_".join(base[:i + 1]) for i in range(len(base))]
+
+SORTMERNA_STAGES = sortmerna_stages()
+
+PREVIOUS_STAGE = {
+    SORTMERNA_STAGES[0]: "decontamination",
+    **{
+        SORTMERNA_STAGES[i]: SORTMERNA_STAGES[i - 1]
+        for i in range(1, len(SORTMERNA_STAGES))
+    },
+}
+
+FINAL_SORTMERNA_STAGE = [SORTMERNA_STAGES[-1] for i in range(len(SAMPLES))]
+
+print(f"sortmerna stages {SORTMERNA_STAGES} with previous stages {PREVIOUS_STAGE} and final stage {FINAL_SORTMERNA_STAGE} to be requested to trigger previous stages in the workflow")
+# sortmerna stages ['ssu', 'ssu_lsu'] with previous stages {'ssu': 'decontamination', 'ssu_lsu': 'ssu'} with final stages being identical ['ssu_lsu', 'ssu_lsu'] for the samples
+
+def sortmerna_r1(wc):
+    base = Path(SAMPLE_OUTDIR[wc.sample]) / wc.sample / "QC"
+    prev = PREVIOUS_STAGE[wc.stage]
+
+    if prev == "decontamination":
+        return base / "decontamination" / f"{wc.sample}_R1.cleaned.fastq.gz"
+
+    return (
+        base / "sortmerna" / prev / f"{wc.sample}_{prev}.nonaligned_fwd.fq.gz"
+    )
+
+def sortmerna_r2(wc):
+    base = Path(SAMPLE_OUTDIR[wc.sample]) / wc.sample / "QC"
+    prev = PREVIOUS_STAGE[wc.stage]
+
+    if prev == "decontamination":
+        return base / "decontamination" / f"{wc.sample}_R2.cleaned.fastq.gz"
+
+    return (
+        base / "sortmerna" / prev / f"{wc.sample}_{prev}.nonaligned_rev.fq.gz"
+    )
+
+def sortmerna_db(wc):
+    key = wc.stage.split("_")[-1]
+    return config["databases"][f"sortmeRNA_{key}"]
+
+def sortmerna_db_idx(wc):
+    key = wc.stage.split("_")[-1]
+    return config["databases"][f"sortmeRNA_{key}_idx"]
+
 # --------------------------
 # Modules
 # --------------------------
 include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/kraken2.smk"
+include: "qc/rules/bwa_decontamination.smk"
+include: "qc/rules/sortmerna.smk"
 
 # --------------------------
 # Final target
@@ -69,27 +123,42 @@ rule QC_done:
             sample=SAMPLES,
             outdir=[OUTDIRS[s] for s in SAMPLES],
         ),
-        # Kraken2 completion
+        # Kraken2 report of contamination sources
         expand(
             "{outdir}/{sample}/QC/classification/{sample}.kraken",
             zip,
             sample=SAMPLES,
             outdir=[OUTDIRS[s] for s in SAMPLES],
         ),
-        # Human contamination decision
+        # BWA-mem2 Aligned contaminants genomes 
         expand(
-            "{outdir}/{sample}/QC/classification/{sample}.human.flag",
+            "{outdir}/{sample}/QC/decontamination/{sample}_aligned_contaminants.sam",
             zip,
             sample=SAMPLES,
             outdir=[OUTDIRS[s] for s in SAMPLES],
         ),
-        # Human decontamination outputs
+        # Identify read IDs of contaminants
         expand(
-            "{outdir}/{sample}/QC/decontamination/{sample}_R1.clean.fastq.gz",
+            "{outdir}/{sample}/QC/decontamination/{sample}_contaminants_id.txt",
             zip,
             sample=SAMPLES,
             outdir=[OUTDIRS[s] for s in SAMPLES],
         ),
+        # Decontamination of reads
+        expand(
+            "{outdir}/{sample}/QC/decontamination/{sample}_R1.cleaned.fastq.gz",
+            zip,
+            sample=SAMPLES,
+            outdir=[OUTDIRS[s] for s in SAMPLES],
+        ),
+        # SortmeRNA on defined stages defined like a chain: Decontaminated reads -> SSU aligned reads -> SSU non-aligned reads -> LSU aligned reads -> LSU non-aligned reads, and so on if more stages are added in the config pipeline definition. By defining the stages as a chain, we can ensure that the stages are run in order, and we can also easily add more stages or change the order of the stages by simply changing the definition of the stages and the previous stage mapping.
+        expand(
+            "{outdir}/{sample}/QC/sortmerna/{stage}/{sample}_{stage}.aligned_fwd.fq.gz",
+            zip, # we need zip to ensure each stage maps to each sample output, otherwise it would run each stage for each sample for each sample output (so not sample specific sample output, from samplesheet), so cartesian multiplication
+            sample=SAMPLES,
+            outdir=[SAMPLE_OUTDIR[s] for s in SAMPLES],
+            stage=FINAL_SORTMERNA_STAGE, #Define last step in the chain, this way snakemake itself will activate the dependencies (previous steps in the chain).
+        )
     output:
         flag="QC/QC.done"
     shell:
@@ -102,4 +171,11 @@ rule all:
     input:
         "QC/QC.done"
 
+
+"""
+    rules.sortmerna.output.aligned_fwd,
+
+# snakemake --use-conda --cores 10 --rerun-incomplete --keep-going --dry-run
+
 #/usr/bin/time -v seqkit split2 -s 1000000 -e .gz -O split/ -1 trimmed/ANN1_R1_001.fastp.trim.fastq.gz -2 trimmed/ANN1_R2_001.fastp.trim.fastq.gz -j 8 &> split.log
+"""
