@@ -1,5 +1,7 @@
 samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
 
+shared_results_dir: /data/rasmus/Dev/SnakeResDev
+
 databases:
   human_GRCh38_genome: /data_2/Databases/GRCh38/GCF_000001405.40_GRCh38.p14_genomic.fna
   human_T2T_genome: /data_2/Databases/T2T‑CHM13/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna
@@ -34,17 +36,37 @@ qc:
     options: -f 2 -q 30 -l 50 -r 0.5
   decontamination:
     threads: 8
+
+RNA:
+  method: ribodetector        # sortmerna | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
   sortmerna:
-    options: "--fastx --other --paired_in --out2"
+    options: "--fastx --paired_in --out2"
     threads: 12
     pipeline:
       - ssu
       - lsu
-  
-#rRNA:
-#  Metarib
-#  .
-#  .
+    # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then 
+    # the sortmerna created OTU would be comparable to the qiime2 created OTU?
+  ribodetector:
+    options: "--ensure both"
+    threads: 15
+  bwa_mem:
+    options: ""
+    threads: 16
+  bbmap:
+    options: ""
+    threads: 16
+  samtools_filter:
+    options: "-F 4" # this is the option to filter out unmapped reads (the non-rRNA reads), so only keep mapped reads (rRNA reads in this case)
+    threads: 8
+
+rRNA:
+  qiime2_otu:
+    method: de-novo        # de-novo | closed-reference | open-reference
+    identity: 0.97
+    pipeline: 
+      - ssu
+    threads: 12
 
 #nonrRNA:
 #  Trinity
