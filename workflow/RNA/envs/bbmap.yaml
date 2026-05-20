@@ -1,0 +1,10 @@
+name: bbmap
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bbmap>=39.81
+  - pigz>=2.8
+  - samtools>=1.23.1
+  - seqkit

@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import re
 
 configfile: "config/config.yaml"
 
@@ -29,11 +30,42 @@ print(f"Shared results directory: {RESULTS_DIR}")
 # Helpers
 # --------------------------
 
+def get_reads(sample):
+    files = samplesheet.loc[sample, "input_files"].split(",")
+
+    r1_patterns = ["_R1", "_1", "read1", "_forward"]
+    r2_patterns = ["_R2", "_2", "read2", "_reverse"]
+
+    r1 = None
+    r2 = None
+
+    for f in files:
+        fname = Path(f).name.lower()
+
+        if any(p.lower() in fname for p in r1_patterns):
+            r1 = f
+        elif any(p.lower() in fname for p in r2_patterns):
+            r2 = f
+
+    # fallback: assume order if detection failed
+    if r1 is None or r2 is None:
+        raise ValueError(
+            f"[ERROR] Could not detect R1/R2 for sample '{sample}' from files: {files}"
+        )
+
+    return r1, r2
+
 def raw_r1(wc):
-    return samplesheet.loc[wc.sample, "input_files"].split(",")[0]
+    r1 = get_reads(wc.sample)[0]
+    print(f"[INFO] {wc.sample}: R1={r1}")
+
+    return r1
 
 def raw_r2(wc):
-    return samplesheet.loc[wc.sample, "input_files"].split(",")[1]
+    r2 = get_reads(wc.sample)[1]
+    print(f"[INFO] {wc.sample}: R2={r2}")
+
+    return r2
 
 def sample_qc_dir(wc):
     return RESULTS_DIR / "qc" / wc.sample
@@ -49,7 +81,7 @@ def sortmerna_stages():
     """
     ['ssu', 'lsu'] -> ['ssu', 'ssu_lsu']
     """
-    base = config["qc"]["sortmerna"]["pipeline"]
+    base = config["RNA"]["sortmerna_staged"]["pipeline"]
     return ["_".join(base[:i + 1]) for i in range(len(base))]
 
 SORTMERNA_STAGES = sortmerna_stages()
@@ -111,6 +143,72 @@ def sortmerna_db_idx(wc):
     key = wc.stage.split("_")[-1]
     return config["databases"][f"sortmeRNA_{key}_idx"]
 
+def RNA_separation_module():
+    method = config["RNA"]["method"]
+    print(f"RNA separation method: {method}")
+
+    if method == "sortmerna_staged":
+        return expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
+            zip,
+            sample=SAMPLES,
+            stage=FINAL_SORTMERNA_STAGE,
+        )
+
+    elif method == "ribodetector":
+        return (
+            expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.nonrRNA.r1.fastq.gz",
+            zip,
+            sample=SAMPLES,
+            ) +
+            expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/bbmap/{{sample}}_rRNA_readid.txt",
+            zip,
+            sample=SAMPLES,
+            ) +
+            expand(
+            f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
+            zip,
+            sample=SAMPLES,
+            ) 
+      )
+    else:
+        raise ValueError(f"Unsupported RNA method: {method}")
+
+# add ribodetector + mitag4taxa
+
+# --------------------------
+# rRNA composition classification
+# --------------------------
+
+def rRNA_composition_method():
+    method = config["rRNA"]["method"]
+
+    if method == "OTU" or method == "QIIME2" or method == "vsearch" or method == "operational_taxonomic_units":
+        return expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
+            zip,
+            sample=SAMPLES,
+            stage=FINAL_SORTMERNA_STAGE,
+        )
+    elif method == "ASV" or method == "DADA2" or method == "amplicon" or method == "amplicon_sequence_variants":
+        return expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
+            zip,
+            sample=SAMPLES,
+            stage=FINAL_SORTMERNA_STAGE,
+        )
+    elif method == "Kraken2" or method == "Bracken" or method == "taxonomic_composition":
+        return expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/classification/{{sample}}.kraken",
+            zip,
+            sample=SAMPLES
+        )
+    else:
+        raise ValueError(f"Unsupported RNA method: {method}")
+
+
 # --------------------------
 # Final target
 # --------------------------
@@ -118,18 +216,23 @@ def sortmerna_db_idx(wc):
 rule all:
     input:
         f"{RESULTS_DIR}/qc/QC.done",
-        f"{RESULTS_DIR}/rRNA/rRNA.done"
+        f"{RESULTS_DIR}/RNA/RNA_seperation.done",
+        #f"{RESULTS_DIR}/rRNA/rRNA.done"
 
 # --------------------------
 # Modules
 # --------------------------
 include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
-include: "qc/rules/kraken2.smk"
 include: "qc/rules/bwa_decontamination.smk"
-include: "qc/rules/sortmerna.smk"
 
-include: "rRNA/rules/qiime2.smk"
+
+include: "RNA/rules/sortmerna.smk"
+include: "RNA/rules/ribodetector.smk"
+include: "RNA/rules/bbmap.smk"
+
+#include: "rRNA/rules/qiime2.smk"
+
 # --------------------------
 # Final target
 # --------------------------
@@ -147,12 +250,6 @@ rule QC_done:
             f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_fastp.html",
             zip,
             sample=SAMPLES,
-        ),
-        # Kraken2 report of contamination sources
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/classification/{{sample}}.kraken",
-            zip,
-            sample=SAMPLES
         ),
         # BWA-mem2 Aligned contaminants genomes 
         expand(
@@ -176,42 +273,18 @@ rule QC_done:
         flag=f"{RESULTS_DIR}/qc/QC.done"
     shell:
         """
-        mkdir -p qc
+        mkdir -p {RESULTS_DIR}/qc
         touch {output.flag}
         """
 
 rule RNA_seperation_done:
     input:
-        # SortmeRNA on defined stages defined like a chain: Decontaminated reads -> SSU aligned reads -> SSU non-aligned reads -> LSU aligned reads -> LSU non-aligned reads, and so on if more stages are added in the config pipeline definition. By defining the stages as a chain, we can ensure that the stages are run in order, and we can also easily add more stages or change the order of the stages by simply changing the definition of the stages and the previous stage mapping.
-        expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
-            zip, # we need zip to ensure each stage maps to each sample output, otherwise it would run each stage for each sample for each sample output (so not sample specific sample output, from samplesheet), so cartesian multiplication
-            sample=SAMPLES,
-            stage=FINAL_SORTMERNA_STAGE, #Define last step in the chain, this way snakemake itself will activate the dependencies (previous steps in the chain).
-        )
+        RNA_separation_module()
     output:
         flag=f"{RESULTS_DIR}/RNA/RNA_seperation.done"
     shell:
         """
-        mkdir -p qc
-        touch {output.flag}
-        """
-
-rule rRNA_done:
-    input:
-        expand(
-            f"{RESULTS_DIR}/rRNA/qiime/{{stage}}/qiime_{{stage}}_manifest.csv",
-            stage=SORTMERNA_STAGES,
-        ),
-        expand(
-            f"{RESULTS_DIR}/rRNA/qiime/{{stage}}/qiime_{{stage}}_demux.qza",
-            stage=SORTMERNA_STAGES,
-        )
-    output:
-        flag=f"{RESULTS_DIR}/rRNA/rRNA.done"
-    shell:
-        """
-        mkdir -p rRNA
+        mkdir -p {RESULTS_DIR}/RNA
         touch {output.flag}
         """
 
@@ -221,4 +294,13 @@ rule rRNA_done:
 # snakemake --use-conda --cores 10 --rerun-incomplete --keep-going --dry-run
 
 #/usr/bin/time -v seqkit split2 -s 1000000 -e .gz -O split/ -1 trimmed/ANN1_R1_001.fastp.trim.fastq.gz -2 trimmed/ANN1_R2_001.fastp.trim.fastq.gz -j 8 &> split.log
+"""
+
+"""
+        # Kraken2 report of contamination sources
+        expand(
+            f"{RESULTS_DIR}/qc/{{sample}}/classification/{{sample}}.kraken",
+            zip,
+            sample=SAMPLES
+        ),
 """
