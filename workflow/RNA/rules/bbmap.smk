@@ -83,7 +83,6 @@ if config["RNA"]["method"] == "ribodetector":
 
             seqkit grep \
                 -f {input.read_ids} \
-                -v \
                 --threads {threads} \
                 {input.ribodetector_r1} \
                 -o {output.filtered_r1} \
@@ -91,7 +90,6 @@ if config["RNA"]["method"] == "ribodetector":
 
             seqkit grep \
                 -f {input.read_ids} \
-                -v \
                 --threads {threads} \
                 {input.ribodetector_r2} \
                 -o {output.filtered_r2} \
