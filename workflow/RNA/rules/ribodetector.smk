@@ -75,3 +75,21 @@ rule ribodetector:
             {params.options} \
             --log {log.stdout} 2>&1
         """
+
+rule link_non_rRNA_ribodetector:
+    message:
+        "[RiboDetector] Linking non-rRNA reads for {wildcards.sample}"
+    input:
+        nonrna_r1=rules.ribodetector.output.nonrna_r1,
+        nonrna_r2=rules.ribodetector.output.nonrna_r2,
+    output:
+        linked_r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
+        linked_r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R2.nonrRNA.fastq.gz",
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.linked_r1})
+
+        ln -s {input.nonrna_r1} {output.linked_r1}
+        ln -s {input.nonrna_r2} {output.linked_r2}
+        """
