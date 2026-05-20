@@ -97,6 +97,9 @@ PREVIOUS_STAGE = {
 FIRST_SORTMERNA_STAGE = [SORTMERNA_STAGES[0] for i in range(len(SAMPLES))]
 FINAL_SORTMERNA_STAGE = [SORTMERNA_STAGES[-1] for i in range(len(SAMPLES))]
 
+FIRST_STAGE_NAME = SORTMERNA_STAGES[0]
+FINAL_STAGE_NAME = SORTMERNA_STAGES[-1]
+
 
 print(f"sortmerna stages {SORTMERNA_STAGES} with previous stages {PREVIOUS_STAGE} and final stage {FINAL_SORTMERNA_STAGE} to be requested to trigger previous stages in the workflow")
 # sortmerna stages ['ssu', 'ssu_lsu'] with previous stages {'ssu': 'decontamination', 'ssu_lsu': 'ssu'} with final stages being identical ['ssu_lsu', 'ssu_lsu'] for the samples
@@ -148,11 +151,21 @@ def RNA_separation_module():
     print(f"RNA separation method: {method}")
 
     if method == "sortmerna_staged":
-        return expand(
+        return (
+            expand(
             f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
             zip,
             sample=SAMPLES,
             stage=FINAL_SORTMERNA_STAGE,
+            ) +
+            expand(
+                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
+                sample=SAMPLES,
+            ) +
+            expand(
+                f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
+                sample=SAMPLES,
+            )
         )
 
     elif method == "ribodetector":
@@ -171,8 +184,13 @@ def RNA_separation_module():
             f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
             zip,
             sample=SAMPLES,
-            ) 
-      )
+            ) +
+            expand(
+            f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
+            zip,
+            sample=SAMPLES,
+            )
+        )
     else:
         raise ValueError(f"Unsupported RNA method: {method}")
 

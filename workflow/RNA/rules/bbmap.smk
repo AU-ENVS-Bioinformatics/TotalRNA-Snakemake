@@ -56,42 +56,44 @@ rule rRNA_id:
         samtools view {params.filters} {input.aligned} | cut -f1 | sort | uniq > {output.rna_seqid} 2> {log.stdout}
         """
 
-rule filter_reads_by_id:
-    conda:
-        "../envs/bbmap.yaml"
-    message:
-        "[BBMap] filter aligned rRNA reads for {wildcards.sample}"
-    input:
-        ribodetector_r1 = f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r1.fastq.gz",
-        ribodetector_r2 = f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r2.fastq.gz",
-        read_ids=rules.rRNA_id.output.rna_seqid
-    output:
-        filtered_r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
-        filtered_r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R2.rRNA.fastq.gz",
-    log:
-        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/filtered.log"
-    benchmark:
-        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/{{sample}}_filtered.txt"
-    threads:
-        config["RNA"]["bbmap"]["threads"]
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p $(dirname {output.filtered_r1})
 
-        seqkit grep \
-            -f {input.read_ids} \
-            -v \
-            --threads {threads} \
-            {input.ribodetector_r1} \
-            -o {output.filtered_r1} \
-            2> {log.stdout}
+if config["RNA"]["method"] == "ribodetector":
+    rule link_rRNA_ribodetector:
+        conda:
+            "../envs/bbmap.yaml"
+        message:
+            "[BBMap] filter aligned rRNA reads for {wildcards.sample}"
+        input:
+            ribodetector_r1 = f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r1.fastq.gz",
+            ribodetector_r2 = f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r2.fastq.gz",
+            read_ids=rules.rRNA_id.output.rna_seqid
+        output:
+            filtered_r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
+            filtered_r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R2.rRNA.fastq.gz",
+        log:
+            stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/filtered.log"
+        benchmark:
+            f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/{{sample}}_filtered.txt"
+        threads:
+            config["RNA"]["bbmap"]["threads"]
+        shell:
+            r"""
+            set -euo pipefail
+            mkdir -p $(dirname {output.filtered_r1})
 
-        seqkit grep \
-            -f {input.read_ids} \
-            -v \
-            --threads {threads} \
-            {input.ribodetector_r2} \
-            -o {output.filtered_r2} \
-            2>> {log.stdout}
-        """
+            seqkit grep \
+                -f {input.read_ids} \
+                -v \
+                --threads {threads} \
+                {input.ribodetector_r1} \
+                -o {output.filtered_r1} \
+                2> {log.stdout}
+
+            seqkit grep \
+                -f {input.read_ids} \
+                -v \
+                --threads {threads} \
+                {input.ribodetector_r2} \
+                -o {output.filtered_r2} \
+                2>> {log.stdout}
+            """
