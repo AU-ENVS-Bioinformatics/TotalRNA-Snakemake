@@ -4,22 +4,20 @@ rule kraken2:
     message:
         "[Kraken2] estimate species composition for {wildcards.sample}"
     input:
-        trim_r1="{outdir}/{sample}/QC/trimmed/{sample}_R1.fastq.gz",
-        trim_r2="{outdir}/{sample}/QC/trimmed/{sample}_R2.fastq.gz",
+        trim_r1=f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_R1.fastq.gz",
+        trim_r2=f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_R2.fastq.gz",
     output:
-        report="{outdir}/{sample}/QC/classification/{sample}.report",
-        kraken="{outdir}/{sample}/QC/classification/{sample}.kraken"
+        report=f"{RESULTS_DIR}/qc/{{sample}}/classification/{{sample}}.report",
+        kraken=f"{RESULTS_DIR}/qc/{{sample}}/classification/{{sample}}.kraken"
     log:
-        stdout = "{outdir}/{sample}/logs/kraken2.log"
+        stdout=f"{RESULTS_DIR}/qc/{{sample}}/logs/kraken2.log"
     benchmark:
-        "{outdir}/{sample}/benchmarks/kraken2.txt"
+        f"{RESULTS_DIR}/qc/{{sample}}/benchmarks/kraken2.txt"
     params:
         db=config["databases"]["kraken_db"],
         options=config["qc"]["kraken2"]["options"],
     threads:
         config["qc"]["kraken2"].get("threads", 2)
-    wildcard_constraints:
-        outdir=".+"
     shell:
         r"""
         set -euo pipefail

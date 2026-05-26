@@ -86,6 +86,7 @@ rule decontamination:
 
         seqkit grep \
             -f {input.read_ids} \
+            -v \
             --threads {threads} \
             {input.trim_r1} \
             -o {output.cleaned_r1} \
@@ -93,6 +94,7 @@ rule decontamination:
 
         seqkit grep \
             -f {input.read_ids} \
+            -v \
             --threads {threads} \
             {input.trim_r2} \
             -o {output.cleaned_r2} \
