@@ -16,7 +16,8 @@ databases:
   sortmeRNA_lsu_idx: /data_2/Databases/sortmerna_idx/LSU/
   SILVA_138.1_N99: /data_2/Databases/SILVA_138/SILVA_138.1_SSU_LSU_N99_tax_silva_trunc.fasta
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
-  kraken_db: /data_2/Databases/kraken2_dbs
+  kraken_decontamination_db: /data_2/Databases/kraken2_dbs
+  kraken_rRNA_db: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
 
 # decontamination_sources: #combine human, chloroplast, mitochondrion or something
 
@@ -38,7 +39,8 @@ qc:
     threads: 8
 
 RNA:
-  method: sortmerna_staged        # sortmerna_staged | sortmerna_combined | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
+  method: ribodetector        # sortmerna_staged | sortmerna_combined | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
+  refinement: bbduk #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
   ribodetector:
     options: "--ensure none"
     threads: 15
@@ -48,18 +50,11 @@ RNA:
     pipeline:
       - ssu
       - lsu
-    rrna_separation_stages:
-      - ssu
-    nonrrna_separation_stages:
-      - lsu
   bbmap:
     options: "maxindel=100 strictmaxindel=t minid=0.80 pairlen=2000 rescuedist=1200 sam=1.3 unpigz=t pigz=t" # consider adding minhits, and increase the minid, or look into additional reads
     threads: 16
-  bwa_mem:
-    options: ""
-    threads: 16
-  samtools_filter:
-    options: "-F 4" # this is the option to filter out unmapped reads (the non-rRNA reads), so only keep mapped reads (rRNA reads in this case)
+  bbduk:
+    options: "k=31 ordered=t hdist=1"
     threads: 8
   Mitag4taxa:
     options: ""
@@ -67,13 +62,22 @@ RNA:
 
 rRNA:
   method: otu        # otu | asv | kraken2 + bracken (taxonomic classification) | abundance (emirge??) or updated
+  kraken2:
+    threads: 10
+  bracken:
+    options: "-r 150 -l S -t 10"
   qiime2_otu:
     method: de-novo        # de-novo | closed-reference | open-reference
     identity: 0.97
     pipeline: 
       - ssu
     threads: 12
-
+  qiime2_asv:
+    method: de-novo        # de-novo | closed-reference | open-reference
+    identity: 0.97
+    pipeline: 
+      - ssu
+    threads: 12
 #nonrRNA:
 #  Trinity
 #  .
