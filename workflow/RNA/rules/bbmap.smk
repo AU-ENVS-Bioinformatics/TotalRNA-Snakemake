@@ -56,8 +56,7 @@ rule rRNA_id:
         samtools view {params.filters} {input.aligned} | cut -f1 | sort | uniq > {output.rna_seqid} 2> {log.stdout}
         """
 
-
-if config["RNA"]["method"] == "ribodetector":
+if config["RNA"]["method"] == "ribodetector" and config["RNA"]["refinement"] == "bbmap":
     rule link_rRNA_ribodetector:
         conda:
             "../envs/bbmap.yaml"
