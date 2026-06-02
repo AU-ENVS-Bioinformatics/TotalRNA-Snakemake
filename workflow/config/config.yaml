@@ -42,7 +42,7 @@ RNA:
   method: ribodetector        # sortmerna_staged | sortmerna_combined | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
   refinement: bbduk #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
   ribodetector:
-    options: "--ensure none"
+    options: "--ensure rrna"
     threads: 15
   sortmerna_staged:
     options: "--fastx --paired_in --out2 --id 0.97 --coverage 0.97" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
@@ -61,11 +61,13 @@ RNA:
     threads: 8
 
 rRNA:
-  method: otu        # otu | asv | kraken2 + bracken (taxonomic classification) | abundance (emirge??) or updated
+  method: kraken2        # otu | asv | kraken2 + bracken (taxonomic classification) | abundance (emirge??) or updated
   kraken2:
     threads: 10
   bracken:
-    options: "-r 150 -l S -t 10"
+    options: "-r 150 -l G -t 10"
+  kraken_biom:
+    options: "--min G --max D"
   qiime2_otu:
     method: de-novo        # de-novo | closed-reference | open-reference
     identity: 0.97
