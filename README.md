@@ -12,7 +12,7 @@ conda activate snakemake
 git clone https://github.com/AU-ENVS-Bioinformatics/TotalRNA-Snakemake
 cd TotalRNA-Snakemake
 snakemake -c1 skip_rename # or snakemake -n rename
-snakemake -c100 --use-conda --keep-going
+snakemake -c20 --use-conda --keep-going
 ```
 
 ## Introduction
@@ -79,7 +79,7 @@ snakemake -n --use-conda
 Finally, run the whole pipeline. A useful flag to add is `--keep-going` to prevent the pipeline to stop if an error occurs. If you are running this in a shared environment, you can have all the conda environments in a shared location by adding `--conda-prefix /path/to/shared/conda/envs`. 
 
 ```bash
-snakemake -c100 --use-conda --keep-going
+snakemake -c20 --use-conda --keep-going
 ```
 
 You should consider re-running the AnnoTree notebook with custom parameters interactively (notebook/annotree.ipynb)
