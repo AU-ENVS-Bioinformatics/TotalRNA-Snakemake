@@ -39,9 +39,10 @@ rule sortmerna:
             "results/sortmerna/not_{rrna_type}/{sample}_rev.fq.gz",
         ],
         stats="results/sortmerna/{rrna_type}/{sample}.log",
+    shadow:
+        "minimal"
     params:
         extra=" ".join(config.get("sortmerna", [])),
-        workdir="results/sortmerna",
         aligned_prefix="results/sortmerna/{rrna_type}/{sample}",
         not_aligned_prefix="results/sortmerna/not_{rrna_type}/{sample}",
     log:
@@ -55,12 +56,11 @@ rule sortmerna:
         """
         sortmerna -ref {input.database} \
         --idx-dir {input.database_index} \
-        --workdir {params.workdir} \
+        --workdir . \
         --threads {threads} \
         {params.extra} \
         --aligned {params.aligned_prefix} \
         --other {params.not_aligned_prefix} \
         --reads {input.fasta[0]} --reads {input.fasta[1]} \
         > {log} 2>&1
-        rm -rf {params.workdir}/kvdb {params.workdir}/readb
         """
