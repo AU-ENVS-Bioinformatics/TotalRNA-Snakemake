@@ -148,49 +148,50 @@ def sortmerna_db_idx(wc):
 
 def RNA_separation_module():
     method = config["RNA"]["method"]
+    refinement = config["RNA"]["refinement"]
     print(f"RNA separation method: {method}")
-
-    if method == "sortmerna_staged":
-        return (
-            expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
-            zip,
-            sample=SAMPLES,
-            stage=FINAL_SORTMERNA_STAGE,
-            ) +
-            expand(
-                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
+    outputs = []
+    if method == "sortmerna":
+        if refinement == "staged":
+            outputs += expand(
+                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
+                    zip,
+                    sample=SAMPLES,
+                    stage=FINAL_SORTMERNA_STAGE,
+                    )
+            outputs += expand(
+                    f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
+                    sample=SAMPLES,
+                )
+            outputs += expand(
+                    f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
+                    sample=SAMPLES,
+                )
+            return outputs
+        elif refinement == "combined":
+            outputs += expand(
+                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.sam",
+                    sample=SAMPLES,
+                )
+            return outputs
+    elif method == "ribodetector": #consider bbduk, bbmap, alignments (bwa) or kraken2 classification as refinement steps
+        outputs += expand(
+                f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r1.fastq.gz",
+                zip,
                 sample=SAMPLES,
-            ) +
-            expand(
+            ) 
+        outputs += expand(
                 f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
+                zip,
                 sample=SAMPLES,
             )
-        )
-
-    elif method == "ribodetector":
-        return (
-            expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.nonrRNA.r1.fastq.gz",
-            zip,
-            sample=SAMPLES,
-            ) +
-            expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/bbmap/{{sample}}_rRNA_readid.txt",
-            zip,
-            sample=SAMPLES,
-            ) +
-            expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
-            zip,
-            sample=SAMPLES,
-            ) +
-            expand(
-            f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
-            zip,
-            sample=SAMPLES,
+        if refinement == "bbduk":
+            outputs += expand(
+                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
+                zip,
+                sample=SAMPLES,
             )
-        )
+        return outputs
     else:
         raise ValueError(f"Unsupported RNA method: {method}")
 
@@ -202,27 +203,36 @@ def RNA_separation_module():
 
 def rRNA_composition_method():
     method = config["rRNA"]["method"]
-
-    if method == "OTU" or method == "QIIME2" or method == "vsearch" or method == "operational_taxonomic_units":
+    print(f"RNA separation method: {method}")
+    outputs = []
+    
+    if method == "otu" or method == "qiime2" or method == "vsearch" or method == "operational_taxonomic_units":
         return expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
+            f"{RESULTS_DIR}/rRNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
             zip,
             sample=SAMPLES,
             stage=FINAL_SORTMERNA_STAGE,
         )
-    elif method == "ASV" or method == "DADA2" or method == "amplicon" or method == "amplicon_sequence_variants":
+    elif method == "asv" or method == "dada2" or method == "amplicon" or method == "amplicon_sequence_variants":
         return expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
+            f"{RESULTS_DIR}/rRNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
             zip,
             sample=SAMPLES,
             stage=FINAL_SORTMERNA_STAGE,
         )
-    elif method == "Kraken2" or method == "Bracken" or method == "taxonomic_composition":
-        return expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/classification/{{sample}}.kraken",
+    elif method in ["kraken2", "bracken", "taxonomic_composition"]:
+        outputs +=  expand(
+            f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.k2report",
             zip,
             sample=SAMPLES
         )
+        outputs += expand(
+            f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.bracken.k2report",
+            zip,
+            sample=SAMPLES
+        )
+        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.biom")
+        return outputs
     else:
         raise ValueError(f"Unsupported RNA method: {method}")
 
@@ -245,11 +255,21 @@ include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
 
 
-include: "RNA/rules/sortmerna.smk"
-include: "RNA/rules/ribodetector.smk"
-include: "RNA/rules/bbmap.smk"
+if config["RNA"]["method"] == "sortmerna":
+    include: "RNA/rules/sortmerna.smk"
+elif config["rRNA"]["method"] == "ribodetector":
+    include: "rRNA/rules/ribodetector.smk"
+    if config["RNA"]["refinement"] == "bbduk":
+        include: "rRNA/rules/bbduk.smk"
+    elif config["RNA"]["refinement"] == "bbmap":
+        include: "rRNA/rules/bbmap.smk"
+
+#include: "RNA/rules/bbmap.smk"
 
 #include: "rRNA/rules/qiime2.smk"
+include: "rRNA/rules/kraken.smk"
+include: "rRNA/rules/bracken.smk"
+include: "rRNA/rules/kraken_bracken_downstream.smk"
 
 # --------------------------
 # Final target
@@ -306,6 +326,16 @@ rule RNA_seperation_done:
         touch {output.flag}
         """
 
+rule rRNA_done:
+    input:
+        rRNA_composition_method()
+    output:
+        flag=f"{RESULTS_DIR}/rRNA/rRNA.done"
+    shell:
+        """
+        mkdir -p {RESULTS_DIR}/rRNA
+        touch {output.flag}
+        """
 """
     rules.sortmerna.output.aligned_fwd,
 

@@ -12,8 +12,11 @@ databases:
   genome_for_decontamination: /data_2/Databases/Contamination/GRCH38genomeMT_mitochondrion_organalle.fna
   sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
   sortmeRNA_ssu_idx: /data_2/Databases/sortmerna_idx/SSU/
+  sortmeRNA_ssu_ids: /data_2/Databases/sortmerna_idx/SSU/SILVA_138.1_SSURef_NR99_tax_silva_trunc.contigs_ids
   sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
   sortmeRNA_lsu_idx: /data_2/Databases/sortmerna_idx/LSU/
+  sortmeRNA_ssu_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta
+  sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna_idx/SSU_LSU/idx/
   SILVA_138.1_N99: /data_2/Databases/SILVA_138/SILVA_138.1_SSU_LSU_N99_tax_silva_trunc.fasta
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
@@ -39,26 +42,29 @@ qc:
     threads: 8
 
 RNA:
-  method: ribodetector        # sortmerna_staged | sortmerna_combined | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
-  refinement: bbduk #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
-  ribodetector:
-    options: "--ensure rrna"
-    threads: 15
+  method: sortmerna # sortmerna | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
+  refinement: combined #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
+  # Seperation of rRNA from non-rRNA reads using sortmerna, either in a staged manner (first separate SSU and then LSU) or in a combined manner (SSU and LSU together)
   sortmerna_staged:
-    options: "--fastx --paired_in --out2 --id 0.97 --coverage 0.97" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
-    threads: 12
+    options: "--fastx --paired_in --out2 --id 0.97 --coverage 0.97 --index 0 --dbg-level 2" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
+    threads: 16
     pipeline:
       - ssu
       - lsu
-  bbmap:
-    options: "maxindel=100 strictmaxindel=t minid=0.80 pairlen=2000 rescuedist=1200 sam=1.3 unpigz=t pigz=t" # consider adding minhits, and increase the minid, or look into additional reads
+  sortmerna_combined:
+    options: "--sam --SQ --print_all_reads --zip-out 0 --min_lis 3 --num_seeds 3 -e 1e-3 --max_pos 500"
     threads: 16
+  # rRNA filtration method based on ribodetector, which is a tool that uses a combination of k-mer based and alignment based methods to identify rRNA reads. Consider adding additional refinement steps, e.g. using bbduk or bbmap to get more rRNA reads or to get higher confidence rRNA reads.
+  ribodetector:
+    options: "--ensure rrna"
+    threads: 15
   bbduk:
     options: "k=31 ordered=t hdist=1"
     threads: 8
-  Mitag4taxa:
-    options: ""
-    threads: 8
+  # General alignment based method for rRNA read refinement, which can be used to get more rRNA reads or to get higher confidence rRNA reads. Consider adding additional options, e.g. minid, maxindel, etc.
+  bbmap:
+    options: "maxindel=100 strictmaxindel=t minid=0.80 pairlen=2000 rescuedist=1200 sam=1.3 unpigz=t pigz=t" # consider adding minhits, and increase the minid, or look into additional reads
+    threads: 16
 
 rRNA:
   method: kraken2        # otu | asv | kraken2 + bracken (taxonomic classification) | abundance (emirge??) or updated

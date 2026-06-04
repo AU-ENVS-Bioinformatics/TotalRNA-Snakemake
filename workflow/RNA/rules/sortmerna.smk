@@ -43,7 +43,7 @@ rule sortmerna_staged:
             --reads {input.r2} \
             --aligned {params.aligned_prefix} \
             --other {params.nonaligned_prefix} \
-            --otu_map
+            --otu_map 
             > {log.stdout} 2>&1
         
         rm -rf {params.workdir}/kvdb || true
@@ -53,8 +53,55 @@ rule sortmerna_staged:
 # --idx-dir /data_2/Databases/sortmerna_idx/SSU/ --workdir sortmeRNA  --fastx --paired_in --out2 --threads 10 --aligned sortmeRNA/aligned.fastq --other sortmeRNA/notaligned.fastq 
 # --reads decontamination/ANN_10_R1.cleaned.fastq.gz --reads decontamination/ANN_10_R2.cleaned.fastq.gz --id 0.97 --coverage 0.97 --otu_map ANN_10.otu --index 0 --dbg-level 2
 
+#consider changing the mkdir -p and workdir to have a basename = dirname {output.sam} and then reuse it, such that we dont have to have same "dir" in both params and outpiút
+rule sortmerna_combined:
+    conda:
+        "../envs/sortmerna.yaml"
+    message:
+        "[SortMeRNA] seperate reads  for {wildcards.sample} according to the numerous databases at once"
+    input:
+        cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
+        cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
+        db=config["databases"][f"sortmeRNA_ssu_lsu"],
+        db_idx=config["databases"][f"sortmeRNA_ssu_lsu_idx"]
+    output:
+        sam=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.sam",
+    log:
+        stdout = f"{RESULTS_DIR}/RNA/{{sample}}/logs/sortmerna_aligned.log"
+    benchmark:
+        f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/sortmerna_aligned.txt"
+    params:
+        workdir=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned",
+        options=config["RNA"]["sortmerna_combined"]["options"],
+        aligned_prefix=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned",
+        nonaligned_prefix=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.nonaligned"
+    threads:
+        config["RNA"]["sortmerna_combined"]["threads"]
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.workdir}
 
-if config["RNA"]["method"] == "sortmerna_staged":
+        sortmerna \
+            --ref {input.db} \
+            --idx-dir {input.db_idx} \
+            --workdir {params.workdir} \
+            --threads {threads} \
+            --reads {input.cleaned_r1} \
+            --reads {input.cleaned_r2} \
+            {params.options} \
+            --aligned {params.aligned_prefix} \
+            > {log.stdout} 2>&1
+        
+        rm -rf {params.workdir}/kvdb || true
+        rm -rf {params.workdir}/readb || true
+        """
+
+#sortmerna --ref /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta --idx-dir /data_2/Databases/sortmerna_idx/SSU_LSU/idx/ 
+#--workdir sortmerna/ --reads decontamination/ANN_11_R1.cleaned.fastq.gz --reads decontamination/ANN_11_R2.cleaned.fastq.gz 
+#--sam --SQ --print_all_reads -zip-out 0 --threads 12
+
+if config["RNA"]["refinement"] == "staged":
     rule link_rRNA_sortmerna:
         message:
             "[SortMeRNA] linking rRNA from first stage for {wildcards.sample}"
@@ -62,8 +109,8 @@ if config["RNA"]["method"] == "sortmerna_staged":
             r1=lambda wc: f"{RESULTS_DIR}/RNA/{wc.sample}/sortmerna/{FIRST_STAGE_NAME}/{wc.sample}_{FIRST_STAGE_NAME}.aligned_fwd.fq.gz",
             r2=lambda wc: f"{RESULTS_DIR}/RNA/{wc.sample}/sortmerna/{FIRST_STAGE_NAME}/{wc.sample}_{FIRST_STAGE_NAME}.aligned_rev.fq.gz",
         output:
-            r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R1.rRNA.fastq.gz",
-            r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_R2.rRNA.fastq.gz",
+            r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
+            r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R2.fastq.gz",
         shell:
             """
             mkdir -p $(dirname {output.r1})
@@ -86,3 +133,5 @@ if config["RNA"]["method"] == "sortmerna_staged":
             ln -sf {input.r1} {output.r1}
             ln -sf {input.r2} {output.r2}
             """
+
+#sortmerna --ref /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta --idx-dir /data_2/Databases/sortmerna_idx/SSU_LSU --workdir sortmerna/ --reads decontamination/ANN_11_R1.cleaned.fastq.gz --reads decontamination/ANN_11_R2.cleaned.fastq.gz --sam --SQ --print_all_reads -zip-out 0 --threads 12
