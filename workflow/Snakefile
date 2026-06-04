@@ -173,6 +173,10 @@ def RNA_separation_module():
                     f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.sam",
                     sample=SAMPLES,
                 )
+            outputs += expand(
+                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.filtered.accessions_taxonomy.tsv",
+                    sample=SAMPLES,
+                )
             return outputs
     elif method == "ribodetector": #consider bbduk, bbmap, alignments (bwa) or kraken2 classification as refinement steps
         outputs += expand(
@@ -194,8 +198,6 @@ def RNA_separation_module():
         return outputs
     else:
         raise ValueError(f"Unsupported RNA method: {method}")
-
-# add ribodetector + mitag4taxa
 
 # --------------------------
 # rRNA composition classification
@@ -250,13 +252,20 @@ rule all:
 # --------------------------
 # Modules
 # --------------------------
+
+### Quality control and decontamination
 include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
 
-
+### RNA SEPERATION 
 if config["RNA"]["method"] == "sortmerna":
-    include: "RNA/rules/sortmerna.smk"
+    if config["RNA"]["refinement"] == "staged":
+        include: "RNA/rules/sortmerna_stages.smk"
+        include: "RNA/rules/sortmerna_stages_postprocessing.smk"
+    if config["RNA"]["refinement"] == "combined":
+        include: "RNA/rules/sortmerna_combined.smk"
+        include: "RNA/rules/sortmerna_combined_postprocessing.smk"
 elif config["rRNA"]["method"] == "ribodetector":
     include: "rRNA/rules/ribodetector.smk"
     if config["RNA"]["refinement"] == "bbduk":
@@ -264,8 +273,7 @@ elif config["rRNA"]["method"] == "ribodetector":
     elif config["RNA"]["refinement"] == "bbmap":
         include: "rRNA/rules/bbmap.smk"
 
-#include: "RNA/rules/bbmap.smk"
-
+### rRNA composition classification
 #include: "rRNA/rules/qiime2.smk"
 include: "rRNA/rules/kraken.smk"
 include: "rRNA/rules/bracken.smk"

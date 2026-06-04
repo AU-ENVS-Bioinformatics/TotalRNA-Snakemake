@@ -1,0 +1,8 @@
+name: rna_python_tools
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pysam
+  - biopython

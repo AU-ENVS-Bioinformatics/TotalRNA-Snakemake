@@ -21,6 +21,7 @@ databases:
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
   kraken_rRNA_db: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
+  taxonomy_table: /data_2/Databases/taxonomy/taxonomy.tsv
 
 # decontamination_sources: #combine human, chloroplast, mitochondrion or something
 
@@ -43,7 +44,7 @@ qc:
 
 RNA:
   method: sortmerna # sortmerna | ribodetector | other methods to be added in the future, e.g. based on mapping or something else
-  refinement: staged #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
+  refinement: combined #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
   # Seperation of rRNA from non-rRNA reads using sortmerna, either in a staged manner (first separate SSU and then LSU) or in a combined manner (SSU and LSU together)
   sortmerna_staged:
     options: "--fastx --paired_in --out2 --id 0.97 --coverage 0.97 --index 0 --dbg-level 2" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
