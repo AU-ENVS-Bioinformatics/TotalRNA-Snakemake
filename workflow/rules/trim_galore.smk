@@ -27,14 +27,13 @@ rule trim_galore_pe:
 
         trim_galore \
             --paired \
+            --basename {wildcards.sample} \
             {params.extra} \
             --output_dir {params.outdir} \
             {input.r1} {input.r2} \
             > {log} 2>&1
 
-        # Rename output files to match expected output
-        mv {params.outdir}/{wildcards.sample}*1_val_1.fq.gz {output.fasta_fwd}
-        mv {params.outdir}/{wildcards.sample}*2_val_2.fq.gz {output.fasta_rev}
-        mv {params.outdir}/{wildcards.sample}*1.fq.gz_trimming_report.txt {output.report_fwd}
-        mv {params.outdir}/{wildcards.sample}*2.fq.gz_trimming_report.txt {output.report_rev}
+        mv {params.outdir}/{wildcards.sample}*_val_1.fq.gz {output.fasta_fwd} >> {log} 2>&1
+        mv {params.outdir}/{wildcards.sample}*_val_2.fq.gz {output.fasta_rev} >> {log} 2>&1
+        mv {params.outdir}/{wildcards.sample}*_trimming_report.txt {params.report_dir} >> {log} 2>&1
         """
