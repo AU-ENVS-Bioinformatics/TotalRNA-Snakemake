@@ -8,10 +8,8 @@ rule trim_galore_pe:
         r1=lambda wc: samples_dict[wc.sample].r1,
         r2=lambda wc: samples_dict[wc.sample].r2,
     output:
-        fasta_fwd="results/trim_galore/{sample}_R1.fq.gz",
-        report_fwd="results/trim_galore/reports/{sample}_R1_trimming_report.txt",
-        fasta_rev="results/trim_galore/{sample}_R2.fq.gz",
-        report_rev="results/trim_galore/reports/{sample}_R2_trimming_report.txt",
+        fasta_fwd="results/trim_galore/{sample}_fwd.fq.gz",
+        fasta_rev="results/trim_galore/{sample}_rev.fq.gz",
     threads: trim_galore_threads
     params:
         extra=" ".join(trim_galore_params),

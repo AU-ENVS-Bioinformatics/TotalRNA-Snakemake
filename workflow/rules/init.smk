@@ -67,11 +67,11 @@ onstart:
 rule trim_files:
     input:
         expand(
-            "results/trim_galore/{sample}_R1.fq.gz",
+            "results/trim_galore/{sample}_fwd.fq.gz",
             sample=unique_samples,
         ),
         expand(
-            "results/trim_galore/{sample}_R2.fq.gz",
+            "results/trim_galore/{sample}_rev.fq.gz",
             sample=unique_samples,
         ),
 

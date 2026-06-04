@@ -3,8 +3,8 @@ def get_sortmerna_input(wildcards):
     if wildcards.rrna_type == "SSU":
         return {
             "fasta": [
-                "results/trim_galore/{sample}_R1.fq.gz",
-                "results/trim_galore/{sample}_R2.fq.gz",
+                "results/trim_galore/{sample}_fwd.fq.gz",
+                "results/trim_galore/{sample}_rev.fq.gz",
             ]
         }
     elif wildcards.rrna_type == "LSU":
