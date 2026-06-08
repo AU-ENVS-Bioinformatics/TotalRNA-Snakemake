@@ -7,8 +7,8 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "st
             r1=lambda wc: f"{RESULTS_DIR}/RNA/{wc.sample}/sortmerna/{FIRST_STAGE_NAME}/{wc.sample}_{FIRST_STAGE_NAME}.aligned_fwd.fq.gz",
             r2=lambda wc: f"{RESULTS_DIR}/RNA/{wc.sample}/sortmerna/{FIRST_STAGE_NAME}/{wc.sample}_{FIRST_STAGE_NAME}.aligned_rev.fq.gz",
         output:
-            r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
-            r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R2.fastq.gz",
+            r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+            r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
         shell:
             """
             mkdir -p $(dirname {output.r1})
@@ -23,8 +23,8 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "st
             r1=lambda wc: f"{RESULTS_DIR}/RNA/{wc.sample}/sortmerna/{FINAL_STAGE_NAME}/{wc.sample}_{FINAL_STAGE_NAME}.nonaligned_fwd.fq.gz",
             r2=lambda wc: f"{RESULTS_DIR}/RNA/{wc.sample}/sortmerna/{FINAL_STAGE_NAME}/{wc.sample}_{FINAL_STAGE_NAME}.nonaligned_rev.fq.gz",
         output:
-            r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
-            r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R2.nonrRNA.fastq.gz",
+            r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
+            r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_2.fastq.gz",
         shell:
             """
             mkdir -p $(dirname {output.r1})

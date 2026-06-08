@@ -160,11 +160,11 @@ def RNA_separation_module():
                     stage=FINAL_SORTMERNA_STAGE,
                     )
             outputs += expand(
-                    f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
+                    f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
                     sample=SAMPLES,
                 )
             outputs += expand(
-                    f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
+                    f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
                     sample=SAMPLES,
                 )
             return outputs
@@ -174,7 +174,7 @@ def RNA_separation_module():
                     sample=SAMPLES,
                 )
             outputs += expand(
-                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.filtered.accessions_taxonomy.tsv",
+                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_SSU_filtered_taxonomy.tsv",
                     sample=SAMPLES,
                 )
             return outputs
@@ -258,7 +258,7 @@ include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
 
-### RNA SEPERATION 
+### RNA SEPERATION - check if the if statements are redudnant with the ones in the included rules (smk files) or if they are needed to avoid including rules that would not be used
 if config["RNA"]["method"] == "sortmerna":
     if config["RNA"]["refinement"] == "staged":
         include: "RNA/rules/sortmerna_stages.smk"
@@ -270,8 +270,6 @@ elif config["rRNA"]["method"] == "ribodetector":
     include: "rRNA/rules/ribodetector.smk"
     if config["RNA"]["refinement"] == "bbduk":
         include: "rRNA/rules/bbduk.smk"
-    elif config["RNA"]["refinement"] == "bbmap":
-        include: "rRNA/rules/bbmap.smk"
 
 ### rRNA composition classification
 #include: "rRNA/rules/qiime2.smk"
@@ -279,6 +277,7 @@ include: "rRNA/rules/kraken.smk"
 include: "rRNA/rules/bracken.smk"
 include: "rRNA/rules/kraken_bracken_downstream.smk"
 
+# once the rules has been completed check 
 # --------------------------
 # Final target
 # --------------------------

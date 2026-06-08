@@ -36,6 +36,7 @@ rule sortmerna_combined:
             --reads {input.cleaned_r1} \
             --reads {input.cleaned_r2} \
             {params.options} \
+            --index 0 \
             --aligned {params.aligned_prefix} \
             > {log.stdout} 2>&1
         

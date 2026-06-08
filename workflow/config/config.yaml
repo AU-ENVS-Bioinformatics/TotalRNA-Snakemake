@@ -4,6 +4,8 @@ samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
 #shared_results_dir: /data/rasmus/Dev/Lucas
 shared_results_dir: /data/rasmus/Dev/SnakeResDev
 
+ncbi_email: "au811884.uni.au.dk"
+
 databases:
   human_GRCh38_genome: /data_2/Databases/GRCh38/GCF_000001405.40_GRCh38.p14_genomic.fna
   human_T2T_genome: /data_2/Databases/T2T‑CHM13/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna
@@ -11,12 +13,12 @@ databases:
   mitochondrion_genome: /data_2/Databases/mitochondrion/mitochondrion.1.1.genomic.fna
   genome_for_decontamination: /data_2/Databases/Contamination/GRCH38genomeMT_mitochondrion_organalle.fna
   sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
-  sortmeRNA_ssu_idx: /data_2/Databases/sortmerna_idx/SSU/idx/
-  sortmeRNA_ssu_ids: /data_2/Databases/sortmerna_idx/SSU/SILVA_138.1_SSURef_NR99_tax_silva_trunc.contigs_ids
   sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
-  sortmeRNA_lsu_idx: /data_2/Databases/sortmerna_idx/LSU/idx/
   sortmeRNA_ssu_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta
-  sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna_idx/SSU_LSU/idx/
+  sortmeRNA_ssu_idx: /data_2/Databases/sortmerna5_idx/SSU/idx/
+  sortmeRNA_lsu_idx: /data_2/Databases/sortmerna5_idx/LSU/idx/
+  sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna5_idx/SSU_LSU/idx/
+  sortmeRNA_ssu_ids: /data_2/Databases/sortmerna_idx/SSU/SILVA_138.1_SSURef_NR99_tax_silva_trunc.contigs_ids
   SILVA_138.1_N99: /data_2/Databases/SILVA_138/SILVA_138.1_SSU_LSU_N99_tax_silva_trunc.fasta
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
