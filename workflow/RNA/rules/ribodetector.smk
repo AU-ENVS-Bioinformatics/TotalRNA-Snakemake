@@ -49,10 +49,10 @@ rule ribodetector:
         cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
         cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
     output:
-        nonrna_r1=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.nonrRNA.r1.fastq.gz",
-        nonrna_r2=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.nonrRNA.r2.fastq.gz",
-        rna_r1=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r1.fastq.gz",
-        rna_r2=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r2.fastq.gz",
+        nonrna_r1=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_nonrRNA_1.fastq.gz",
+        nonrna_r2=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_nonrRNA_2.fastq.gz",
+        rna_r1=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
+        rna_r2=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_2.fastq.gz",
     log:
         stdout = f"{RESULTS_DIR}/RNA/{{sample}}/logs/ribodetector.log"
     benchmark:
@@ -83,8 +83,8 @@ rule link_non_rRNA_ribodetector:
         nonrna_r1=rules.ribodetector.output.nonrna_r1,
         nonrna_r2=rules.ribodetector.output.nonrna_r2,
     output:
-        linked_r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
-        linked_r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R2.nonrRNA.fastq.gz",
+        linked_r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
+        linked_r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_2.fastq.gz",
     shell:
         r"""
         set -euo pipefail

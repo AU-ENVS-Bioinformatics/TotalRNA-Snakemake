@@ -275,10 +275,10 @@ if config["RNA"]["method"] == "sortmerna":
     if config["RNA"]["refinement"] == "combined":
         include: "RNA/rules/sortmerna_combined.smk"
         include: "RNA/rules/sortmerna_combined_postprocessing.smk"
-elif config["rRNA"]["method"] == "ribodetector":
-    include: "rRNA/rules/ribodetector.smk"
+elif config["RNA"]["method"] == "ribodetector":
+    include: "RNA/rules/ribodetector.smk"
     if config["RNA"]["refinement"] == "bbduk":
-        include: "rRNA/rules/bbduk.smk"
+        include: "RNA/rules/bbduk.smk"
 
 ### rRNA composition classification
 #include: "rRNA/rules/qiime2.smk"
