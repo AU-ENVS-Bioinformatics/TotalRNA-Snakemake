@@ -10,13 +10,13 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
             sam=rules.sortmerna_combined.output.sam
         output:
             readid_info_tsv=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}.all_aligned_ids.tsv",
-            readid_txt=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}.all_aligned_ids.txt",
+            read_ids=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}.all_aligned_ids.txt",
         shell:  
             r"""
             set -euo pipefail
 
             # full TSV for downstream filtering
-            samtools view {input.sam} | awk -v OFS="\t" '{{print $1,$3,$6,$12,$13,length($10)}}' | tee {output.readid_info_tsv} | cut -f1 | sort -u > {output.readid_txt}
+            samtools view {input.sam} | awk -v OFS="\t" '{{print $1,$3,$6,$12,$13,length($10)}}' | tee {output.readid_info_tsv} | cut -f1 | sort -u > {output.read_ids}
             """
     
     rule filter_and_assign_taxonomy:
@@ -79,7 +79,7 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
         benchmark:
             f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/{{sample}}_rrna_extraction.txt"
         threads:
-            config["qc"]["decontamination"]["threads"]
+            config["RNA"]["threads"]
         params:
             prefix=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA"
         shell:
@@ -90,12 +90,17 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
 
             seqkit grep \
                 -f {input.read_ids} \
-                --paired \
                 --threads {threads} \
-                -1 {input.cleaned_r1} \
-                -2 {input.cleaned_r2} \
-                -o {params.prefix} \
-                &> {log.stdout}
+                {input.cleaned_r1} \
+                -o {output.rrna_r1} \
+                2> {log.stdout}
+
+            seqkit grep \
+                -f {input.read_ids} \
+                --threads {threads} \
+                {input.cleaned_r2} \
+                -o {output.rrna_r2} \
+                2>> {log.stdout}
             """
     
     rule non_rrna_extraction:
@@ -106,7 +111,7 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
         input:
             cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
             cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
-            readid_txt=rules.extract_all_aligned_ids.output.readid_txt
+            read_ids=rules.extract_all_aligned_ids.output.read_ids
         output:
             non_rrna_r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
             non_rrna_r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_2.fastq.gz"
@@ -115,7 +120,7 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
         benchmark:
             f"{RESULTS_DIR}/nonrRNA/{{sample}}/benchmarks/{{sample}}_non_rrna_extraction.txt"
         threads:
-            config["qc"]["decontamination"]["threads"]
+                config["RNA"]["threads"]
         params:
             prefix=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA"
         shell:
@@ -125,12 +130,19 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
             mkdir -p $(dirname {output.non_rrna_r1})
 
             seqkit grep \
-                -v -f {input.readid_txt} \
-                --paired \
+                -f {input.read_ids} \
+                -v \
                 --threads {threads} \
-                -1 {input.cleaned_r1} \
-                -2 {input.cleaned_r2} \
-                -o {params.prefix} \
-                &> {log.stdout}
+                {input.cleaned_r1} \
+                -o {output.non_rrna_r1} \
+                2> {log.stdout}
+
+            seqkit grep \
+                -f {input.read_ids} \
+                -v \
+                --threads {threads} \
+                {input.cleaned_r2} \
+                -o {output.non_rrna_r2} \
+                2>> {log.stdout}
             """
 

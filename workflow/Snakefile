@@ -149,7 +149,9 @@ def sortmerna_db_idx(wc):
 def RNA_separation_module():
     method = config["RNA"]["method"]
     refinement = config["RNA"]["refinement"]
-    print(f"RNA separation method: {method}")
+
+    print(f"[RNA separation] method={method}, refinement={refinement}")
+
     outputs = []
     if method == "sortmerna":
         if refinement == "staged":
@@ -177,22 +179,29 @@ def RNA_separation_module():
                     f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_SSU_filtered_taxonomy.tsv",
                     sample=SAMPLES,
                 )
+            # final filtered outputs
+            outputs += expand(
+                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+                sample=SAMPLES,
+            )
+            outputs += expand(
+                f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
+                sample=SAMPLES,
+            )
             return outputs
     elif method == "ribodetector": #consider bbduk, bbmap, alignments (bwa) or kraken2 classification as refinement steps
         outputs += expand(
-                f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}.rRNA.r1.fastq.gz",
-                zip,
-                sample=SAMPLES,
-            ) 
+            f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
+            zip,
+            sample=SAMPLES,
+        )
         outputs += expand(
-                f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_R1.nonrRNA.fastq.gz",
-                zip,
-                sample=SAMPLES,
-            )
+            f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
+            sample=SAMPLES,
+        )
         if refinement == "bbduk":
             outputs += expand(
-                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
-                zip,
+                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
                 sample=SAMPLES,
             )
         return outputs
