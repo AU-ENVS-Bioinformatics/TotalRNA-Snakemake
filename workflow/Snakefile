@@ -100,7 +100,6 @@ FINAL_SORTMERNA_STAGE = [SORTMERNA_STAGES[-1] for i in range(len(SAMPLES))]
 FIRST_STAGE_NAME = SORTMERNA_STAGES[0]
 FINAL_STAGE_NAME = SORTMERNA_STAGES[-1]
 
-
 print(f"sortmerna stages {SORTMERNA_STAGES} with previous stages {PREVIOUS_STAGE} and final stage {FINAL_SORTMERNA_STAGE} to be requested to trigger previous stages in the workflow")
 # sortmerna stages ['ssu', 'ssu_lsu'] with previous stages {'ssu': 'decontamination', 'ssu_lsu': 'ssu'} with final stages being identical ['ssu_lsu', 'ssu_lsu'] for the samples
 
@@ -243,6 +242,10 @@ def rRNA_composition_method():
             sample=SAMPLES
         )
         outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.biom")
+        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species_qualitative.txt")
+        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species_observations.txt")
+        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.tsv")
+        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/phyloseq.rds")
         return outputs
     else:
         raise ValueError(f"Unsupported RNA method: {method}")
@@ -256,7 +259,7 @@ rule all:
     input:
         f"{RESULTS_DIR}/qc/QC.done",
         f"{RESULTS_DIR}/RNA/RNA_seperation.done",
-        #f"{RESULTS_DIR}/rRNA/rRNA.done"
+        f"{RESULTS_DIR}/rRNA/rRNA.done"
 
 # --------------------------
 # Modules
