@@ -1,0 +1,23 @@
+name: r_phyloseq
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core R
+  - r-base=4.3
+
+  # tidyverse (optional but useful)
+  - r-tidyverse
+
+  # phyloseq ecosystem
+  - bioconductor-phyloseq
+  - bioconductor-biomformat
+  - bioconductor-biobase
+
+  # CRAN package (IMPORTANT FIX)
+  - r-vegan
+
+  # optional utilities
+  - r-optparse

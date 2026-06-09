@@ -4,8 +4,8 @@ rule kraken2:
     message:
         "[Kraken2] estimate species composition for {wildcards.sample} for taxonomic classification"
     input:
-        rRNA_R1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R1.fastq.gz",
-        rRNA_R2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_SSU.rRNA.R2.fastq.gz",
+        rRNA_R1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+        rRNA_R2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
     output:
         report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.k2report",
         kraken=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.kraken"
