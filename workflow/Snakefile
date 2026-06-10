@@ -2,6 +2,10 @@ import pandas as pd
 from pathlib import Path
 import re
 
+from targets.qc import qc_outputs
+#from workflow.targets.rna import rna_outputs
+#from workflow.targets.rrna import rrna_outputs
+
 configfile: "config/config.yaml"
 
 # --------------------------
@@ -309,41 +313,11 @@ include: "rRNA/rules/kraken_bracken_downstream.smk"
 
 # once the rules has been completed check 
 # --------------------------
-# Final target
+# Final targets
 # --------------------------
 rule QC_done:
     input:
-        # FastQC read specific report output
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/fastqc/{{read}}",
-            zip,
-            sample=[s for s in SAMPLES for _ in ("R1", "R2")],
-            read=["R1", "R2"] * len(SAMPLES),
-        ),
-        # Fastp trimming outputs
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_fastp.html",
-            zip,
-            sample=SAMPLES,
-        ),
-        # BWA-mem2 Aligned contaminants genomes 
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_aligned_contaminants.sam",
-            zip,
-            sample=SAMPLES,
-        ),
-        # Identify read IDs of contaminants
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_contaminants_id.txt",
-            zip,
-            sample=SAMPLES
-        ),
-        # Decontamination of reads
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
-            zip,
-            sample=SAMPLES,
-        ),
+        qc_outputs(RESULTS_DIR, SAMPLES)
     output:
         flag=f"{RESULTS_DIR}/qc/QC.done"
     shell:
