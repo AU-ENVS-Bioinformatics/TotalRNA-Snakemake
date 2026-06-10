@@ -5,3 +5,4 @@ channels:
   - defaults
 dependencies:
   - seqkit
+  - samtools>=1.23.1

@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 
 from targets.qc import qc_outputs
+from targets.rna_seperation import rna_outputs
 #from workflow.targets.rna import rna_outputs
 #from workflow.targets.rrna import rrna_outputs
 
@@ -149,83 +150,6 @@ def sortmerna_db_idx(wc):
     key = wc.stage.split("_")[-1]
     return config["databases"][f"sortmeRNA_{key}_idx"]
 
-def RNA_separation_module():
-    method = config["RNA"]["method"]
-    refinement = config["RNA"]["refinement"]
-
-    print(f"[RNA separation] method={method}, refinement={refinement}")
-
-    outputs = []
-    if method == "sortmerna":
-        if refinement == "staged":
-            outputs += expand(
-                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
-                    zip,
-                    sample=SAMPLES,
-                    stage=FINAL_SORTMERNA_STAGE,
-                    )
-            outputs += expand(
-                    f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-                    sample=SAMPLES,
-                )
-            outputs += expand(
-                    f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
-                    sample=SAMPLES,
-                )
-            return outputs
-        elif refinement == "combined":
-            outputs += expand(
-                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.sam",
-                    sample=SAMPLES,
-                )
-            outputs += expand(
-                    f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_SSU_filtered_taxonomy.tsv",
-                    sample=SAMPLES,
-                )
-            # final filtered outputs
-            outputs += expand(
-                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-                sample=SAMPLES,
-            )
-            outputs += expand(
-                f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
-                sample=SAMPLES,
-            )
-            return outputs
-    elif method == "ribodetector": #consider bbduk, bbmap, alignments (bwa) or kraken2 classification as refinement steps
-        outputs += expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
-            zip,
-            sample=SAMPLES,
-        )
-        outputs += expand(
-            f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
-            sample=SAMPLES,
-        )
-        if refinement == "bbduk":
-            outputs += expand(
-                f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-                sample=SAMPLES,
-            )
-        return outputs
-    elif method == "bbmap": #consider bbduk, bbmap, alignments (bwa) or kraken2 classification as refinement steps
-        outputs += expand(
-            f"{RESULTS_DIR}/RNA/{{sample}}/bbmap/{{sample}}_all_reads.bam",
-            zip,
-            sample=SAMPLES,
-        )
-        outputs += expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-            sample=SAMPLES,
-        )
-        outputs += expand(
-            f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
-            sample=SAMPLES,
-        )
-        return outputs
-    else:
-        raise ValueError(f"Unsupported RNA method: {method}")
-
 # --------------------------
 # rRNA composition classification
 # --------------------------
@@ -328,7 +252,7 @@ rule QC_done:
 
 rule RNA_seperation_done:
     input:
-        RNA_separation_module()
+        rna_outputs(RESULTS_DIR, SAMPLES, config, FINAL_SORTMERNA_STAGE)
     output:
         flag=f"{RESULTS_DIR}/RNA/RNA_seperation.done"
     shell:

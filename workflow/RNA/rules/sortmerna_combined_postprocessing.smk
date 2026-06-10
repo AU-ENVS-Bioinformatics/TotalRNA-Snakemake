@@ -1,11 +1,17 @@
 from pathlib import Path
 
-ENVS_DIR = Path(workflow.basedir)/"RNA/envs"
-SCRIPTS_DIR = Path(workflow.basedir)/"RNA/scripts"
+RNA_ENVS_DIR = str(Path(workflow.basedir)/"RNA/envs")
+RNA_SCRIPTS_DIR = str(Path(workflow.basedir)/"RNA/scripts")
+
+print(f"sortmerna combined postprocessing defined RNA_ENVS_DIR as {RNA_ENVS_DIR} and RNA_SCRIPTS_DIR as {RNA_SCRIPTS_DIR}")
 
 if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "combined":
     
     rule extract_all_aligned_ids:
+        conda:
+            f"{RNA_ENVS_DIR}/seqkit.yaml"
+        message:
+            "[Extract aligned and filtered reads] for {wildcards.sample} filtering reads of percentage of the read length and at least certain number of nucleotide matches to the reference, and extract the ENA accession number for each read id and assign taxonomy to each read based on the ncbi taxonomy table"
         input:
             sam=rules.sortmerna_combined.output.sam
         output:
@@ -21,9 +27,9 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
     
     rule filter_and_assign_taxonomy:
         conda:
-            f"{ENVS_DIR}/rna_python_tools.yaml"
+            f"{RNA_ENVS_DIR}/rna_python_tools.yaml"
         message:
-                "[Sortmerna_postprocessing_filter] for {wildcards.sample} filtering reads of percentage of the read length and at least certain number of nucleotide matches to the reference, and extract the ENA accession number for each read id and assign taxonomy to each read based on the ncbi taxonomy table"
+            "[Filter and assign taxonomy] for {wildcards.sample} filtering reads of percentage of the read length and at least certain number of nucleotide matches to the reference, and extract the ENA accession number for each read id and assign taxonomy to each read based on the ncbi taxonomy table"
         input:
             id_info=rules.extract_all_aligned_ids.output.readid_info_tsv,
             taxonomy=config["databases"]["taxonomy_table"]
@@ -46,7 +52,7 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
             options="Metazoa,Viridiplantae"
         shell:
             r"""
-            python {SCRIPTS_DIR}/filter_reads_assign_taxonomy.py \
+            python {RNA_SCRIPTS_DIR}/filter_reads_assign_taxonomy.py \
                 --id_info {input.id_info} \
                 --fraction {params.fraction} \
                 --matches {params.matches} \
@@ -64,7 +70,7 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
         
     rule rrna_extraction:
         conda:
-            "../envs/seqkit.yaml"
+            f"{RNA_ENVS_DIR}/seqkit.yaml"
         message:
             "[Seqkit] extract rRNA reads for {wildcards.sample}"
         input:
@@ -105,7 +111,7 @@ if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "co
     
     rule non_rrna_extraction:
         conda:
-            "../envs/seqkit.yaml"
+            f"{RNA_ENVS_DIR}/seqkit.yaml"
         message:
             "[Seqkit] extract non-rRNA reads for {wildcards.sample}"
         input:
