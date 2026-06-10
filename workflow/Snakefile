@@ -204,6 +204,21 @@ def RNA_separation_module():
                 sample=SAMPLES,
             )
         return outputs
+    elif method == "bbmap": #consider bbduk, bbmap, alignments (bwa) or kraken2 classification as refinement steps
+        outputs += expand(
+            f"{RESULTS_DIR}/RNA/{{sample}}/bbmap/{{sample}}_all_reads.bam",
+            zip,
+            sample=SAMPLES,
+        )
+        outputs += expand(
+            f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+            sample=SAMPLES,
+        )
+        outputs += expand(
+            f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
+            sample=SAMPLES,
+        )
+        return outputs
     else:
         raise ValueError(f"Unsupported RNA method: {method}")
 
@@ -282,6 +297,9 @@ elif config["RNA"]["method"] == "ribodetector":
     include: "RNA/rules/ribodetector.smk"
     if config["RNA"]["refinement"] == "bbduk":
         include: "RNA/rules/bbduk.smk"
+elif config["RNA"]["method"] == "bbmap":
+    include: "RNA/rules/bbmap.smk"
+    include: "RNA/rules/bbmap_postprocessing.smk"
 
 ### rRNA composition classification
 #include: "rRNA/rules/qiime2.smk"
@@ -355,19 +373,5 @@ rule rRNA_done:
         mkdir -p {RESULTS_DIR}/rRNA
         touch {output.flag}
         """
-"""
-    rules.sortmerna.output.aligned_fwd,
 
-# snakemake --use-conda --cores 10 --rerun-incomplete --keep-going --dry-run
-
-#/usr/bin/time -v seqkit split2 -s 1000000 -e .gz -O split/ -1 trimmed/ANN1_R1_001.fastp.trim.fastq.gz -2 trimmed/ANN1_R2_001.fastp.trim.fastq.gz -j 8 &> split.log
-"""
-
-"""
-        # Kraken2 report of contamination sources
-        expand(
-            f"{RESULTS_DIR}/qc/{{sample}}/classification/{{sample}}.kraken",
-            zip,
-            sample=SAMPLES
-        ),
-"""
+# snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going
