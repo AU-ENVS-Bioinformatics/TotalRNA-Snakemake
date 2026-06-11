@@ -3,21 +3,26 @@ channels:
   - conda-forge
   - bioconda
   - defaults
-
 dependencies:
   # Core R
   - r-base=4.3
 
-  # tidyverse (optional but useful)
-  - r-tidyverse
-
-  # phyloseq ecosystem
+  # Phyloseq ecosystem (Bioconductor)
   - bioconductor-phyloseq
   - bioconductor-biomformat
   - bioconductor-biobase
 
-  # CRAN package (IMPORTANT FIX)
+  # CRAN packages
+  - r-dplyr
+  - r-tibble
+  - r-magrittr
+
+  # Optional but useful (plotting / downstream)
+  - r-ggplot2
+  - r-tidyverse
+
+  # Optional (but often required by phyloseq workflows)
   - r-vegan
 
-  # optional utilities
+  # Optional CLI parsing (you are not using it yet, but fine to keep)
   - r-optparse

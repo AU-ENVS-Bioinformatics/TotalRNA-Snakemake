@@ -108,3 +108,5 @@ rule biom_to_phyloseq:
         r"""
         Rscript {SCRIPTS_DIR}/biom_to_phyloseq.R {input.biom} {output.rds} > {log} 2>&1
         """
+
+#mamba create -n kraken_biom_test     -c conda-forge     -c bioconda     python=3.10     kraken-biom     biom-format
