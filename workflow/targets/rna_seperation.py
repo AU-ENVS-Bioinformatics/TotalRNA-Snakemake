@@ -1,7 +1,81 @@
-from typing import List
+from typing import List,Dict
 from pathlib import Path
 from snakemake.io import expand
 
+# --------------------------
+# sortmeRNA stage logic
+# --------------------------
+
+def sortmerna_stages(config: dict) -> List[str]:
+    base = config["RNA"]["sortmerna_staged"]["pipeline"]
+    return ["_".join(base[: i + 1]) for i in range(len(base))]
+
+
+def previous_stage_map(stages: List[str]) -> Dict[str, str]:
+    return {
+        stages[0]: "decontamination",
+        **{
+            stages[i]: stages[i - 1]
+            for i in range(1, len(stages))
+        },
+    }
+
+def sortmerna_input_r1(
+    sample: str,
+    stage: str,
+    results_dir: Path,
+    previous_stage: Dict[str, str],
+) -> str:
+    qc_base = results_dir / "qc" / sample
+    rna_base = results_dir / "RNA" / sample
+
+    prev = previous_stage[stage]
+
+    if prev == "decontamination":
+        return str(
+            qc_base / "decontamination" / f"{sample}_R1.cleaned.fastq.gz"
+        )
+
+    return str(
+        rna_base / "sortmerna" / prev / f"{sample}_{prev}.nonaligned_fwd.fq.gz"
+    )
+
+
+def sortmerna_input_r2(
+    sample: str,
+    stage: str,
+    results_dir: Path,
+    previous_stage: Dict[str, str],
+) -> str:
+    qc_base = results_dir / "qc" / sample
+    rna_base = results_dir / "RNA" / sample
+
+    prev = previous_stage[stage]
+
+    if prev == "decontamination":
+        return str(
+            qc_base / "decontamination" / f"{sample}_R2.cleaned.fastq.gz"
+        )
+
+    return str(
+        rna_base
+        / "sortmerna"
+        / prev
+        / f"{sample}_{prev}.nonaligned_rev.fq.gz"
+    )
+
+# --------------------------
+# Database lookup
+# --------------------------
+
+def get_sortmerna_db(stage: str, config: dict) -> str:
+    key = stage.split("_")[-1]
+    return config["databases"][f"sortmeRNA_{key}"]
+
+
+def get_sortmerna_db_idx(stage: str, config: dict) -> str:
+    key = stage.split("_")[-1]
+    return config["databases"][f"sortmeRNA_{key}_idx"]
 
 # --------------------------
 # Shared outputs for the filtered rRNA and non-rRNA reads, which are common across all methods
