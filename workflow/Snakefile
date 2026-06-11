@@ -4,6 +4,8 @@ import re
 
 from targets.qc import qc_outputs
 from targets.rna_seperation import rna_outputs
+from targets.rrna import rrna_outputs
+
 #from workflow.targets.rna import rna_outputs
 #from workflow.targets.rrna import rrna_outputs
 
@@ -151,50 +153,6 @@ def sortmerna_db_idx(wc):
     return config["databases"][f"sortmeRNA_{key}_idx"]
 
 # --------------------------
-# rRNA composition classification
-# --------------------------
-
-def rRNA_composition_method():
-    method = config["rRNA"]["method"]
-    print(f"RNA separation method: {method}")
-    outputs = []
-    
-    if method == "otu" or method == "qiime2" or method == "vsearch" or method == "operational_taxonomic_units":
-        return expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
-            zip,
-            sample=SAMPLES,
-            stage=FINAL_SORTMERNA_STAGE,
-        )
-    elif method == "asv" or method == "dada2" or method == "amplicon" or method == "amplicon_sequence_variants":
-        return expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
-            zip,
-            sample=SAMPLES,
-            stage=FINAL_SORTMERNA_STAGE,
-        )
-    elif method in ["kraken2", "bracken", "taxonomic_composition"]:
-        outputs +=  expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.k2report",
-            zip,
-            sample=SAMPLES
-        )
-        outputs += expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.bracken.k2report",
-            zip,
-            sample=SAMPLES
-        )
-        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.biom")
-        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species_qualitative.txt")
-        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species_observations.txt")
-        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.tsv")
-        outputs += expand(f"{RESULTS_DIR}/rRNA/taxonomy/phyloseq.rds")
-        return outputs
-    else:
-        raise ValueError(f"Unsupported RNA method: {method}")
-
-
-# --------------------------
 # Final target
 # --------------------------
 
@@ -263,7 +221,7 @@ rule RNA_seperation_done:
 
 rule rRNA_done:
     input:
-        rRNA_composition_method()
+        rrna_outputs(RESULTS_DIR, SAMPLES,config)
     output:
         flag=f"{RESULTS_DIR}/rRNA/rRNA.done"
     shell:

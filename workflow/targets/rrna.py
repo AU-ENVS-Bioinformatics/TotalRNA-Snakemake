@@ -2,7 +2,6 @@ from typing import List
 from pathlib import Path
 from snakemake.io import expand
 
-
 def rrna_outputs(
     results_dir: Path,
     samples: List[str],
