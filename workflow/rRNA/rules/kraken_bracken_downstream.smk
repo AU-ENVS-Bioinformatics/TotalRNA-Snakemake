@@ -103,10 +103,14 @@ rule biom_to_phyloseq:
     output:
         rds = f"{RESULTS_DIR}/rRNA/taxonomy/phyloseq.rds"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/logs/phyloseq_import.log"
+        f"{RESULTS_DIR}/rRNA/taxonomy/logs/biom_to_phyloseq.log"
+    benchmark:
+        f"{RESULTS_DIR}/rRNA/taxonomy/benchmarks/biom_to_phyloseq.txt"
+    params:
+        prefix=f"{RESULTS_DIR}/rRNA/taxonomy/"
     shell:
         r"""
-        Rscript {SCRIPTS_DIR}/biom_to_phyloseq.R {input.biom} {output.rds} > {log} 2>&1
+        Rscript {SCRIPTS_DIR}/biom_to_phyloseq.R {input.biom} {output.rds} {params.prefix} > {log} 2>&1
         """
 
 #mamba create -n kraken_biom_test     -c conda-forge     -c bioconda     python=3.10     kraken-biom     biom-format

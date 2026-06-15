@@ -13,6 +13,11 @@ args <- commandArgs(trailingOnly = TRUE)
 
 biom_file <- args[1]
 out_rds   <- args[2]
+results_dir <- args[3]
+
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir, recursive = TRUE)
+}
 
 ########################
 # FUNCTIONS
@@ -45,42 +50,50 @@ fix_incertae_sedis <- function(physeq) {
   
   tax <- as.data.frame(tax_table(physeq), stringsAsFactors = FALSE)
   
-  # ✅ FIX: use t(apply()), NOT do.call()
   tax_fixed <- t(apply(tax, 1, function(row) {
     
     row <- as.character(row)
+
+    # Keep original taxonomy for parent lookup
+    original_row <- row
     
     for (i in seq_along(row)) {
       
       if (is.na(row[i]) || row[i] == "Incertae Sedis") {
         
-        replacement <- NA
+        replacement <- NA_character_
         
         if (i > 1) {
+          
+          # Search upwards for nearest classified ancestor
           for (j in seq(i - 1, 1)) {
-            parent <- row[j]
             
-            if (!is.na(parent) && parent != "Incertae Sedis") {
+            parent <- original_row[j]
+            
+            if (!is.na(parent) &&
+                parent != "Incertae Sedis") {
+              
               replacement <- parent
               break
             }
           }
         }
         
-        if (!is.na(replacement)) {
-          row[i] <- paste0("Unclassified (", replacement, ")")
+        row[i] <- if (!is.na(replacement)) {
+          paste0("Unclassified (", replacement, ")")
         } else {
-          row[i] <- "Unclassified"
+          "Unclassified"
         }
       }
     }
     
-    return(row)
+    row
   }))
   
   colnames(tax_fixed) <- colnames(tax)
+  rownames(tax_fixed) <- rownames(tax)
   
-  tax_table(physeq) <- as.matrix(tax_fixed)
+  tax_table(physeq) <- tax_table(as.matrix(tax_fixed))
   
   return(physeq)
 }
@@ -185,23 +198,77 @@ if (nrow(otu_mat) != nrow(tax_mat)) {
 OTU <- otu_table(otu_mat, taxa_are_rows = TRUE)
 TAX <- tax_table(tax_mat)
 
-physeq <- phyloseq(OTU, TAX)
+########################
+# RAW INPUT DEBUG
+########################
+
+write.table(
+  as.data.frame(tax_mat),
+  file = file.path(results_dir, "debug_tax_raw.tsv"),
+  sep = "\t",
+  quote = FALSE,
+  col.names = NA
+)
+
+write.table(
+  as.data.frame(otu_mat),
+  file = file.path(results_dir, "debug_otu_raw.tsv"),
+  sep = "\t",
+  quote = FALSE,
+  col.names = NA
+)
 
 ########################
-# ADD SAMPLE DATA
+# CREATE PHYLOSEQ AND ADD SAMPLE DATA
 ########################
+
+physeq <- phyloseq(OTU, TAX)
+
 physeq <- add_sample_data(physeq, otu_mat)
 
 ########################
 # CLEAN + FIX TAXONOMY
 ########################
 physeq <- clean_taxonomy(physeq)
+
+write.table(
+  as.data.frame(as(tax_table(physeq), "matrix")),
+  file = file.path(results_dir, "debug_tax_after_clean.tsv"),
+  sep = "\t",
+  quote = FALSE,
+  col.names = NA
+)
+
 physeq <- fix_incertae_sedis(physeq)
+
+write.table(
+  as.data.frame(as(tax_table(physeq), "matrix")),
+  file = file.path(results_dir, "debug_tax_after_incertae.tsv"),
+  sep = "\t",
+  quote = FALSE,
+  col.names = NA
+)
 
 ########################
 # FILTER TAXA
 ########################
 physeq <- remove_multicellular(physeq)
+
+write.table(
+  as.data.frame(as(tax_table(physeq), "matrix")),
+  file = file.path(results_dir, "debug_tax_final.tsv"),
+  sep = "\t",
+  quote = FALSE,
+  col.names = NA
+)
+
+write.table(
+  as.data.frame(as(otu_table(physeq), "matrix")),
+  file = file.path(results_dir, "debug_otu_final.tsv"),
+  sep = "\t",
+  quote = FALSE,
+  col.names = NA
+)
 
 ########################
 # SAVE OUTPUT

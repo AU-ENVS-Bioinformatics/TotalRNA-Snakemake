@@ -1,7 +1,6 @@
 #samples_file: /data/rasmus/Dev/Lucas/samplesheet.tsv
 samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
 
-#shared_results_dir: /data/rasmus/Dev/Lucas
 shared_results_dir: /data/rasmus/Dev/SnakeResDev
 
 ncbi_email: "au811884.uni.au.dk"
@@ -24,8 +23,6 @@ databases:
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
   kraken_rRNA_db: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
   taxonomy_table: /data_2/Databases/taxonomy/taxonomy.tsv
-
-# decontamination_sources: #combine human, chloroplast, mitochondrion or something
 
 #######################
 ### Module settings ###
@@ -71,32 +68,10 @@ RNA:
     threads: 16
 
 rRNA:
-  method: kraken2        # otu | asv | kraken2 + bracken (taxonomic classification) | abundance (emirge??) or updated
+  method: kraken2        # kraken2 + bracken (taxonomic classification)
   kraken2:
     threads: 10
   bracken:
     options: "-r 150 -l G -t 10"
   kraken_biom:
-    options: "--min G --max D"
-  qiime2_otu:
-    method: de-novo        # de-novo | closed-reference | open-reference
-    identity: 0.97
-    pipeline: 
-      - ssu
-    threads: 12
-  qiime2_asv:
-    method: de-novo        # de-novo | closed-reference | open-reference
-    identity: 0.97
-    pipeline: 
-      - ssu
-    threads: 12
-#nonrRNA:
-#  Trinity
-#  .
-#  .
-
-# Barnnap
-# VirSorter2
-# CMsearch
-# infernal
-# 
+    options: "--min G --max D --fmt hdf5"
