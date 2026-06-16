@@ -1,5 +1,0 @@
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-  - r-vegan=2.6_4

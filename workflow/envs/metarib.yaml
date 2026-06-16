@@ -1,7 +1,0 @@
-channels:
-  - bioconda
-  - conda-forge
-dependencies:
-  - bbmap=38.18
-  - emirge=0.61.1=py27h30f897e_7
-  - pandas

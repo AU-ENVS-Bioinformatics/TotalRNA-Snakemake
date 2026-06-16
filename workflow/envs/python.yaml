@@ -1,9 +1,0 @@
-name: python_functions
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - python=3.11
-  - pandas=2.2
-  - numpy=2.0
-  - pyyaml
