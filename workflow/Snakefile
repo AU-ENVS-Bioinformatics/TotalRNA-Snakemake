@@ -13,9 +13,7 @@ from targets.rna_seperation import (
     get_sortmerna_db_idx,
 )
 from targets.rrna import rrna_outputs
-
-#from workflow.targets.rna import rna_outputs
-#from workflow.targets.rrna import rrna_outputs
+from targets.nonrrna import non_rrna_outputs
 
 configfile: "config/config.yaml"
 
@@ -130,7 +128,8 @@ rule all:
     input:
         f"{RESULTS_DIR}/qc/QC.done",
         f"{RESULTS_DIR}/RNA/RNA_seperation.done",
-        f"{RESULTS_DIR}/rRNA/rRNA.done"
+        f"{RESULTS_DIR}/rRNA/rRNA.done",
+        f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
 
 # --------------------------
 # Modules
@@ -162,6 +161,11 @@ elif config["RNA"]["method"] == "bbmap":
 include: "rRNA/rules/kraken.smk"
 include: "rRNA/rules/bracken.smk"
 include: "rRNA/rules/kraken_bracken_downstream.smk"
+
+### non-rRNA read-based functional profiling / ORF functional annotation
+include: "nonrRNA/rules/preprocessing.smk"
+include: "nonrRNA/rules/metaphlan.smk"
+include: "nonrRNA/rules/humann.smk"
 
 # once the rules has been completed check 
 # --------------------------
@@ -199,6 +203,18 @@ rule rRNA_done:
         mkdir -p {RESULTS_DIR}/rRNA
         touch {output.flag}
         """
+
+rule nonrRNA_done:
+    input:
+        non_rrna_outputs(RESULTS_DIR, SAMPLES,config)
+    output:
+        flag=f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
+    shell:
+        """
+        mkdir -p {RESULTS_DIR}/nonrRNA
+        touch {output.flag}
+        """
+
 
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --cores 35 --rerun-incomplete --keep-going --dry-run

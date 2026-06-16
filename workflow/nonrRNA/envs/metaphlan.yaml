@@ -1,0 +1,14 @@
+name: humann_env
+channels:
+  - biobakery
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - humann=3.9
+  - metaphlan=4.0.6
+  - bowtie2
+  - diamond
+  - blast
+  - samtools
+  - python=3.9
