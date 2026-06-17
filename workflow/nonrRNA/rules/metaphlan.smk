@@ -6,7 +6,7 @@ rule metaphlan:
     input:
         nonrRNA_concatenate=rules.concatenate.output.nonrRNA_concatenate
     output:
-        metaphlan_profile=f"{RESULTS_DIR}/nonrRNA/{{sample}}/metaphlan/{{sample}}_1_metaphlan_profile.tsv",
+        metaphlan_profile=f"{RESULTS_DIR}/nonrRNA/{{sample}}/metaphlan/{{sample}}_metaphlan_profile.tsv",
     log:
         stdout=f"{RESULTS_DIR}/nonrRNA/{{sample}}/logs/metaphlan.log"
     benchmark:

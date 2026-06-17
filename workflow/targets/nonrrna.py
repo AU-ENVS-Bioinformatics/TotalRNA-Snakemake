@@ -21,13 +21,13 @@ def non_rrna_outputs(
 
         # Per-sample metaphlan species-level microbial profiling
         outputs += expand(
-            f"{results_dir}/nonrRNA/{{sample}}/metaphlan/{{sample}}_1_metaphlan_profile.tsv",
+            f"{results_dir}/nonrRNA/{{sample}}/metaphlan/{{sample}}_metaphlan_profile.tsv",
             sample=samples,
         )
 
         # Per-sample humann functional profiling
         outputs += expand(
-            f"{results_dir}/nonrRNA/{{sample}}/humann/{{sample}}_2_genefamilies.tsv",
+            f"{results_dir}/nonrRNA/{{sample}}/humann/{{sample}}_genefamilies.tsv",
             sample=samples,
         )
 

@@ -23,6 +23,9 @@ databases:
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
   kraken_rRNA_db: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
   taxonomy_table: /data_2/Databases/taxonomy/taxonomy.tsv
+  humann_bowtie2db: /data_2/Databases/humann/metaphlan/
+  humann_nucleotidedb: /data_2/Databases/humann/chocophlan/
+  humann_proteindb: /data_2/Databases/humann/uniref/
 
 #######################
 ### Module settings ###
@@ -75,3 +78,12 @@ rRNA:
     options: "-r 150 -l G -t 10"
   kraken_biom:
     options: "--min G --max D --fmt hdf5"
+
+nonrRNA:
+  method: metaphlan # diamon | humann
+  metaphlan:
+    threads: 14
+    options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
+  humann:
+    threads: 16
+    options: "--diamond-options=--fast"

@@ -7,9 +7,9 @@ rule humann:
         nonrRNA_concatenate=rules.concatenate.output.nonrRNA_concatenate,
         metaphlan_profile=rules.metaphlan.output.metaphlan_profile
     output:
-        genefamilies=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_2_genefamilies.tsv",
-        reaction=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_3_reactions.tsv",
-        abundance=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_4_pathabundance.tsv"
+        genefamilies=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_genefamilies.tsv",
+        abundance=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_pathabundance.tsv",
+        coverage=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_pathcoverage.tsv"
     log:
         stdout=f"{RESULTS_DIR}/nonrRNA/{{sample}}/logs/humann.log"
     benchmark:
