@@ -34,6 +34,8 @@ rule humann:
             --taxonomic-profile {input.metaphlan_profile} \
             --nucleotide-database {params.nucleotide_db} \
             --protein-database {params.protein_db} \
+            --prescreen-threshold 0 \
+            --translated-query-coverage-threshold 50 \
             {params.options} \
             > {log.stdout} 2>&1
         """

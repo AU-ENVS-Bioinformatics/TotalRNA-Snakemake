@@ -13,14 +13,18 @@ rule metaphlan:
         f"{RESULTS_DIR}/nonrRNA/{{sample}}/benchmarks/metaphlan.txt"
     params:
         db=config["databases"]["humann_bowtie2db"],
-        options=config["nonrRNA"]["metaphlan"]["options"]
+        options=config["nonrRNA"]["metaphlan"]["options"],
+        metaphlan_bowtie2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/metaphlan/{{sample}}_metaphlan_profile.tsv.bowtie2.bz2",
     threads:
         config["nonrRNA"]["metaphlan"].get("threads", 8)
     shell:
         r"""
         set -euo pipefail
         mkdir -p $(dirname {output.metaphlan_profile})
-    
+        
+        rm -f {input.nonrRNA_concatenate}.bowtie2out.txt
+        rm -f {params.metaphlan_bowtie2}
+
         metaphlan {input.nonrRNA_concatenate} \
             {params.options} \
             --nproc {threads} \
@@ -29,3 +33,4 @@ rule metaphlan:
             > {log.stdout} 2>&1
         """
 #metaphlan ANN11_concantenated.fastq.gz --input_type fastq --bowtie2db /data_2/Databases/humann/metaphlan/ --nproc 16 --index mpa_vJun23_CHOCOPhlAnSGB_202307 --output_file ../humann/Metaphlan_Jun23_profile.txt
+#metaphlan /data/rasmus/Dev/SnakeResDev/nonrRNA/ANN_11_01/filtered/ANN_11_01_nonrRNA_concat.fastq.gz --input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307 --add_viruses --nproc 14 --bowtie2db /data_2/Databases/humann/metaphlan/ --output_file /data/rasmus/Dev/SnakeResDev/nonrRNA/ANN_11_01/metaphlan/ANN_11_01_metaphlan_profile.tsv

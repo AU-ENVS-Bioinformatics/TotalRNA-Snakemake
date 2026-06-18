@@ -26,6 +26,7 @@ databases:
   humann_bowtie2db: /data_2/Databases/humann/metaphlan/
   humann_nucleotidedb: /data_2/Databases/humann/chocophlan/
   humann_proteindb: /data_2/Databases/humann/uniref/
+  diamond_proteindb: /data_2/Databases/uniref90_db/uniref90.dmnd
 
 #######################
 ### Module settings ###
@@ -83,7 +84,10 @@ nonrRNA:
   method: metaphlan # diamon | humann
   metaphlan:
     threads: 14
-    options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
+    options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307 --add_viruses" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
   humann:
     threads: 16
-    options: "--diamond-options=--fast"
+    options: "--diamond-options=--very-sensitive"
+  diamond:
+    threads: 16
+    options: "--outfmt 6 qseqid sseqid pident length evalue bitscore --evalue 1e-5 --max-target-seqs 5"
