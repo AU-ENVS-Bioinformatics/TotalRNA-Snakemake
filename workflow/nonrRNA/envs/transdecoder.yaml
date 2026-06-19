@@ -1,0 +1,7 @@
+name: transdecoder
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - transdecoder>=6.0.0
