@@ -166,6 +166,7 @@ include: "rRNA/rules/kraken_bracken_downstream.smk"
 include: "nonrRNA/rules/preprocessing.smk"
 include: "nonrRNA/rules/metaphlan.smk"
 include: "nonrRNA/rules/humann.smk"
+include: "nonrRNA/rules/humann_postprocessing.smk"
 
 # once the rules has been completed check 
 # --------------------------

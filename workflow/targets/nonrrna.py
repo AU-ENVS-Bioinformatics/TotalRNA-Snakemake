@@ -31,6 +31,8 @@ def non_rrna_outputs(
             sample=samples,
         )
 
+        # merged humann functional profiling
+        outputs += f"{results_dir}/nonrRNA/humann_merged/merged_genefamilies.tsv",
         return outputs
 
     else:
