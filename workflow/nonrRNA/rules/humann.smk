@@ -7,9 +7,9 @@ rule humann:
         nonrRNA_concatenate=rules.concatenate.output.nonrRNA_concatenate,
         metaphlan_profile=rules.metaphlan.output.metaphlan_profile
     output:
-        genefamilies=f"{RESULTS_DIR}/nonrRNA/humann/{{sample}}_genefamilies.tsv",
-        abundance=f"{RESULTS_DIR}/nonrRNA/humann/{{sample}}_pathabundance.tsv",
-        coverage=f"{RESULTS_DIR}/nonrRNA/humann/{{sample}}_pathcoverage.tsv"
+        genefamilies=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_genefamilies.tsv",
+        abundance=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_pathabundance.tsv",
+        coverage=f"{RESULTS_DIR}/nonrRNA/{{sample}}/humann/{{sample}}_pathcoverage.tsv"
     log:
         stdout=f"{RESULTS_DIR}/nonrRNA/{{sample}}/logs/humann.log"
     benchmark:
@@ -34,9 +34,7 @@ rule humann:
             --taxonomic-profile {input.metaphlan_profile} \
             --nucleotide-database {params.nucleotide_db} \
             --protein-database {params.protein_db} \
-            --prescreen-threshold 0 \
-            --translated-query-coverage-threshold 50 \
             {params.options} \
             > {log.stdout} 2>&1
         """
-#humann -i ANN11_concantenated.fastq.gz -o ../humann/ --threads 24 --taxonomic-profile test_profile.txt --nucleotide-database /data_2/Databases/humann/chocophlan/ --protein-database /data_2/Databases/humann/uniref/ --diamond-options=--fast
+#humann -i ANN11_coßncantenated.fastq.gz -o ../humann/ --threads 24 --taxonomic-profile test_profile.txt --nucleotide-database /data_2/Databases/humann/chocophlan/ --protein-database /data_2/Databases/humann/uniref/ --diamond-options=--fast

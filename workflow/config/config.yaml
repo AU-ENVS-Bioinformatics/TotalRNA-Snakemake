@@ -88,7 +88,11 @@ nonrRNA:
     options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307 --add_viruses" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
   humann:
     threads: 16
-    options: "--diamond-options=--very-sensitive"
+    options: "--diamond-options=--fast --prescreen-threshold 0.05 --translated-query-coverage-threshold 50"
   diamond:
     threads: 16
     options: "--outfmt 6 qseqid sseqid pident length evalue bitscore --evalue 1e-5 --max-target-seqs 5"
+  spades:
+  prodigal:
+  transdecoder:
+  eggnog:

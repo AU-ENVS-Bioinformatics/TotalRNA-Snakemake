@@ -19,7 +19,7 @@ configfile: "config/config.yaml"
 
 # --------------------------
 # Load samplesheet
-# --------------------------…
+# --------------------------
 samplesheet = pd.read_csv(
     config["samples_file"],
     sep=r"\s+",
@@ -164,9 +164,38 @@ include: "rRNA/rules/kraken_bracken_downstream.smk"
 
 ### non-rRNA read-based functional profiling / ORF functional annotation
 include: "nonrRNA/rules/preprocessing.smk"
-include: "nonrRNA/rules/metaphlan.smk"
-include: "nonrRNA/rules/humann.smk"
-include: "nonrRNA/rules/humann_postprocessing.smk"
+
+
+# --------------------------
+# non-rRNA module selection
+# --------------------------
+if config["nonrRNA"]["method"] in ["metaphlan", "humann", "sequence reads", "diamond"]:
+    # Metaphlan is ALWAYS required (taxonomy baseline)
+    include: "nonrRNA/rules/metaphlan.smk"
+
+    # HUMANN is ALWAYS downstream of metaphlan in your design
+    include: "nonrRNA/rules/humann.smk"
+    include: "nonrRNA/rules/humann_postprocessing.smk"
+else:
+    raise ValueError(f"Unsupported nonrRNA method: {config['nonrRNA']['method']}")
+
+"""
+if config["nonrRNA"]["method"] == "read":
+    include: "nonrRNA/rules/metaphlan.smk"
+    include: "nonrRNA/rules/humann.smk"
+    include: "nonrRNA/rules/humann_postprocessing.smk"
+elif config["nonrRNA"]["method"] == "coassembly":
+    include: "nonrRNA/rules/assembly.smk"
+    include: "nonrRNA/rules/ORF_prediction.smk"
+    include: "nonrRNA/rules/eggnog.smk"
+    include: "nonrRNA/rules/alignment.smk"
+    include: "nonrRNA/rules/abundance.smk"
+
+elif config["nonrRNA"]["method"] == "assembly":
+    config["nonrRNA"]["method"]["refinement"] == "viral": # also co assembly
+    config["nonrRNA"]["method"]["refinement"] == "coassembly":
+    config["nonrRNA"]["method"]["refinement"] == "sample":
+"""
 
 # once the rules has been completed check 
 # --------------------------
