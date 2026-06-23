@@ -165,17 +165,25 @@ include: "rRNA/rules/kraken_bracken_downstream.smk"
 ### non-rRNA read-based functional profiling / ORF functional annotation
 include: "nonrRNA/rules/preprocessing.smk"
 
-
 # --------------------------
 # non-rRNA module selection
 # --------------------------
-if config["nonrRNA"]["method"] in ["metaphlan", "humann", "sequence reads", "diamond"]:
-    # Metaphlan is ALWAYS required (taxonomy baseline)
-    include: "nonrRNA/rules/metaphlan.smk"
+if config["nonrRNA"]["module"] == "read":
+    if config["nonrRNA"]["method"] in ["metaphlan", "humann"]:
+        # Metaphlan is ALWAYS required (taxonomy baseline)
+        include: "nonrRNA/rules/metaphlan.smk"
 
-    # HUMANN is ALWAYS downstream of metaphlan in your design
-    include: "nonrRNA/rules/humann.smk"
-    include: "nonrRNA/rules/humann_postprocessing.smk"
+        # HUMANN is ALWAYS downstream of metaphlan in your design
+        include: "nonrRNA/rules/humann.smk"
+        include: "nonrRNA/rules/humann_postprocessing.smk"
+elif config["nonrRNA"]["module"] == "coassembly":
+    if config["nonrRNA"]["method"] in ["spades","rnaspades"]:
+        # Co assembly
+        include: "nonrRNA/rules/co_assembly.smk"
+    if config["nonrRNA"]["predictor"] in ["transdecoder"]:
+        include: "nonrRNA/rules/diamond.smk"
+        include: "nonrRNA/rules/hmmscan.smk"
+        include: "nonrRNA/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
 else:
     raise ValueError(f"Unsupported nonrRNA method: {config['nonrRNA']['method']}")
 
@@ -236,7 +244,7 @@ rule rRNA_done:
 
 rule nonrRNA_done:
     input:
-        non_rrna_outputs(RESULTS_DIR, SAMPLES,config)
+        non_rrna_outputs(RESULTS_DIR,SAMPLES,config)
     output:
         flag=f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
     shell:
@@ -249,3 +257,7 @@ rule nonrRNA_done:
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --cores 35 --rerun-incomplete --keep-going --dry-run
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --cores 35 --rerun-incomplete --keep-going --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv
+
+#mamba create -n eggnog_env_dev -c conda-forge -c bioconda eggnog-mapper=2.1.13
+#mamba create -n prodigal_env -c bioconda prodigal
+#mamba create -n transdecoder_env -c bioconda transdecoder

@@ -1,32 +1,38 @@
-rule diamond:
-    conda:
-        "../envs/diamond.yaml"
-    message:
-        "[DIAMOND] sequence aligner for protein and translated DNA searches for {wildcards.sample}"
-    input:
-        nonrRNA_concatenate=rules.concatenate.output.nonrRNA_concatenate,
-    output:
-        diamond_uniref90=f"{RESULTS_DIR}/nonrRNA/{{sample}}/diamond/{{sample}}_uniref90.tsv",
-    log:
-        stdout=f"{RESULTS_DIR}/nonrRNA/{{sample}}/logs/diamond.log"
-    benchmark:
-        f"{RESULTS_DIR}/nonrRNA/{{sample}}/benchmarks/diamond.txt"
-    params:
-        protein_db=config["databases"]["diamond_proteindb"],
-        options=config["nonrRNA"]["diamond"]["options"]
-    threads:
-        config["nonrRNA"]["diamond"].get("threads", 14)
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p $(dirname {output.genefamilies})
+if config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predictor"] == "transdecoder":
+    rule diamond_blastp:
+        conda:
+            "../envs/diamond.yaml"
+        message:
+            "[DIAMOND] protein alignment (UniRef90)"
+        input:
+            pep=f"{RESULTS_DIR}/nonrRNA/predicted/longest_orfs.pep"
+        output:
+            diamond_uniref90=f"{RESULTS_DIR}/nonrRNA/diamond/transdecoder.blastp.outfmt6",
+        log:
+            stdout=f"{RESULTS_DIR}/nonrRNA/diamond/logs/diamond.log"
+        benchmark:
+            f"{RESULTS_DIR}/nonrRNA/diamond/benchmarks/diamond.txt"
+        params:
+            db=config["databases"]["diamond_proteindb"],
+            options=config["nonrRNA"]["diamond_blastp"]["options"]
+        threads:
+            config["nonrRNA"]["diamond_blastp"].get("threads", 14)
+        shell:
+            r"""
+            set -euo pipefail
+            mkdir -p $(dirname {output.diamond_uniref90})
 
-        diamond blastx 
-            -q {input.nonrRNA_concatenate} \
-            -d {params.protein_db}
-            -o {params.diamond_uniref90} \
-            --threads {threads} \
-            {params.options} \
-            > {log.stdout} 2>&1
-        """
+            diamond blastp \
+                -q {input.pep} \
+                -d {params.db} \
+                -o {output.diamond_uniref90} \
+                --threads {threads} \
+                {params.options} \
+                > {log.stdout} 2>&1
+            """
 
+#diamond blastp -q longest_orfs.pep 
+#--db /data_2/Databases/uniref90_db/uniref90.dmnd 
+#--out transdecoder.blastp.outfmt6 
+#--outfmt 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore 
+#--evalue 1e-5 --max-target-seqs 1 --sensitive --threads 16

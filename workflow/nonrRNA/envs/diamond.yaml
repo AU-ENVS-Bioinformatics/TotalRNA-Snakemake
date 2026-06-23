@@ -1,7 +1,7 @@
-name: transdecoder
+name: diamond
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - transdecoder=5.7.1
+  - diamond>=2.2.2

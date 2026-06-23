@@ -27,6 +27,7 @@ databases:
   humann_nucleotidedb: /data_2/Databases/humann/chocophlan/
   humann_proteindb: /data_2/Databases/humann/uniref/
   diamond_proteindb: /data_2/Databases/uniref90_db/uniref90.dmnd
+  Pfam_db: /data_2/Databases/Pfam/Pfam-A.hmm
 
 #######################
 ### Module settings ###
@@ -81,7 +82,9 @@ rRNA:
     options: "--min G --max D --fmt hdf5"
 
 nonrRNA:
-  method: metaphlan # diamon | humann
+  module: coassembly # read | coassembly | assembly 
+  method: spades # humann | rnaspades | trinity
+  predictor: transdecoder #prodigal | transdecoder
   threads: 14
   metaphlan:
     threads: 14
@@ -89,10 +92,16 @@ nonrRNA:
   humann:
     threads: 16
     options: "--diamond-options=--fast --prescreen-threshold 0.05 --translated-query-coverage-threshold 50"
-  diamond:
+  rnaspades:
     threads: 16
-    options: "--outfmt 6 qseqid sseqid pident length evalue bitscore --evalue 1e-5 --max-target-seqs 5"
-  spades:
-  prodigal:
+    options: "--rna"
+  diamond_blastp:
+    threads: 16
+    options: "--outfmt 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore --evalue 1e-5 --max-target-seqs 1 --sensitive"
+  hmm_scan:
+    threads: 16
   transdecoder:
+    options: "-m 100"
+  prodigal:
+    options: "-p meta -f gff -m -c -n"
   eggnog:

@@ -27,13 +27,13 @@ rule concatenate_across_samples:
             sample=SAMPLES,
         )
     output:
-        f"{RESULTS_DIR}/nonrRNA/concatenated/nonrRNA_{{read}}.fastq.gz"
+        merged=f"{RESULTS_DIR}/nonrRNA/concatenated/nonrRNA_{{read}}.fastq.gz"
     shell:
         r"""
         set -euo pipefail
-        mkdir -p $(dirname {output.nonrRNA_concatenate})
+        mkdir -p $(dirname {output.merged})
 
-        cat {input} > {output}
+        cat {input} > {output.merged}
         """
 
 """

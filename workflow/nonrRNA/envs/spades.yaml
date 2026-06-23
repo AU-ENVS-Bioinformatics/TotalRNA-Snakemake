@@ -1,7 +1,7 @@
-name: transdecoder
+name: spades
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - transdecoder=5.7.1
+  - spades>=4.3.0
