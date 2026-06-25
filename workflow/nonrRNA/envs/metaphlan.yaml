@@ -1,4 +1,4 @@
-name: humann_env
+name: humann
 channels:
   - biobakery
   - bioconda
