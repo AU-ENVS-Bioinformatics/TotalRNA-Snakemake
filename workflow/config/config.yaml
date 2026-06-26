@@ -108,6 +108,8 @@ nonrRNA:
   eggnog:
     threads: 24
     options: "--itype proteins -m diamond --sensmode sensitive"
+  salmon:
+    threads: 12
 
 #emapper.py \
 #    -i transcripts.fasta.transdecoder.pep \

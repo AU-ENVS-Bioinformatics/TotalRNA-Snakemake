@@ -4,6 +4,16 @@ from snakemake.io import expand
 
 METRICS = ["genefamilies", "pathabundance", "pathcoverage"]
 
+# translate the sequences to be quantified with salmon into a keyword 
+# (used to look up in the dictionary in salmon.smk), to do both original assembled contigs and predicted CDS
+
+SALMON_REFERENCES = {
+    "transcripts": "transcripts.fasta",
+    "cds": "transcripts.fasta.transdecoder.cds",
+}
+
+SALMON_REFERENCE_NAMES = list(SALMON_REFERENCES.keys())
+
 def non_rrna_outputs(
     results_dir: Path,
     samples: List[str],
@@ -81,7 +91,14 @@ def non_rrna_outputs(
 
             # Transdecoder Predict
             outputs += [f"{results_dir}/nonrRNA/predicted/transdecoder.done"]
-        
+
+            # Abundance quantification of samples against assembled contigs and predicted CDS
+            outputs += expand(
+                f"{results_dir}/nonrRNA/salmon/{{reference}}/{{sample}}/quant.sf",
+                sample=samples,
+                reference=SALMON_REFERENCE_NAMES,
+            )
+
         #annotations
         outputs += [f"{results_dir}/nonrRNA/eggnog/eggnog.emapper.annotations"]
 
