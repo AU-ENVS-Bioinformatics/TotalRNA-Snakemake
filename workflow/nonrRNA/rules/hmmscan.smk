@@ -17,7 +17,7 @@ if config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predictor"
         params:
             db=config["databases"]["Pfam_db"]
         threads:
-            config["nonrRNA"]["hmm_scan"].get("threads", 16)
+            config["nonrRNA"]["hmm_scan"].get("threads", 4)
         shell:
             r"""
             set -euo pipefail

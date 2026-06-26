@@ -81,6 +81,10 @@ def non_rrna_outputs(
 
             # Transdecoder Predict
             outputs += [f"{results_dir}/nonrRNA/predicted/transdecoder.done"]
+        
+        #annotations
+        outputs += [f"{results_dir}/nonrRNA/eggnog/eggnog.emapper.annotations"]
+
         return outputs
     else:
         raise ValueError(f"Unsupported rRNA module")

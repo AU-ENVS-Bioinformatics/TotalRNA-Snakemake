@@ -184,26 +184,9 @@ elif config["nonrRNA"]["module"] == "coassembly":
         include: "nonrRNA/rules/diamond.smk"
         include: "nonrRNA/rules/hmmscan.smk"
         include: "nonrRNA/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
+    include: "nonrRNA/rules/eggnog.smk"
 else:
     raise ValueError(f"Unsupported nonrRNA method: {config['nonrRNA']['method']}")
-
-"""
-if config["nonrRNA"]["method"] == "read":
-    include: "nonrRNA/rules/metaphlan.smk"
-    include: "nonrRNA/rules/humann.smk"
-    include: "nonrRNA/rules/humann_postprocessing.smk"
-elif config["nonrRNA"]["method"] == "coassembly":
-    include: "nonrRNA/rules/assembly.smk"
-    include: "nonrRNA/rules/ORF_prediction.smk"
-    include: "nonrRNA/rules/eggnog.smk"
-    include: "nonrRNA/rules/alignment.smk"
-    include: "nonrRNA/rules/abundance.smk"
-
-elif config["nonrRNA"]["method"] == "assembly":
-    config["nonrRNA"]["method"]["refinement"] == "viral": # also co assembly
-    config["nonrRNA"]["method"]["refinement"] == "coassembly":
-    config["nonrRNA"]["method"]["refinement"] == "sample":
-"""
 
 # once the rules has been completed check 
 # --------------------------
@@ -252,7 +235,6 @@ rule nonrRNA_done:
         mkdir -p {RESULTS_DIR}/nonrRNA
         touch {output.flag}
         """
-
 
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --cores 35 --rerun-incomplete --keep-going --dry-run

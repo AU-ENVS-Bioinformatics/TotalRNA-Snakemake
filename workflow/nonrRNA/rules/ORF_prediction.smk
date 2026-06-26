@@ -41,6 +41,7 @@ elif config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predicto
             assembled_fa=f"{RESULTS_DIR}/nonrRNA/coassembly/transcripts.fasta"
         output:
             pep=temp(f"{PREDICTED_DIR}/longest_orfs.pep"),
+            pep2=f"{PREDICTED_DIR}/longest_orfs_tmp.pep",
             cds=temp(f"{PREDICTED_DIR}/longest_orfs.cds"),
             gff=temp(f"{PREDICTED_DIR}/longest_orfs.gff3"),
         log:
@@ -63,10 +64,12 @@ elif config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predicto
             
 
             TD_DIR="{params.outdir}/$(basename {input.assembled_fa}).transdecoder_dir"
-
+            
             ln -sf "$TD_DIR/longest_orfs.pep" {output.pep}
             ln -sf "$TD_DIR/longest_orfs.cds" {output.cds}
             ln -sf "$TD_DIR/longest_orfs.gff3" {output.gff}
+
+            cp "$TD_DIR/longest_orfs.pep" {output.pep2}
             """
 
     # TransDecoder.LongOrfs -t transcripts.fasta --output_dir ../Transdecoder
@@ -84,6 +87,9 @@ elif config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predicto
             diamond=f"{RESULTS_DIR}/nonrRNA/diamond/transdecoder.blastp.outfmt6",
             pfam=f"{RESULTS_DIR}/nonrRNA/hmmscan/pfam.domtblout",
         output:
+            pep = f"{PREDICTED_DIR}/transcripts.fasta.transdecoder.pep",
+            cds = f"{PREDICTED_DIR}/transcripts.fasta.transdecoder.cds",
+            gff = f"{PREDICTED_DIR}/transcripts.fasta.transdecoder.gff3",
             done=f"{PREDICTED_DIR}/transdecoder.done"
         log:
             stdout = f"{RESULTS_DIR}/nonrRNA/predicted/logs/transdecoder_predicted.log"
@@ -108,3 +114,8 @@ elif config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predicto
 
     # TransDecoder.LongOrfs -t "contigs.fasta"
     # TransDecoder.Predict -t "contigs.fasta"
+
+# filtering ORFs: keep biologically meaningful coding sequences 
+# using:
+# homology evidence (DIAMOND)
+# domain presence (Pfam)
