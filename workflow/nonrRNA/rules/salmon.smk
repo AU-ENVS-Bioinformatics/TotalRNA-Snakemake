@@ -7,10 +7,8 @@ SALMON_REFERENCES = {
     ),
 }
 
-
 def salmon_reference(wc):
     return SALMON_REFERENCES[wc.reference]
-
 
 rule salmon_index:
     conda:
@@ -38,7 +36,6 @@ rule salmon_index:
             -i {output.index} \
             > {log.stdout} 2>&1
         """
-
 
 rule salmon:
     conda:

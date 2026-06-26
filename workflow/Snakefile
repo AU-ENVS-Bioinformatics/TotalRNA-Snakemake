@@ -177,9 +177,10 @@ if config["nonrRNA"]["module"] == "read":
         include: "nonrRNA/rules/humann.smk"
         include: "nonrRNA/rules/humann_postprocessing.smk"
 elif config["nonrRNA"]["module"] == "coassembly":
-    if config["nonrRNA"]["method"] in ["spades","rnaspades"]:
+    if config["nonrRNA"]["method"] in ["spades","rnaspades","metaspades"]:
         # Co assembly
         include: "nonrRNA/rules/co_assembly.smk"
+        include: "nonrRNA/rules/salmon.smk"
     if config["nonrRNA"]["predictor"] in ["transdecoder"]:
         include: "nonrRNA/rules/diamond.smk"
         include: "nonrRNA/rules/hmmscan.smk"

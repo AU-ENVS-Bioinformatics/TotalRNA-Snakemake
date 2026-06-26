@@ -1,3 +1,3 @@
-sample_id   input_files  module  condition_classification    condition_description
-ANN_10  /data/rasmus/TotalRNA-Snakemake/dataset/raw/ANN10_raw_R1_001.part_001.fastq.gz,/data/rasmus/TotalRNA-Snakemake/dataset/raw/ANN10_raw_R2_001.part_001.fastq.gz    rRNA    1   NA
-ANN_11  /data/rasmus/TotalRNA-Snakemake/dataset/rawsubet/ANN11_raw_R1_001.part_001.fastq.gz,/data/rasmus/TotalRNA-Snakemake/dataset/rawsubet/ANN11_raw_R2_001.part_001.fastq.gz    rRNA    1   NA
+sample_id   R1  R2  module  condition_classification    condition_description
+ANN_10  /data/rasmus/TotalRNA-Snakemake/dataset/rawsubet/10mill/ANN10_raw_R1_001.part_001.fastq.gz  /data/rasmus/TotalRNA-Snakemake/dataset/rawsubet/10mill/ANN10_raw_R2_001.part_001.fastq.gz    rRNA    1   NA
+ANN_11  /data/rasmus/TotalRNA-Snakemake/dataset/rawsubet/10mill/ANN11_raw_R1_001.part_001.fastq.gz  /data/rasmus/TotalRNA-Snakemake/dataset/rawsubet/10mill/ANN11_raw_R2_001.part_001.fastq.gz    rRNA    1   NA
