@@ -4,6 +4,7 @@ samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
 shared_results_dir: /data/rasmus/Dev/SnakeResDev
 
 ncbi_email: "au811884.uni.au.dk"
+send_mail: "yes"
 
 databases:
   human_GRCh38_genome: /data_2/Databases/GRCh38/GCF_000001405.40_GRCh38.p14_genomic.fna
@@ -83,9 +84,10 @@ rRNA:
     options: "--min G --max D --fmt hdf5"
 
 nonrRNA:
-  module: coassembly # read | coassembly | assembly 
-  method: spades # humann | rnaspades | trinity
-  predictor: transdecoder #prodigal | transdecoder
+  nonrrna_module: all # read | coassembly | assembly | both | all
+  read_method: humann # humann | metaphlan
+  assembly_method: spades # spades | rnaspades | trinity
+  assembly_predictor: transdecoder #prodigal | transdecoder
   threads: 24
   metaphlan:
     threads: 14
@@ -110,17 +112,3 @@ nonrRNA:
     options: "--itype proteins -m diamond --sensmode sensitive"
   salmon:
     threads: 12
-
-#emapper.py \
-#    -i transcripts.fasta.transdecoder.pep \
-#    --itype proteins \
-#    -m diamond \
-#    --data_dir /data_2/eggnog_data \
-#    --cpu 32 \
-#    --tax_scope auto \
-#    --target_orthologs all \
-#    --go_evidence non-electronic \
-#    --pfam_realign none \
-#    --dmnd_iterate yes \
-#    --sensmode sensitive \
-#    -o eggnog

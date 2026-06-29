@@ -21,9 +21,13 @@ def non_rrna_outputs(
 ) -> List[str]:
 
     outputs: List[str] = []
+    nonrrna_module = config["nonrRNA"]["nonrrna_module"]
 
-    if config["nonrRNA"]["module"] == "read":
-        if config["nonrRNA"]["method"] in ["metaphlan", "humann"]:
+    # --------------------------
+    # READ-BASED
+    # --------------------------
+    if nonrrna_module in ["read", "both", "all"]:
+        if config["nonrRNA"]["read_method"] in ["metaphlan", "humann"]:
             # --------------------------
             # 1. raw per-sample outputs
             # --------------------------
@@ -76,13 +80,12 @@ def non_rrna_outputs(
             outputs += [
                 f"{results_dir}/nonrRNA/humann_merged/merged_genefamilies_xrn.tsv"
             ]
-
-            return outputs
-    elif config["nonrRNA"]["module"] == "coassembly":
+    
+    if nonrrna_module in ["coassembly", "both", "all"]:
 
         outputs += [f"{results_dir}/nonrRNA/coassembly/transcripts.fasta"]
 
-        if config["nonrRNA"]["predictor"] == "transdecoder":
+        if config["nonrRNA"]["assembly_predictor"] == "transdecoder":
             # DIAMOND Blastp 
             outputs += [f"{results_dir}/nonrRNA/diamond/transdecoder.blastp.outfmt6"]
 
@@ -101,8 +104,11 @@ def non_rrna_outputs(
 
         #annotations
         outputs += [f"{results_dir}/nonrRNA/eggnog/eggnog.emapper.annotations"]
-
-        return outputs
-    else:
-        raise ValueError(f"Unsupported rRNA module")
     
+    # --------------------------
+    # VALIDATION
+    # --------------------------
+    if nonrrna_module not in ["read", "coassembly", "both", "all"]:
+        raise ValueError(f"Unsupported nonrRNA module: {nonrrna_module}")
+
+    return outputs
