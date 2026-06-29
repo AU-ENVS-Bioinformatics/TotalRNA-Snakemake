@@ -106,6 +106,7 @@ elif config["nonrRNA"]["module"] == "coassembly" and config["nonrRNA"]["predicto
                 -t {input.assembled_fa} \
                 --retain_blastp_hits {input.diamond} \
                 --retain_pfam_hits {input.pfam} \
+                --single_best_only \
                 --output_dir {params.outdir} \
                 > {log} 2>&1
 
