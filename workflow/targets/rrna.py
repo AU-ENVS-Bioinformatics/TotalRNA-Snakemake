@@ -33,11 +33,12 @@ def rrna_outputs(
 
         # Global aggregated outputs
         outputs += [
-            f"{results_dir}/rRNA/taxonomy/bracken_species.biom",
-            f"{results_dir}/rRNA/taxonomy/bracken_species_qualitative.txt",
-            f"{results_dir}/rRNA/taxonomy/bracken_species_observations.txt",
-            f"{results_dir}/rRNA/taxonomy/bracken_species.tsv",
-            f"{results_dir}/rRNA/taxonomy/phyloseq.rds",
+            f"{results_dir}/rRNA/taxonomy/bracken_taxonomy.biom",
+            f"{results_dir}/rRNA/taxonomy/bracken_taxonomy_qualitative.txt",
+            f"{results_dir}/rRNA/taxonomy/bracken_taxonomy_observations.txt",
+            f"{results_dir}/rRNA/taxonomy/bracken_taxonomy.tsv",
+            f"{results_dir}/rRNA/taxonomy/phyloseq_raw.rds",
+            f"{results_dir}/rRNA/taxonomy/phyloseq_filtered.rds",
         ]
 
         return outputs

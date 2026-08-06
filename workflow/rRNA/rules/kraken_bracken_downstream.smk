@@ -8,10 +8,10 @@ rule kraken_biom:
         "[Kraken-Biom] converts kraken report to BIOM format for for taxonomic classification"
     input:
         expand(
-            f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.k2report",sample=SAMPLES
+            f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.bracken.k2report",sample=SAMPLES
         )
     output:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.biom"
+        biom=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_taxonomy.biom"
     log:
         f"{RESULTS_DIR}/rRNA/taxonomy/logs/kraken_biom.log"
     benchmark:
@@ -37,7 +37,7 @@ rule biom_table_stats_qualitative:
     input:
         biom = rules.kraken_biom.output.biom
     output:
-        biom_qual=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species_qualitative.txt"
+        biom_qual=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_taxonomy_qualitative.txt"
     log:
         f"{RESULTS_DIR}/rRNA/taxonomy/logs/biom_summary_qualitative.log"
     benchmark:
@@ -60,7 +60,7 @@ rule biom_table_stats_observations:
     input:
         biom = rules.kraken_biom.output.biom
     output:
-        biom_obs=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species_observations.txt"
+        biom_obs=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_taxonomy_observations.txt"
     log:
         f"{RESULTS_DIR}/rRNA/taxonomy/logs/biom_summary_observations.log"
     benchmark:
@@ -83,7 +83,7 @@ rule kraken_biom_convert:
     input:
         biom = rules.kraken_biom.output.biom
     output:
-        biom_tsv=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_species.tsv"
+        biom_tsv=f"{RESULTS_DIR}/rRNA/taxonomy/bracken_taxonomy.tsv"
     log:
         f"{RESULTS_DIR}/rRNA/taxonomy/logs/biom_convert.log"
     benchmark:
@@ -95,13 +95,46 @@ rule kraken_biom_convert:
         biom convert -i {input.biom} -o {output.biom_tsv} --to-tsv --header-key taxonomy > {log} 2>&1
         """
 
-rule biom_to_phyloseq:
+rule biom_to_phyloseq_raw:
+    conda:
+        f"{ENVS_DIR}/r_phyloseq.yaml"
+    message:
+        "[phyloseq] Import BIOM into an unfiltered phyloseq object"
+    input:
+        biom=rules.kraken_biom.output.biom
+    output:
+        rds=f"{RESULTS_DIR}/rRNA/taxonomy/phyloseq_raw.rds"
+    log:
+        f"{RESULTS_DIR}/rRNA/taxonomy/logs/biom_to_phyloseq_raw.log"
+    benchmark:
+        f"{RESULTS_DIR}/rRNA/taxonomy/benchmarks/biom_to_phyloseq_raw.txt"
+    shell:
+        r"""
+        mkdir -p $(dirname {output.rds})
+
+        Rscript -e '
+        suppressPackageStartupMessages({{
+            library(biomformat)
+            library(phyloseq)
+        }})
+
+        physeq <- import_biom("{input.biom}")
+
+        saveRDS(
+            physeq,
+            file="{output.rds}",
+            compress="xz"
+        )
+        ' > {log} 2>&1
+        """
+
+rule biom_to_phyloseq_filtered:
     conda:
         f"{ENVS_DIR}/r_phyloseq.yaml"
     input:
         biom = rules.kraken_biom.output.biom
     output:
-        rds = f"{RESULTS_DIR}/rRNA/taxonomy/phyloseq.rds"
+        rds = f"{RESULTS_DIR}/rRNA/taxonomy/phyloseq_filtered.rds"
     log:
         f"{RESULTS_DIR}/rRNA/taxonomy/logs/biom_to_phyloseq.log"
     benchmark:
@@ -113,4 +146,4 @@ rule biom_to_phyloseq:
         Rscript {SCRIPTS_DIR}/biom_to_phyloseq.R {input.biom} {output.rds} {params.prefix} > {log} 2>&1
         """
 
-#mamba create -n kraken_biom_test     -c conda-forge     -c bioconda     python=3.10     kraken-biom     biom-format
+#mamba create -n kraken_biom_test -c conda-forge -c bioconda python=3.10 kraken-biom biom-format
