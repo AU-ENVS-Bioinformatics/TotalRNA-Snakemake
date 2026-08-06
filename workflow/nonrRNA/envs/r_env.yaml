@@ -1,0 +1,23 @@
+name: r_env
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - r-base
+  - r-data.table
+  - r-tidyverse
+  - r-optparse
+  - r-readr
+  - r-dplyr
+  - r-tidyr
+  - r-stringr
+  - r-ggplot2
+  - r-purrr
+  - r-rmarkdown
+  - r-knitr
+  - bioconductor-deseq2
+  - bioconductor-edger
+  - bioconductor-limma
+  - bioconductor-tximport
+  - bioconductor-biostrings
