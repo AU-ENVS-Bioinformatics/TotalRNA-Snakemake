@@ -140,7 +140,7 @@ include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
 
-### RNA SEPERATION - check if the if statements are redudnant with the ones in the included rules (smk files) or if they are needed to avoid including rules that would not be used
+### RNA SEPERATION - check if the if statements are redundant with the ones in the included rules (smk files) or if they are needed to avoid including rules that would not be used
 if config["RNA"]["method"] == "sortmerna":
     if config["RNA"]["refinement"] == "staged":
         include: "RNA/rules/sortmerna_stages.smk"
@@ -168,26 +168,31 @@ include: "nonrRNA/rules/preprocessing.smk"
 # --------------------------
 # non-rRNA module selection
 # --------------------------
-if config["nonrRNA"]["module"] == "read":
-    if config["nonrRNA"]["method"] in ["metaphlan", "humann"]:
+
+nonrrna_module = config["nonrRNA"]["nonrrna_module"]
+
+if nonrrna_module in ["read", "both", "all"]:
+    if config["nonrRNA"]["read_method"] in ["metaphlan", "humann"]:
         # Metaphlan is ALWAYS required (taxonomy baseline)
         include: "nonrRNA/rules/metaphlan.smk"
-
         # HUMANN is ALWAYS downstream of metaphlan in your design
         include: "nonrRNA/rules/humann.smk"
         include: "nonrRNA/rules/humann_postprocessing.smk"
-elif config["nonrRNA"]["module"] == "coassembly":
-    if config["nonrRNA"]["method"] in ["spades","rnaspades","metaspades"]:
+
+if nonrrna_module in ["coassembly", "both", "all"]:
+    if config["nonrRNA"]["assembly_method"] in ["spades","rnaspades","metaspades"]:
         # Co assembly
         include: "nonrRNA/rules/co_assembly.smk"
-        include: "nonrRNA/rules/salmon.smk"
-    if config["nonrRNA"]["predictor"] in ["transdecoder"]:
+    if config["nonrRNA"]["assembly_predictor"] in ["transdecoder"]:
         include: "nonrRNA/rules/diamond.smk"
         include: "nonrRNA/rules/hmmscan.smk"
+        include: "nonrRNA/rules/hmmscan_processing.smk"
         include: "nonrRNA/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
+    include: "nonrRNA/rules/salmon.smk"
     include: "nonrRNA/rules/eggnog.smk"
-else:
-    raise ValueError(f"Unsupported nonrRNA method: {config['nonrRNA']['method']}")
+
+if nonrrna_module not in ["read", "coassembly", "both", "all"]:
+    raise ValueError(f"Unsupported nonrRNA module: {nonrrna_module}")
 
 # once the rules has been completed check 
 # --------------------------
@@ -244,3 +249,5 @@ rule nonrRNA_done:
 #mamba create -n eggnog_env_dev -c conda-forge -c bioconda eggnog-mapper=2.1.13
 #mamba create -n prodigal_env -c bioconda prodigal
 #mamba create -n transdecoder_env -c bioconda transdecoder
+
+#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.donesnakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done

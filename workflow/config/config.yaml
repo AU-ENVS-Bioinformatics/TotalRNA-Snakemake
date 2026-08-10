@@ -20,6 +20,7 @@ databases:
   sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna5_idx/SSU_LSU/idx/
   sortmeRNA_ssu_ids: /data_2/Databases/sortmerna_idx/SSU/SILVA_138.1_SSURef_NR99_tax_silva_trunc.contigs_ids
   SILVA_138.1_N99: /data_2/Databases/SILVA_138/SILVA_138.1_SSU_LSU_N99_tax_silva_trunc.fasta
+  SILVA_138.2_N99_blast: /data_2/Databases/SILVA_138.2_blast/SILVA_138.2_SSURef_NR99
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
   kraken_rRNA_db: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
@@ -30,6 +31,7 @@ databases:
   diamond_proteindb: /data_2/Databases/uniref90_db/uniref90.dmnd
   Pfam_db: /data_2/Databases/Pfam/Pfam-A.hmm
   emapper_diamond_proteindb: /data_2/Databases/eggnog_mapper
+  phyloflash: /data_2/Databases/phyloflash/138.2
 
 #######################
 ### Module settings ###
@@ -84,7 +86,7 @@ rRNA:
     options: "--min G --max D --fmt hdf5"
 
 nonrRNA:
-  nonrrna_module: all # read | coassembly | assembly | both | all
+  nonrrna_module: coassembly # read | coassembly | assembly | both | all
   read_method: humann # humann | metaphlan
   assembly_method: spades # spades | rnaspades | trinity
   assembly_predictor: transdecoder #prodigal | transdecoder
@@ -93,7 +95,7 @@ nonrRNA:
     threads: 14
     options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307 --add_viruses" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
   humann:
-    threads: 16
+    threads: 3
     options: "--diamond-options=--fast --prescreen-threshold 0.05 --translated-query-coverage-threshold 50"
   rnaspades:
     threads: 16
@@ -101,8 +103,10 @@ nonrRNA:
   diamond_blastp:
     threads: 24
     options: "--outfmt 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore --evalue 1e-5 --max-target-seqs 1 --sensitive"
-  hmm_scan:
-    threads: 5
+  hmmscan:
+    threads: 3
+    chunk_size: 50000
+    options: "--cut_ga --noali --acc"
   transdecoder:
     options: "-m 100"
   prodigal:
@@ -112,3 +116,14 @@ nonrRNA:
     options: "--itype proteins -m diamond --sensmode sensitive"
   salmon:
     threads: 12
+  
+phylogeny:
+  phyloflash:
+    threads: 12
+    options: "-nokeeptmp -nozip"
+  blastn:
+    threads: 12
+    options: "-outfmt 6 qseqid sseqid pident length qlen slen qcovs evalue bitscore -evalue 1e-20 -max_target_seqs 100 -max_hsps 1"
+  iqtree:
+    threads: 12
+    options: "-m MFP -B 1000 -alrt 1000"

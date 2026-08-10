@@ -42,10 +42,10 @@ if nonrrna_module in ["coassembly", "both", "all"]:
             input:
                 assembled_fa=f"{RESULTS_DIR}/nonrRNA/coassembly/transcripts.fasta"
             output:
-                pep=temp(f"{PREDICTED_DIR}/longest_orfs.pep"),
+                pep=f"{PREDICTED_DIR}/longest_orfs.pep",
                 pep2=f"{PREDICTED_DIR}/longest_orfs_tmp.pep",
-                cds=temp(f"{PREDICTED_DIR}/longest_orfs.cds"),
-                gff=temp(f"{PREDICTED_DIR}/longest_orfs.gff3"),
+                cds=f"{PREDICTED_DIR}/longest_orfs.cds",
+                gff=f"{PREDICTED_DIR}/longest_orfs.gff3",
             log:
                 stdout = f"{PREDICTED_DIR}/logs/longorfs.log"
             benchmark:
