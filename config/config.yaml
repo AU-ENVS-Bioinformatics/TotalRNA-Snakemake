@@ -1,4 +1,0 @@
-samplesheet: dataset/samplesheet.tsv
-illumina_raw: dataset/raw
-illumina_trim: dataset/trimmed
-output_folder: results
