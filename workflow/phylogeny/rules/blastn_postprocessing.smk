@@ -20,20 +20,24 @@
 ################################################################################
 
 rule filter_blast_ssu:
+    conda:
+        "../envs/blastn.yaml"
     message:
         "[BLASTN] filter SILVA hits and retain top 20 references per SSU for {wildcards.sample}"
     input:
-        blast=f"{PHYLOGENY_DIR}/{{sample}}/BLAST/{{sample}}_SSU_blast.tsv"
+        blast=f"{PHYLOGENY_DIR}/{{sample}}/blastn/{{sample}}_SSU_blastn.tsv"
     output:
-        filtered=f"{PHYLOGENY_DIR}/{{sample}}/BLAST/{{sample}}_SSU_blast_top20.tsv"
+        blast_top=f"{PHYLOGENY_DIR}/{{sample}}/blastn/{{sample}}_SSU_blast_top20.tsv"
     params:
-        top_n_hits = 20
+        top_n_hits=config["phylogeny"]["blastn_postprocessing"]["top_n_hits"],
+        nt_identify=config["phylogeny"]["blastn_postprocessing"]["nt_identify"],
+        query_coverage=config["phylogeny"]["blastn_postprocessing"]["query_coverage"]
     shell:
         r"""
         set -euo pipefail
-        mkdir -p $(dirname {output.filtered})
+        mkdir -p $(dirname {output.blast_top})
 
-        awk '$3 >= 97 && $7 >= 90' {input.blast} | sort -k1,1 -k9,9nr | awk 'count[$1]++ < {params.top_n_hits}' > {output.filtered}
+        awk '$3 >= {params.nt_identify} && $7 >= {params.query_coverage}' {input.blast} | sort -k1,1 -k9,9nr | awk 'count[$1]++ < {params.top_n_hits}' > {output.blast_top}
         """
 
 ################################################################################
@@ -41,12 +45,14 @@ rule filter_blast_ssu:
 ################################################################################
 
 rule extract_silva_accessions:
+    conda:
+        "../envs/blastn.yaml"
     message:
         "[SILVA] extract reference IDs for {wildcards.sample}"
     input:
-        filtered=f"{PHYLOGENY_DIR}/{{sample}}/BLAST/{{sample}}_SSU_blast_top20.tsv"
+        filtered=f"{PHYLOGENY_DIR}/{{sample}}/blastn/{{sample}}_SSU_blast_top20.tsv"
     output:
-        ids=f"{PHYLOGENY_DIR}/{{sample}}/References/{{sample}}_SILVA_accessions.txt"
+        ids=f"{PHYLOGENY_DIR}/{{sample}}/references/{{sample}}_SILVA_accessions.txt"
     shell:
         r"""
         set -euo pipefail
@@ -63,13 +69,13 @@ rule extract_silva_accessions:
 
 rule extract_silva_sequences:
     conda:
-        "../envs/blast.yaml"
+        "../envs/blastn.yaml"
     message:
         "[SILVA] retrieve closest reference SSU sequences for {wildcards.sample}"
     input:
-        ids=f"{PHYLOGENY_DIR}/{{sample}}/References/{{sample}}_SILVA_accessions.txt"
+        ids=f"{PHYLOGENY_DIR}/{{sample}}/references/{{sample}}_SILVA_accessions.txt"
     output:
-        fasta=f"{PHYLOGENY_DIR}/{{sample}}/References/{{sample}}_SILVA_references.fasta"
+        fasta=f"{PHYLOGENY_DIR}/{{sample}}/references/{{sample}}_SILVA_references.fasta"
     log:
         f"{PHYLOGENY_DIR}/{{sample}}/logs/{{sample}}_blastdbcmd.log"
     benchmark:
@@ -94,13 +100,15 @@ rule extract_silva_sequences:
 ################################################################################
 
 rule combine_ssu_references:
+    conda:
+        "../envs/blastn.yaml"
     message:
         "[Phylogeny] combine reconstructed SSUs and SILVA references for {wildcards.sample}"
     input:
-        query=f"{PHYLOGENY_DIR}/{{sample}}/Phyloflash/{{sample}}.all.final.fasta",
-        refs=f"{PHYLOGENY_DIR}/{{sample}}/References/{{sample}}_SILVA_references.fasta"
+        query=f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}.all.final.fasta",
+        refs=f"{PHYLOGENY_DIR}/{{sample}}/references/{{sample}}_SILVA_references.fasta"
     output:
-        fasta=f"{PHYLOGENY_DIR}/{{sample}}/Alignment/{{sample}}_SSU_with_references.fasta"
+        fasta=f"{PHYLOGENY_DIR}/{{sample}}/phyloflashreference/{{sample}}_SSU_with_references.fasta"
     shell:
         r"""
         set -euo pipefail

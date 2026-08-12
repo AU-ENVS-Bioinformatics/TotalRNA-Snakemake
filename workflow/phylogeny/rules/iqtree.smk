@@ -8,7 +8,7 @@ rule iqtree_ssu:
     message:
         "[IQ-TREE2] construct SSU phylogenetic tree for {wildcards.sample}"
     input:
-        alignment=f"{PHYLOGENY_DIR}/{{sample}}/Alignment/{{sample}}_SSU_mafft_trimmed.fasta"
+        alignment=f"{PHYLOGENY_DIR}/{{sample}}/mafft/{{sample}}_SSU_mafft_trimmed.fasta"
     output:
         tree=f"{PHYLOGENY_DIR}/{{sample}}/IQTREE/{{sample}}_SSU.treefile",
         iqtree=f"{PHYLOGENY_DIR}/{{sample}}/IQTREE/{{sample}}_SSU.iqtree",

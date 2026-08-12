@@ -4,13 +4,13 @@
     
 rule blast_ssu:
     conda:
-        "../envs/blast.yaml"
+        "../envs/blastn.yaml"
     message:
         "[BLASTN] identify closest SILVA references for reconstructed SSUs of {wildcards.sample}"
     input:
-        phyloflash_query=f"{PHYLOGENY_DIR}/{{sample}}/Phyloflash/{{sample}}.all.final.fasta",
+        phyloflash_query=f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}.all.final.fasta",
     output:
-        tsv=f"{PHYLOGENY_DIR}/{{sample}}/BLAST/{{sample}}_SSU_blastn.tsv"
+        tsv=f"{PHYLOGENY_DIR}/{{sample}}/blastn/{{sample}}_SSU_blastn.tsv"
     log:
         stdout=f"{PHYLOGENY_DIR}/{{sample}}/logs/{{sample}}_blastn.log",
         benchmark_file=f"{PHYLOGENY_DIR}/{{sample}}/benchmarks/{{sample}}_blastn_time.txt",
@@ -26,11 +26,12 @@ rule blast_ssu:
         set -euo pipefail
         mkdir -p $(dirname {output.tsv})
 
-        blastn \
-            -query {input.Phyloflash_fasta} \
-            -db {params.db} \
-            -out {output.tsv} \
-            -num_threads {threads} \
-            {params.options} \
-            > {log.stdout} 2>&1
+        /usr/bin/time -v -o {log.benchmark_file} \
+            blastn \
+                -query {input.phyloflash_query} \
+                -db {params.db} \
+                -out {output.tsv} \
+                -num_threads {threads} \
+                {params.options} \
+                > {log.stdout} 2>&1
         """

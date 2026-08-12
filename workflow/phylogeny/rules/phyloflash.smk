@@ -2,7 +2,7 @@
 # 1. PHYLOFLASH SSU RECONSTRUCTIONS FOR PHYLOGENETIC ANALYSIS
 ################################################################################
 
-PHYLOGENY_DIR = f"{RESULTS_DIR}/Phylogeny"
+PHYLOGENY_DIR = f"{RESULTS_DIR}/phylogeny"
 
 rule phyloflash:
     conda:
@@ -10,17 +10,17 @@ rule phyloflash:
     message:
         "[PhyloFlash] reconstruct the SSU rRNAs and explore phylogenetic composition of {wildcards.sample}"
     input:
-        rRNA_R1=f"{PHYLOGENY_DIR}/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-        rRNA_R2=f"{PHYLOGENY_DIR}/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
+        rRNA_ssu_r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+        rRNA_ssu_r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
     output:
-        Phyloflash_fasta=f"{PHYLOGENY_DIR}/{{sample}}/Phyloflash/{{sample}}.all.final.fasta",
+        Phyloflash_fasta=f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}.all.final.fasta",
     log:
         stdout=f"{PHYLOGENY_DIR}/{{sample}}/logs/{{sample}}_phyloflash.log",
         benchmark_file=f"{PHYLOGENY_DIR}/{{sample}}/benchmarks/{{sample}}_phyloflash_time.txt",
     benchmark:
         f"{PHYLOGENY_DIR}/{{sample}}/benchmarks/{{sample}}_phyloflash.txt"
     params:
-        dir=f"{PHYLOGENY_DIR}/{{sample}}/Phyloflash/",
+        dir=f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/",
         db=config["databases"]["phyloflash"],
         options=config["phylogeny"]["phyloflash"]["options"]
     threads:
@@ -35,8 +35,8 @@ rule phyloflash:
         /usr/bin/time -v -o {log.benchmark_file} \
             phyloFlash.pl \
                 -lib {wildcards.sample} \
-                -read1 {input.rRNA_R1} \
-                -read2 {input.rRNA_R2} \
+                -read1 {input.rRNA_ssu_r1} \
+                -read2 {input.rRNA_ssu_r2} \
                 -dbhome {params.db} \
                 -CPUs {threads} \
                 {params.options} \
