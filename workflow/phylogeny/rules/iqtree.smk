@@ -6,19 +6,20 @@ rule iqtree_ssu:
     conda:
         "../envs/iqtree.yaml"
     message:
-        "[IQ-TREE2] construct SSU phylogenetic tree for {wildcards.sample}"
+        "[IQ-TREE2] construct SSU phylogenetic tree across samples and SSU extracted references"
     input:
-        alignment=f"{PHYLOGENY_DIR}/{{sample}}/mafft/{{sample}}_SSU_mafft_trimmed.fasta"
+        trimmed=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft_trim.fasta"
     output:
-        tree=f"{PHYLOGENY_DIR}/{{sample}}/IQTREE/{{sample}}_SSU.treefile",
-        iqtree=f"{PHYLOGENY_DIR}/{{sample}}/IQTREE/{{sample}}_SSU.iqtree",
-        model=f"{PHYLOGENY_DIR}/{{sample}}/IQTREE/{{sample}}_SSU.model.gz"
+        tree=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.treefile",
+        iqtree=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.iqtree",
+        model=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.model.gz"
     log:
-        f"{PHYLOGENY_DIR}/{{sample}}/logs/{{sample}}_iqtree.log"
+        stdout=f"{PHYLOGENY_DIR}/tree/logs/iqtree.log",
+        benchmark_file=f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree_time.txt",
     benchmark:
-        f"{PHYLOGENY_DIR}/{{sample}}/benchmarks/{{sample}}_iqtree.txt"
+        f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree.txt"
     params:
-        prefix=f"{PHYLOGENY_DIR}/{{sample}}/IQTREE/{{sample}}_SSU",
+        prefix=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU",
         options=config["phylogeny"]["iqtree"]["options"]
     threads:
         config["phylogeny"]["iqtree"].get("threads", 8)
@@ -28,9 +29,10 @@ rule iqtree_ssu:
 
         mkdir -p $(dirname {output.tree})
 
-        iqtree2 \
-            -s {input.alignment} \
-            -pre {params.prefix} \
-            -T {threads} \
-            > {log} 2>&1
+        /usr/bin/time -v -o {log.benchmark_file} \
+            iqtree2 \
+                -s {input.trimmed} \
+                -pre {params.prefix} \
+                -T {threads} \
+                > {log.stdout} 2>&1
         """

@@ -6,15 +6,15 @@ rule trimal_ssu:
     conda:
         "../envs/trimal.yaml"
     message:
-        "[trimAl] trim SSU alignment for {wildcards.sample}"
+        "[trimAl] trim SSU multiple-sequence-alignment (MSAs) across samples and references"
     input:
-        alignment=f"{PHYLOGENY_DIR}/{{sample}}/Alignment/{{sample}}_SSU_mafft.fasta"
+        alignment=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft.fasta"
     output:
-        trimmed=f"{PHYLOGENY_DIR}/{{sample}}/Alignment/{{sample}}_SSU_mafft_trimmed.fasta"
+        trimmed=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft_trim.fasta"
     log:
-        f"{PHYLOGENY_DIR}/{{sample}}/logs/{{sample}}_trimal.log"
+        f"{PHYLOGENY_DIR}/mafft/logs/trimal.log"
     benchmark:
-        f"{PHYLOGENY_DIR}/{{sample}}/benchmarks/{{sample}}_trimal.txt"
+        f"{PHYLOGENY_DIR}/mafft/benchmarks/trimal.txt"
     shell:
         r"""
         set -euo pipefail
