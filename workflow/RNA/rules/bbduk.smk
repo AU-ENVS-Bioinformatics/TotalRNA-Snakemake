@@ -1,80 +1,23 @@
-rule reformat_rRNA_for_bbduk:
-    conda:
-        "../envs/bbmap.yaml"
-    message:
-        "[BBDuk] Reformatting ribodetected seperated reads for {wildcards.sample} to ensure read order for downstream processing"
-    input:
-        r1=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
-        r2=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_2.fastq.gz",
-        ref=config["databases"]["sortmeRNA_ssu"]
-    output:
-        interleaved_reads=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_interleaved.fastq.gz",
-    log:
-        stdout=f"{RESULTS_DIR}/RNA/{{sample}}/logs/bbduk_ssu.log"
-    benchmark:
-        f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/bbduk_ssu.txt"
-    params:
-        options="-Xmx40g"     
-    threads:
-        config["RNA"]["bbduk"]["threads"]
-    shell:
-        r"""
-        set -euo pipefail
-
-        mkdir -p $(dirname {output.interleaved_reads})
-
-        reformat.sh in={input.r1} in2={input.r2} interleaved=t threads={threads} out={output.interleaved_reads} {params.options} > {log.stdout} 2>&1
-        """
-
 rule bbduk_ssu:
     conda:
         "../envs/bbmap.yaml"
     message:
         "[BBDuk] Extracting SSU reads for {wildcards.sample}"
     input:
-        interleaved_reads=rules.reformat_rRNA_for_bbduk.output.interleaved_reads,
+        rRNA_r1=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
+        rRNA_r2=f"{RESULTS_DIR}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_2.fastq.gz",
         ref=config["databases"]["sortmeRNA_ssu"]
-    output:
-        ssu_interleaved=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_ssu_interleaved.fastq.gz",
-    log:
-        stdout=f"{RESULTS_DIR}/RNA/{{sample}}/logs/bbduk_ssu.log"
-    benchmark:
-        f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/bbduk_ssu.txt"
-    params:
-        options="interleaved=t -Xmx40g k=31 hdist=0"
-    threads:
-        config["RNA"]["bbduk"]["threads"]
-    shell:
-        r"""
-        set -euo pipefail
-
-        mkdir -p $(dirname {output.ssu_interleaved})
-
-        bbduk.sh \
-            in={input.interleaved_reads} \
-            outm={output.ssu_interleaved} \
-            ref={input.ref} \
-            threads={threads} \
-            {params.options}  \
-            > {log.stdout} 2>&1
-        """
-
-rule reformat_rRNA_for_SSU:
-    conda:
-        "../envs/bbmap.yaml"
-    message:
-        "[BBDuk] Reformatting ribodetected seperated reads for {wildcards.sample} to ensure read order for downstream processing"
-    input:
-        interleaved_reads=rules.bbduk_ssu.output.ssu_interleaved,
     output:
         rRNA_ssu_r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
         rRNA_ssu_r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
+        rRNA_non_ssu_r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_non_ssu_1.fastq.gz",
+        rRNA_non_ssu_r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_non_ssu_2.fastq.gz",
     log:
         stdout=f"{RESULTS_DIR}/RNA/{{sample}}/logs/bbduk_ssu.log"
     benchmark:
         f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/bbduk_ssu.txt"
     params:
-        options="-Xmx40g"     
+        options=config["RNA"]["bbduk"]["options"]
     threads:
         config["RNA"]["bbduk"]["threads"]
     shell:
@@ -83,9 +26,19 @@ rule reformat_rRNA_for_SSU:
 
         mkdir -p $(dirname {output.rRNA_ssu_r1})
 
-        reformat.sh in={input.interleaved_reads} threads={threads} out={output.rRNA_ssu_r1} out2={output.rRNA_ssu_r2} {params.options} > {log.stdout} 2>&1
+        bbduk.sh \
+            in={input.rRNA_r1} \
+            in2={input.rRNA_r2} \
+            outm={output.rRNA_ssu_r1} \
+            outm2={output.rRNA_ssu_r2} \
+            out={output.rRNA_non_ssu_r1} \
+            out2={output.rRNA_non_ssu_r2} \
+            ref={input.ref} \
+            threads={threads} \
+            {params.options}  \
+            > {log.stdout} 2>&1
         """
-
+    
 # reformat.sh in=ANN_10.rRNA.r1.fastq.gz in2=ANN_10.rRNA.r2.fastq.gz interleaved=t threads=6 out=interleaved.fq.gz -Xmx40g
 # bbduk.sh in=interleaved.fq.gz ref=/data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta interleaved=t outm=matched.fq.gz threads=6 k=31 hdist=0 -Xmx40g
 # reformat.sh in=matched.fq.gz threads=6 out=ANN_10.rRNA.SSU.r1.fastq.gz out2=ANN_10.rRNA.SSU.r2.fastq.gz -Xmx40g

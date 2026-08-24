@@ -283,6 +283,8 @@ rule nonrRNA_done:
 #mamba create -n prodigal_env -c bioconda prodigal
 #mamba create -n transdecoder_env -c bioconda transdecoder
 
-#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.donesnakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done
+#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done
+
+#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done
 
 #snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 50 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/phylogeny/phylogeny.done

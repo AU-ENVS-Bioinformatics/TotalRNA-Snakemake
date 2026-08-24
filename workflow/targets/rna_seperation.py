@@ -153,6 +153,11 @@ def ribodetector_outputs(
         sample=samples,
     )
 
+    outputs += expand(
+        f"{results_dir}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+        sample=samples,
+    )
+
     return outputs
 
 

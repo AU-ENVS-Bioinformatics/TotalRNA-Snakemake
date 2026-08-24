@@ -69,8 +69,8 @@ RNA:
     options: "--ensure rrna"
     threads: 15
   bbduk:
-    options: "k=31 ordered=t hdist=1"
-    threads: 8
+    options: "k=31 hdist=0 qhdist=1 maskmiddle=f mincovfraction=0.95 prealloc=t ordered=t removeifeitherbad=t -Xmx40g"
+    threads: 12
   # General alignment based method for rRNA read refinement, which can be used to get more rRNA reads or to get higher confidence rRNA reads. Consider adding additional options, e.g. minid, maxindel, etc.
   bbmap:
     options: "minid=0.90 ambiguous=best unpigz=t maxindel=100 minhits=2" # consider adding minhits, and increase the minid, or look into additional reads

@@ -44,40 +44,40 @@ rule blast_cross_sample_ssu:
 # 2. BLAST EXTRACTED EUKARYOTIC 18S SEQUENCES AGAINST PR2
 ################################################################################
 
-rule blast_eukaryotic_ssu_pr2:
-    conda:
-        "../envs/blastn.yaml"
-    message:
-        "[BLASTN: PR2] classify reconstructed eukaryotic 18S sequences"
-    input:
-        query=f"{PHYLOGENY_DIR}/cross_sample/PR2/queries/eukaryota_18S.fasta"
-    output:
-        tsv=f"{PHYLOGENY_DIR}/cross_sample/PR2/blastn/eukaryota_18S_vs_PR2.tsv"
-    log:
-        stdout=f"{PHYLOGENY_DIR}/cross_sample/PR2/logs/eukaryota_18S_vs_PR2.log",
-        benchmark_file=f"{PHYLOGENY_DIR}/cross_sample/PR2/benchmarks/eukaryota_18S_vs_PR2_time.txt"
-    benchmark:
-        f"{PHYLOGENY_DIR}/cross_sample/PR2/benchmarks/eukaryota_18S_vs_PR2.txt"
-    params:
-        db=config["databases"]["PR2_SSU_blast"],
-        options=config["phylogeny"]["blastn"]["PR2"]["options"]
-    threads:
-        config["phylogeny"]["blastn"]["PR2"].get("threads", 12)
-    shell:
-        r"""
-        set -euo pipefail
-
-        mkdir -p \
-            "$(dirname "{output.tsv}")" \
-            "$(dirname "{log.stdout}")" \
-            "$(dirname "{log.benchmark_file}")"
-
-        /usr/bin/time -v -o "{log.benchmark_file}" \
-            blastn \
-                -query "{input.query}" \
-                -db "{params.db}" \
-                -out "{output.tsv}" \
-                -num_threads {threads} \
-                {params.options} \
-                > "{log.stdout}" 2>&1
-        """
+#rule blast_eukaryotic_ssu_pr2:
+#    conda:
+#        "../envs/blastn.yaml"
+#    message:
+#        "[BLASTN: PR2] classify reconstructed eukaryotic 18S sequences"
+#    input:
+#        query=f"{PHYLOGENY_DIR}/cross_sample/PR2/queries/eukaryota_18S.fasta"
+#    output:
+#       tsv=f"{PHYLOGENY_DIR}/cross_sample/PR2/blastn/eukaryota_18S_vs_PR2.tsv"
+#    log:
+#        stdout=f"{PHYLOGENY_DIR}/cross_sample/PR2/logs/eukaryota_18S_vs_PR2.log",
+#        benchmark_file=f"{PHYLOGENY_DIR}/cross_sample/PR2/benchmarks/eukaryota_18S_vs_PR2_time.txt"
+#    benchmark:
+#        f"{PHYLOGENY_DIR}/cross_sample/PR2/benchmarks/eukaryota_18S_vs_PR2.txt"
+#    params:
+#        db=config["databases"]["PR2_SSU_blast"],
+#        options=config["phylogeny"]["blastn"]["PR2"]["options"]
+#    threads:
+#        config["phylogeny"]["blastn"]["PR2"].get("threads", 12)
+#    shell:
+#        r"""
+#        set -euo pipefail
+#
+#        mkdir -p \
+#            "$(dirname "{output.tsv}")" \
+#            "$(dirname "{log.stdout}")" \
+#            "$(dirname "{log.benchmark_file}")"
+#
+#        /usr/bin/time -v -o "{log.benchmark_file}" \
+#            blastn \
+#                -query "{input.query}" \
+#                -db "{params.db}" \
+#                -out "{output.tsv}" \
+#                -num_threads {threads} \
+#                {params.options} \
+#                > "{log.stdout}" 2>&1
+#        """
