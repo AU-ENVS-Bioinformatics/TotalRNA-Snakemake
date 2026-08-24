@@ -34,7 +34,7 @@ rule combine_reconstructed_ssu:
         "[Phylogeny] combine reconstructed SSUs across all samples"
     input:
         fasta=expand(
-            f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}.all.final.fasta",
+            f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}_SSU_prefixed.fasta",
             sample=SAMPLES
         )
     output:

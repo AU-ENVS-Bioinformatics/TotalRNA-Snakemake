@@ -59,7 +59,7 @@ rule ribodetector:
         f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/ribodetector.txt"
     params:
         options=config["RNA"]["ribodetector"]["options"],
-        read_len=ribodetector_len
+        read_len=150
     threads:
         config["RNA"]["ribodetector"]["threads"]
     shell:
@@ -75,7 +75,7 @@ rule ribodetector:
             {params.options} \
             --log {log.stdout} 2>&1
         """
-
+#read_len=ribodetector_len
 rule link_non_rRNA_ribodetector:
     message:
         "[RiboDetector] Linking non-rRNA reads for {wildcards.sample}"
@@ -90,6 +90,6 @@ rule link_non_rRNA_ribodetector:
         set -euo pipefail
         mkdir -p $(dirname {output.linked_r1})
 
-        ln -s {input.nonrna_r1} {output.linked_r1}
-        ln -s {input.nonrna_r2} {output.linked_r2}
+        ln -sfn {input.nonrna_r1} {output.linked_r1}
+        ln -sfn {input.nonrna_r2} {output.linked_r2}
         """

@@ -1,6 +1,8 @@
 from typing import List
 from pathlib import Path
 from snakemake.io import expand
+import os
+from snakemake.io import glob_wildcards
 
 METRICS = ["genefamilies", "pathabundance", "pathcoverage"]
 
@@ -90,7 +92,8 @@ def non_rrna_outputs(
             outputs += [f"{results_dir}/nonrRNA/diamond/transdecoder.blastp.outfmt6"]
 
             # Hmmer scan against Pfam 
-            outputs += [f"{results_dir}/nonrRNA/hmmscan/pfam.domtblout"]
+            # remember for now hmmscan is run on chunks, so internally it creates temporary files which are then merged into the final output file below
+            outputs += [f"{results_dir}/nonrRNA/hmmscan/pfam.domtblout"] 
 
             # Transdecoder Predict
             outputs += [f"{results_dir}/nonrRNA/predicted/transdecoder.done"]

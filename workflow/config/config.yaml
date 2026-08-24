@@ -118,12 +118,20 @@ nonrRNA:
     threads: 12
   
 phylogeny:
+  reconstruction_method: phyloflash
+  secondary: PR2
   phyloflash:
     threads: 12
     options: "-nokeeptmp -nozip"
   blastn:
     threads: 12
-    options: "-outfmt 6 qseqid sseqid pident length qlen slen qcovs evalue bitscore -evalue 1e-20 -max_target_seqs 100 -max_hsps 1"
+    options: '-outfmt "6 qseqid sseqid pident length qlen slen qcovs evalue bitscore stitle" -evalue 1e-20 -max_target_seqs 100 -max_hsps 1'
+  blastn_postprocessing:
+    top_n_hits: 20
+    nt_identify: 97
+    query_coverage: 90
+  mafft:
+    threads: 6
   iqtree:
     threads: 12
     options: "-m MFP -B 1000 -alrt 1000"

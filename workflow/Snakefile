@@ -13,6 +13,7 @@ from targets.rna_seperation import (
     get_sortmerna_db_idx,
 )
 from targets.rrna import rrna_outputs
+from targets.phylogeny import phylogeny_outputs
 from targets.nonrrna import non_rrna_outputs
 
 configfile: "config/config.yaml"
@@ -129,16 +130,21 @@ rule all:
         f"{RESULTS_DIR}/qc/QC.done",
         f"{RESULTS_DIR}/RNA/RNA_seperation.done",
         f"{RESULTS_DIR}/rRNA/rRNA.done",
+        f"{RESULTS_DIR}/phylogeny/phylogeny.done",
         f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
 
 # --------------------------
-# Modules
+# Quality Control module
 # --------------------------
 
 ### Quality control and decontamination
 include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
+
+# --------------------------
+# RNA seperation module selection
+# --------------------------
 
 ### RNA SEPERATION - check if the if statements are redundant with the ones in the included rules (smk files) or if they are needed to avoid including rules that would not be used
 if config["RNA"]["method"] == "sortmerna":
@@ -156,18 +162,34 @@ elif config["RNA"]["method"] == "bbmap":
     include: "RNA/rules/bbmap.smk"
     include: "RNA/rules/bbmap_postprocessing.smk"
 
+# --------------------------
+# SSU rRNA taxonomic module selection
+# --------------------------
+
 ### rRNA composition classification
 #include: "rRNA/rules/qiime2.smk"
 include: "rRNA/rules/kraken.smk"
 include: "rRNA/rules/bracken.smk"
 include: "rRNA/rules/kraken_bracken_downstream.smk"
 
-### non-rRNA read-based functional profiling / ORF functional annotation
-include: "nonrRNA/rules/preprocessing.smk"
+# --------------------------
+# SSU rRNA phylogenetic module selection
+# --------------------------
 
+### SSU rRNA reconstruction method
+include: "phylogeny/rules/phyloflash.smk"
+include: "phylogeny/rules/phyloflash_postprocessing.smk"
+include: "phylogeny/rules/blastn.smk"
+include: "phylogeny/rules/blastn_postprocessing.smk"
+include: "phylogeny/rules/mafft.smk"
+include: "phylogeny/rules/trimal.smk"
+include: "phylogeny/rules/iqtree.smk"
 # --------------------------
 # non-rRNA module selection
 # --------------------------
+
+### non-rRNA read-based functional profiling / ORF functional annotation
+include: "nonrRNA/rules/preprocessing.smk"
 
 nonrrna_module = config["nonrRNA"]["nonrrna_module"]
 
@@ -231,6 +253,17 @@ rule rRNA_done:
         touch {output.flag}
         """
 
+rule Phylogeny_done:
+    input:
+        phylogeny_outputs(RESULTS_DIR, SAMPLES,config)
+    output:
+        flag=f"{RESULTS_DIR}/phylogeny/phylogeny.done"
+    shell:
+        """
+        mkdir -p {RESULTS_DIR}/phylogeny
+        touch {output.flag}
+        """
+
 rule nonrRNA_done:
     input:
         non_rrna_outputs(RESULTS_DIR,SAMPLES,config)
@@ -251,3 +284,5 @@ rule nonrRNA_done:
 #mamba create -n transdecoder_env -c bioconda transdecoder
 
 #snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.donesnakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done
+
+#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 50 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/phylogeny/phylogeny.done
