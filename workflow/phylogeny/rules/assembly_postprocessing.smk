@@ -2,13 +2,13 @@
 # 2. PREFIX PHYLOFLASH SEQUENCE IDS WITH SAMPLE NAME
 ################################################################################
 
-rule prefix_phyloflash_ids:
+rule prefix_contigs_ids:
     message:
         "[PhyloFlash postprocessing] prefix reconstructed SSU IDs for {wildcards.sample}"
     input:
-        fasta=f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}.all.final.fasta"
+        fasta=f"{PHYLOGENY_DIR}/{{sample}}/reconstructed/transcripts.fasta"
     output:
-        fasta=f"{PHYLOGENY_DIR}/{{sample}}/cross_sample/{{sample}}_SSU_prefixed.fasta"
+        fasta=f"{PHYLOGENY_DIR}/{{sample}}/reconstructed/{{sample}}_SSU_prefixed.fasta"
     params:
         sample=lambda wildcards: wildcards.sample
     shell:
@@ -34,7 +34,7 @@ rule combine_reconstructed_ssu:
         "[Phylogeny] combine reconstructed SSUs across all samples"
     input:
         fasta=expand(
-            f"{PHYLOGENY_DIR}/{{sample}}/phyloflash/{{sample}}_SSU_prefixed.fasta",
+            f"{PHYLOGENY_DIR}/{{sample}}/reconstructed/{{sample}}_SSU_prefixed.fasta",
             sample=SAMPLES
         )
     output:

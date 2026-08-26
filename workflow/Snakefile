@@ -177,8 +177,8 @@ include: "rRNA/rules/kraken_bracken_downstream.smk"
 # --------------------------
 
 ### SSU rRNA reconstruction method
-include: "phylogeny/rules/phyloflash.smk"
-include: "phylogeny/rules/phyloflash_postprocessing.smk"
+include: "phylogeny/rules/rnaspades.smk"
+include: "phylogeny/rules/assembly_postprocessing.smk"
 include: "phylogeny/rules/blastn.smk"
 include: "phylogeny/rules/blastn_postprocessing.smk"
 include: "phylogeny/rules/mafft.smk"

@@ -14,17 +14,17 @@ def phylogeny_outputs(
     method: str = config["phylogeny"]["reconstruction_method"]
     outputs: List[str] = []
 
-    if method in ["phyloflash"]:
-
+    if method in ["spades", "rnaspades"]:
+        
         # Per-sample kraken outputs
         outputs += expand(
-            f"{results_dir}/phylogeny/{{sample}}/phyloflash/{{sample}}.all.final.fasta",
+            f"{results_dir}/phylogeny/{{sample}}/reconstructed/transcripts.fasta",
             sample=samples,
         )
 
         # Sample-prefixed SSU reconstructions for cross-sample analysis
         outputs += expand(
-            f"{results_dir}/phylogeny/{{sample}}/cross_sample/{{sample}}_SSU_prefixed.fasta",
+            f"{results_dir}/phylogeny/{{sample}}/reconstructed/{{sample}}_SSU_prefixed.fasta",
             sample=samples,
         )
 

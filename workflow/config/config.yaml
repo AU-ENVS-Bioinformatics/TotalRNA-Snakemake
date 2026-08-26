@@ -118,11 +118,14 @@ nonrRNA:
     threads: 12
   
 phylogeny:
-  reconstruction_method: phyloflash
+  reconstruction_method: rnaspades # spades | rnaspades | phyloflash
   secondary: PR2
   phyloflash:
     threads: 12
     options: "-nokeeptmp -nozip"
+  rnaspades:
+    threads: 16
+    options: "--memory 200"
   blastn:
     threads: 12
     options: '-outfmt "6 qseqid sseqid pident length qlen slen qcovs evalue bitscore stitle" -evalue 1e-20 -max_target_seqs 100 -max_hsps 1'
