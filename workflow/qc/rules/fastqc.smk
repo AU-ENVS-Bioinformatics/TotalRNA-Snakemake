@@ -7,12 +7,12 @@ rule fastqc:
         fq=lambda wc: raw_r1(wc) if wc.read == "R1" else raw_r2(wc),
     output:
         directory(
-            f"{RESULTS_DIR}/qc/{{sample}}/fastqc/{{read}}"
+            f"{QC_DIR}/{{sample}}/fastqc/{{read}}"
         )
     log:
-        stdout=f"{RESULTS_DIR}/qc/{{sample}}/logs/fastqc_{{read}}.log"
+        stdout=f"{QC_DIR}/{{sample}}/logs/fastqc_{{read}}.log"
     benchmark:
-        f"{RESULTS_DIR}/qc/{{sample}}/benchmarks/fastqc_{{read}}.txt"
+        f"{QC_DIR}/{{sample}}/benchmarks/fastqc_{{read}}.txt"
     threads:
         config["qc"]["fastqc"].get("threads", 2)
     wildcard_constraints:

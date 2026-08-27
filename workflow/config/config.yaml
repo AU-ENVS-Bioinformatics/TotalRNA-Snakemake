@@ -1,5 +1,5 @@
 #samples_file: /data/rasmus/Dev/Lucas/samplesheet.tsv
-samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet.tsv
+samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv
 
 shared_results_dir: /data/rasmus/Dev/SnakeResDev
 
@@ -45,7 +45,7 @@ qc:
     options: "--detect_adapter_for_pe --length_required 60 --cut_right --cut_right_window_size 5 --cut_mean_quality 20 --trim_poly_g --trim_poly_x --poly_x_min_len 10"
     threads: 8
   bwa_contaminants:
-    threads: 16
+    threads: 12
   contamination_source_ids:
     options: -f 2 -q 30 -l 50 -r 0.5
   decontamination:

@@ -2,7 +2,7 @@ import pandas as pd
 import re
 from pathlib import Path
 
-from targets.qc import qc_outputs
+from targets.quality_control import qc_outputs
 
 from targets.rna_seperation import (
     rna_outputs,
@@ -90,6 +90,20 @@ print(f"{len(SAMPLES)} samples loaded")
 
 RESULTS_DIR = Path(config["shared_results_dir"])
 
+QC_DIR = RESULTS_DIR / "Quality_Control"
+RNA_DIR = RESULTS_DIR / "RNA_Classification"
+RNA_CLASSIFIED_DIR = RNA_DIR / "classified"
+RNA_INTERMEDIATE_DIR = RNA_DIR / "intermediate"
+
+
+ASSEMBLY_DIR = str(RESULTS_DIR / "Assembly")
+TAXONOMY_DIR = str(RESULTS_DIR / "Taxonomy_Profiling")
+FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
+QUANT_DIR = str(RESULTS_DIR / "Quantification")
+PHYLOGENY_DIR = str(RESULTS_DIR / "Phylogeny")
+
+#####
+
 KRAKEN_DATABASES = kraken_database_names(config)
 
 print(f"Shared results directory: {RESULTS_DIR}")
@@ -111,7 +125,7 @@ def raw_r2(wc):
     return r2
 
 def sample_qc_dir(wc):
-    return RESULTS_DIR / "qc" / wc.sample
+    return QC_DIR / wc.sample
 
 def rrna_dir(*paths):
     return str(Path(RESULTS_DIR, "rRNA", *paths))
@@ -201,8 +215,8 @@ def taxonomy_reports_for_database(wc):
 
 rule all:
     input:
-        f"{RESULTS_DIR}/qc/QC.done",
-        f"{RESULTS_DIR}/RNA/RNA_seperation.done",
+        f"{QC_DIR}/qualit_control.done",
+        f"{RNA_DIR}/rna_classification.done",
         f"{RESULTS_DIR}/rRNA/rRNA.done",
         f"{RESULTS_DIR}/phylogeny/phylogeny.done",
         f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
@@ -313,11 +327,11 @@ if nonrrna_module not in ["read", "coassembly", "both", "all"]:
 # Module completion targets
 # =========================================================
 
-rule QC_done:
+rule Quality_Control_done:
     input:
-        qc_outputs(RESULTS_DIR, SAMPLES)
+        qc_outputs(QC_DIR, SAMPLES)
     output:
-        flag=f"{RESULTS_DIR}/qc/QC.done"
+        flag=f"{QC_DIR}/qualit_control.done"
     shell:
         r"""
         set -euo pipefail
@@ -328,9 +342,9 @@ rule QC_done:
 
 rule RNA_seperation_done:
     input:
-        rna_outputs(RESULTS_DIR, SAMPLES, config, FINAL_SORTMERNA_STAGE)
+        rna_outputs(RNA_DIR, SAMPLES, config, FINAL_SORTMERNA_STAGE)
     output:
-        flag=f"{RESULTS_DIR}/RNA/RNA_seperation.done"
+        flag=f"{RNA_DIR}/rna_classification.done"
     shell:
         r"""
         set -euo pipefail

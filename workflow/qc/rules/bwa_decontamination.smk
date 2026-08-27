@@ -4,14 +4,14 @@ rule bwa_contaminants:
     message:
         "[BWA] decontaminate {wildcards.sample}"
     input:
-        trim_r1=f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_R1.fastq.gz",
-        trim_r2=f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_R2.fastq.gz"
+        trim_r1=f"{QC_DIR}/{{sample}}/trimmed/{{sample}}_R1.fastq.gz",
+        trim_r2=f"{QC_DIR}/{{sample}}/trimmed/{{sample}}_R2.fastq.gz"
     output:
-        aligned=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_aligned_contaminants.sam",
+        aligned=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_aligned_contaminants.sam",
     log:
-        stdout=f"{RESULTS_DIR}/qc/{{sample}}/logs/aligned_contaminants.log"
+        stdout=f"{QC_DIR}/{{sample}}/logs/aligned_contaminants.log"
     benchmark:
-        f"{RESULTS_DIR}/qc/{{sample}}/benchmarks/{{sample}}_bwa_aligned_contaminants.txt"
+        f"{QC_DIR}/{{sample}}/benchmarks/{{sample}}_bwa_aligned_contaminants.txt"
     params:
         genome=config["databases"]["genome_for_decontamination"],
     threads:
@@ -36,13 +36,13 @@ rule contamination_source_ids:
     message:
         "[BWA] identify contaminant reads for {wildcards.sample}"
     input:
-        aligned=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_aligned_contaminants.sam",
+        aligned=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_aligned_contaminants.sam",
     output:
-        contaminants_id=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_contaminants_id.txt",
+        contaminants_id=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_contaminants_id.txt",
     log:
-        stdout=f"{RESULTS_DIR}/qc/{{sample}}/logs/contamination_source_ids.log"
+        stdout=f"{QC_DIR}/{{sample}}/logs/contamination_source_ids.log"
     benchmark:
-        f"{RESULTS_DIR}/qc/{{sample}}/benchmarks/contamination_source_ids.txt"
+        f"{QC_DIR}/{{sample}}/benchmarks/contamination_source_ids.txt"
     params:
         filters=config["qc"]["contamination_source_ids"]["options"],
         script=f"{workflow.basedir}/qc/scripts/dehosting.sh",
@@ -67,16 +67,16 @@ rule decontamination:
     message:
         "[Seqkit] decontaminate {wildcards.sample}"
     input:
-        trim_r1=f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_R1.fastq.gz",
-        trim_r2=f"{RESULTS_DIR}/qc/{{sample}}/trimmed/{{sample}}_R2.fastq.gz",
-        read_ids=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_contaminants_id.txt"
+        trim_r1=f"{QC_DIR}/{{sample}}/trimmed/{{sample}}_R1.fastq.gz",
+        trim_r2=f"{QC_DIR}/{{sample}}/trimmed/{{sample}}_R2.fastq.gz",
+        read_ids=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_contaminants_id.txt"
     output:
-        cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
-        cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
+        cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
+        cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
     log:
-        stdout=f"{RESULTS_DIR}/qc/{{sample}}/logs/decontamination.log"
+        stdout=f"{QC_DIR}/{{sample}}/logs/decontamination.log"
     benchmark:
-        f"{RESULTS_DIR}/qc/{{sample}}/benchmarks/{{sample}}_decontamination.txt"
+        f"{QC_DIR}/{{sample}}/benchmarks/{{sample}}_decontamination.txt"
     threads:
         config["qc"]["decontamination"]["threads"]
     shell:
