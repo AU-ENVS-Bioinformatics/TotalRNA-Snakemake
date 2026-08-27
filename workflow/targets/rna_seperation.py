@@ -88,17 +88,16 @@ def filtered_outputs(results_dir: Path, samples: List[str]) -> List[str]:
     outputs: List[str] = []
 
     outputs += expand(
-        f"{results_dir}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-        sample=samples,
+    f"{results_dir}/classified/{{sample}}/rRNA/{{sample}}_rRNA_1.fastq.gz",
+    sample=samples,
     )
 
     outputs += expand(
-        f"{results_dir}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
+        f"{results_dir}/classified/{{sample}}/non_rRNA/{{sample}}_non_rRNA_1.fastq.gz",
         sample=samples,
     )
 
     return outputs
-
 
 # --------------------------
 # SortMeRNA outputs
@@ -143,23 +142,38 @@ def sortmerna_outputs(
 def ribodetector_outputs(
     results_dir: Path,
     samples: List[str],
+    refinement: str,
 ) -> List[str]:
 
     outputs: List[str] = []
 
-    # Only specify read 1, will be the same for read 2
+    # Intermediate RiboDetector outputs
+
     outputs += expand(
-        f"{results_dir}/RNA/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
+        f"{results_dir}/intermediate/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
         sample=samples,
     )
 
     outputs += expand(
-        f"{results_dir}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
+        f"{results_dir}/intermediate/{{sample}}/ribodetector/{{sample}}_nonrRNA_1.fastq.gz",
         sample=samples,
     )
+
+    # BBDuk refinement
+
+    if refinement == "bbduk":
+
+        outputs += expand(
+            f"{results_dir}/classified/{{sample}}/SSU/{{sample}}_SSU_1.fastq.gz",
+            sample=samples,
+        )
+
+        outputs += expand(
+            f"{results_dir}/classified/{{sample}}/non_SSU/{{sample}}_non_SSU_1.fastq.gz",
+            sample=samples,
+        )
 
     return outputs
-
 
 # --------------------------
 # BBMap outputs
@@ -201,11 +215,18 @@ def rna_outputs(
 
     if method == "sortmerna":
         outputs += sortmerna_outputs(
-            results_dir, samples, refinement, final_stages
+            results_dir, 
+            samples, 
+            refinement, 
+            final_stages
         )
 
     elif method == "ribodetector":
-        outputs += ribodetector_outputs(results_dir, samples)
+        outputs += ribodetector_outputs(
+            results_dir,
+            samples,
+            refinement,
+        )
 
     elif method == "bbmap":
         outputs += bbmap_outputs(results_dir, samples)
@@ -216,6 +237,9 @@ def rna_outputs(
     # those refinement methods which simply add links to the original files, e.g. bbduk, will not have 
     # additional outputs, but the filtered outputs will be the same as for the other methods, 
     # so we can add those as shared across all the methods
-    outputs += filtered_outputs(results_dir, samples)
+    outputs += filtered_outputs(
+        results_dir, 
+        samples
+        )
 
     return outputs
