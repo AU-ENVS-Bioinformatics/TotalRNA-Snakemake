@@ -52,7 +52,7 @@ qc:
     threads: 8
 
 RNA:
-  method: ribodetector # sortmerna | ribodetector | bbmap | other methods to be added in the future, e.g. based on mapping or something else
+  method: bbmap # sortmerna | ribodetector | bbmap | other methods to be added in the future, e.g. based on mapping or something else
   refinement: bbduk #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
   # Seperation of rRNA from non-rRNA reads using sortmerna, either in a staged manner (first separate SSU and then LSU) or in a combined manner (SSU and LSU together)
   threads: 6

@@ -186,12 +186,11 @@ def bbmap_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        f"{results_dir}/RNA/{{sample}}/bbmap/{{sample}}_all_reads.bam",
+        f"{results_dir}/intermediate/{{sample}}/bbmap/{{sample}}_all_reads.bam",
         sample=samples,
     )
 
     return outputs
-
 
 # --------------------------
 # output used in Snakefile
