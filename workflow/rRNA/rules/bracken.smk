@@ -2,18 +2,18 @@ rule bracken:
     conda:
         "../envs/bracken.yaml"
     message:
-        "[Bracken] resetimates abundance of kraken results for {wildcards.sample} for taxonomic classification"
+        "[Bracken] re-estimate abundance for {wildcards.sample} for {wildcards.database}"
     input:
-        kraken_report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.k2report",
+        kraken_report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.k2report",
     output:
-        bracken_output=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.bracken.tsv",
-        bracken_kreport_output=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.bracken.k2report"
+        bracken_output=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.bracken.tsv",
+        bracken_kreport_output=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.bracken.k2report"
     log:
-        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/bracken.log"
+        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/bracken_{{database}}.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/bracken.txt"
+        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/bracken_{{database}}.txt"
     params:
-        db=config["databases"]["kraken_rRNA_db"],
+        db=kraken_db,
         options=config["rRNA"]["bracken"]["options"]
     shell:
         r"""

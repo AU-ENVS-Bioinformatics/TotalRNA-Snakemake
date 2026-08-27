@@ -2,19 +2,20 @@ rule kraken2:
     conda:
         "../envs/kraken2.yaml"
     message:
-        "[Kraken2] estimate species composition for {wildcards.sample} for taxonomic classification"
+        "[Kraken2] estimate species composition for {wildcards.sample} for taxonomic classification against {wildcards.database}"
     input:
         rRNA_R1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
         rRNA_R2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
     output:
-        report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.k2report",
-        kraken=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{sample}}.kraken"
+        report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.k2report",
+        kraken=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.kraken"
     log:
-        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/kraken2.log"
+        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/kraken2_{{database}}.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/kraken2.txt"
+        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/kraken2_{{database}}.txt"
     params:
-        db=config["databases"]["kraken_rRNA_db"],
+        db=kraken_db,
+        options=config["rRNA"]["kraken2"].get("options","")
     threads:
         config["rRNA"]["kraken2"].get("threads", 2)
     shell:
@@ -28,6 +29,7 @@ rule kraken2:
           --report {output.report} \
           --output {output.kraken} \
           --paired {input.rRNA_R1} {input.rRNA_R2} \
+            {params.options} \
           > {log.stdout} 2>&1
         """
 

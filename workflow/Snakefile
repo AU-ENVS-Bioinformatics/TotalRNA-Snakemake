@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from targets.qc import qc_outputs
+
 from targets.rna_seperation import (
     rna_outputs,
     sortmerna_stages,
@@ -12,8 +13,16 @@ from targets.rna_seperation import (
     get_sortmerna_db,
     get_sortmerna_db_idx,
 )
-from targets.rrna import rrna_outputs
+
+from targets.rrna import (
+    rrna_outputs,
+    kraken_database_names,
+    get_kraken_database,
+    taxonomy_reports,
+)
+
 from targets.phylogeny import phylogeny_outputs
+
 from targets.nonrrna import non_rrna_outputs
 
 configfile: "config/config.yaml"
@@ -25,18 +34,67 @@ samplesheet = pd.read_csv(
     config["samples_file"],
     sep=r"\s+",
     dtype=str,
-    engine="python"
+    engine="python",
 )
 
 samplesheet.columns = samplesheet.columns.str.strip()
+
+required_cols = [
+    "sample_id",
+    "R1",
+    "R2",
+]
+
+missing = [
+    column
+    for column in required_cols
+    if column not in samplesheet.columns
+]
+
+if missing:
+    raise ValueError(
+        "Samplesheet is missing required columns: "
+        + ", ".join(missing)
+    )
+
 samplesheet = samplesheet.set_index("sample_id")
 
+if samplesheet.index.has_duplicates:
+    duplicated_samples = (
+        samplesheet.index[
+            samplesheet.index.duplicated()
+        ]
+        .unique()
+        .tolist()
+    )
+
+    raise ValueError(
+        "Samplesheet contains duplicated sample IDs: "
+        + ", ".join(duplicated_samples)
+    )
+
+for sample in samplesheet.index:
+    for column in ["R1", "R2"]:
+        if pd.isna(samplesheet.loc[sample, column]):
+            raise ValueError(
+                f"Sample {sample} is missing {column}"
+            )
+
+
 SAMPLES = samplesheet.index.tolist()
+print(f"{len(SAMPLES)} samples loaded")
+
+# --------------------------
+# PATH HELPERS
+# --------------------------
 
 RESULTS_DIR = Path(config["shared_results_dir"])
 
-print(f"{len(SAMPLES)} samples loaded")
+KRAKEN_DATABASES = kraken_database_names(config)
+
 print(f"Shared results directory: {RESULTS_DIR}")
+print(f"Shared results directory: {RESULTS_DIR}")
+print(f"Kraken2 databases: {KRAKEN_DATABASES}")
 
 # --------------------------
 # Helpers (raw reads)
@@ -52,28 +110,11 @@ def raw_r2(wc):
     print(f"[INFO] sample: {wc.sample}: read 2 = {r2}")
     return r2
 
-required_cols = ["R1", "R2"]
-
-missing = [c for c in required_cols if c not in samplesheet.columns]
-
-if missing:
-    raise ValueError(
-        f"Samplesheet is missing required columns: {', '.join(missing)}"
-    )
-
-for sample in samplesheet.index:
-    for col in ["R1", "R2"]:
-        if pd.isna(samplesheet.loc[sample, col]):
-            raise ValueError(
-                f"Sample {sample} is missing {col}"
-            )
-
 def sample_qc_dir(wc):
     return RESULTS_DIR / "qc" / wc.sample
 
 def rrna_dir(*paths):
     return str(Path(RESULTS_DIR, "rRNA", *paths))
-
 
 # --------------------------
 # SortMeRNA stage logic
@@ -120,10 +161,43 @@ def sortmerna_db(wc):
 def sortmerna_db_idx(wc):
     return get_sortmerna_db_idx(wc.stage, config)
 
+# =========================================================
+# Kraken2 wrappers
+# =========================================================
 
-# --------------------------
-# Final target
-# --------------------------
+def kraken_db(wc):
+    """
+    Return the Kraken2 database path corresponding to
+    the {database} wildcard.
+    """
+
+    return get_kraken_database(
+        database=wc.database,
+        config=config,
+    )
+
+
+def taxonomy_reports_for_database(wc):
+    """
+    Return all reports for one Kraken2 database.
+
+    SILVA:
+        Bracken reports are returned.
+
+    PR2:
+        Raw Kraken2 reports are returned.
+    """
+
+    return taxonomy_reports(
+        results_dir=RESULTS_DIR,
+        samples=SAMPLES,
+        database=wc.database,
+        config=config,
+    )
+
+# =========================================================
+# Final workflow target
+# =========================================================
 
 rule all:
     input:
@@ -133,50 +207,67 @@ rule all:
         f"{RESULTS_DIR}/phylogeny/phylogeny.done",
         f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
 
-# --------------------------
-# Quality Control module
-# --------------------------
+# =========================================================
+# Quality-control module
+# =========================================================
 
 ### Quality control and decontamination
 include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
 
-# --------------------------
-# RNA seperation module selection
-# --------------------------
+# =========================================================
+# RNA-separation module
+# =========================================================
 
 ### RNA SEPERATION - check if the if statements are redundant with the ones in the included rules (smk files) or if they are needed to avoid including rules that would not be used
 if config["RNA"]["method"] == "sortmerna":
+
     if config["RNA"]["refinement"] == "staged":
         include: "RNA/rules/sortmerna_stages.smk"
         include: "RNA/rules/sortmerna_stages_postprocessing.smk"
-    if config["RNA"]["refinement"] == "combined":
+    
+    elif config["RNA"]["refinement"] == "combined":
         include: "RNA/rules/sortmerna_combined.smk"
         include: "RNA/rules/sortmerna_combined_postprocessing.smk"
+    
+    else:
+        raise ValueError(
+            "Unsupported SortMeRNA refinement: "
+            f"{config['RNA']['refinement']}"
+        )
+
 elif config["RNA"]["method"] == "ribodetector":
+    
     include: "RNA/rules/ribodetector.smk"
+
     if config["RNA"]["refinement"] == "bbduk":
         include: "RNA/rules/bbduk.smk"
+
 elif config["RNA"]["method"] == "bbmap":
+    
     include: "RNA/rules/bbmap.smk"
     include: "RNA/rules/bbmap_postprocessing.smk"
 
-# --------------------------
-# SSU rRNA taxonomic module selection
-# --------------------------
+else:
+    raise ValueError(
+        "Unsupported RNA-separation method: "
+        f"{config['RNA']['method']}"
+    )
 
-### rRNA composition classification
-#include: "rRNA/rules/qiime2.smk"
+
+# =========================================================
+# SSU rRNA taxonomic classification
+# =========================================================
+
 include: "rRNA/rules/kraken.smk"
 include: "rRNA/rules/bracken.smk"
 include: "rRNA/rules/kraken_bracken_downstream.smk"
 
-# --------------------------
-# SSU rRNA phylogenetic module selection
-# --------------------------
+# =========================================================
+# SSU rRNA reconstruction and phylogeny
+# =========================================================
 
-### SSU rRNA reconstruction method
 include: "phylogeny/rules/rnaspades.smk"
 include: "phylogeny/rules/assembly_postprocessing.smk"
 include: "phylogeny/rules/blastn.smk"
@@ -184,9 +275,10 @@ include: "phylogeny/rules/blastn_postprocessing.smk"
 include: "phylogeny/rules/mafft.smk"
 include: "phylogeny/rules/trimal.smk"
 include: "phylogeny/rules/iqtree.smk"
-# --------------------------
-# non-rRNA module selection
-# --------------------------
+
+# =========================================================
+# Non-rRNA module
+# =========================================================
 
 ### non-rRNA read-based functional profiling / ORF functional annotation
 include: "nonrRNA/rules/preprocessing.smk"
@@ -194,6 +286,7 @@ include: "nonrRNA/rules/preprocessing.smk"
 nonrrna_module = config["nonrRNA"]["nonrrna_module"]
 
 if nonrrna_module in ["read", "both", "all"]:
+
     if config["nonrRNA"]["read_method"] in ["metaphlan", "humann"]:
         # Metaphlan is ALWAYS required (taxonomy baseline)
         include: "nonrRNA/rules/metaphlan.smk"
@@ -202,7 +295,7 @@ if nonrrna_module in ["read", "both", "all"]:
         include: "nonrRNA/rules/humann_postprocessing.smk"
 
 if nonrrna_module in ["coassembly", "both", "all"]:
-    if config["nonrRNA"]["assembly_method"] in ["spades","rnaspades","metaspades"]:
+    if config["nonrRNA"]["assembly_method"] in ["spades","rnaspades"]:
         # Co assembly
         include: "nonrRNA/rules/co_assembly.smk"
     if config["nonrRNA"]["assembly_predictor"] in ["transdecoder"]:
@@ -216,19 +309,21 @@ if nonrrna_module in ["coassembly", "both", "all"]:
 if nonrrna_module not in ["read", "coassembly", "both", "all"]:
     raise ValueError(f"Unsupported nonrRNA module: {nonrrna_module}")
 
-# once the rules has been completed check 
-# --------------------------
-# Final targets
-# --------------------------
+# =========================================================
+# Module completion targets
+# =========================================================
+
 rule QC_done:
     input:
         qc_outputs(RESULTS_DIR, SAMPLES)
     output:
         flag=f"{RESULTS_DIR}/qc/QC.done"
     shell:
-        """
-        mkdir -p {RESULTS_DIR}/qc
-        touch {output.flag}
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
         """
 
 rule RNA_seperation_done:
@@ -237,9 +332,11 @@ rule RNA_seperation_done:
     output:
         flag=f"{RESULTS_DIR}/RNA/RNA_seperation.done"
     shell:
-        """
-        mkdir -p {RESULTS_DIR}/RNA
-        touch {output.flag}
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
         """
 
 rule rRNA_done:
@@ -248,9 +345,11 @@ rule rRNA_done:
     output:
         flag=f"{RESULTS_DIR}/rRNA/rRNA.done"
     shell:
-        """
-        mkdir -p {RESULTS_DIR}/rRNA
-        touch {output.flag}
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
         """
 
 rule Phylogeny_done:
@@ -259,9 +358,11 @@ rule Phylogeny_done:
     output:
         flag=f"{RESULTS_DIR}/phylogeny/phylogeny.done"
     shell:
-        """
-        mkdir -p {RESULTS_DIR}/phylogeny
-        touch {output.flag}
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
         """
 
 rule nonrRNA_done:
@@ -270,9 +371,11 @@ rule nonrRNA_done:
     output:
         flag=f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
     shell:
-        """
-        mkdir -p {RESULTS_DIR}/nonrRNA
-        touch {output.flag}
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
         """
 
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going
