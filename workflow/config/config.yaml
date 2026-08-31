@@ -15,9 +15,9 @@ databases:
   sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
   sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
   sortmeRNA_ssu_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta
-  sortmeRNA_ssu_idx: /data_2/Databases/sortmerna5_idx/SSU/idx/
-  sortmeRNA_lsu_idx: /data_2/Databases/sortmerna5_idx/LSU/idx/
-  sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna5_idx/SSU_LSU/idx/
+  sortmeRNA_ssu_idx: /data_2/Databases/sortmerna_idx/SSU
+  sortmeRNA_lsu_idx: /data_2/Databases/sortmerna_idx/LSU
+  sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna_idx/SSU_LSU
   sortmeRNA_ssu_ids: /data_2/Databases/sortmerna_idx/SSU/SILVA_138.1_SSURef_NR99_tax_silva_trunc.contigs_ids
   SILVA_138.1_N99: /data_2/Databases/SILVA_138/SILVA_138.1_SSU_LSU_N99_tax_silva_trunc.fasta
   SILVA_138.2_N99_blast: /data_2/Databases/SILVA_138.2_blast/SILVA_138.2_SSURef_NR99
@@ -52,12 +52,12 @@ qc:
     threads: 8
 
 RNA:
-  method: bbmap # sortmerna | ribodetector | bbmap | other methods to be added in the future, e.g. based on mapping or something else
-  refinement: bbduk #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
+  method: sortmerna # sortmerna | ribodetector | bbmap | other methods to be added in the future, e.g. based on mapping or something else
+  refinement: staged #staged | combined | bbduk (refinement of ribodetector output, e.g. to get more rRNA reads or to get higher confidence rRNA reads)
   # Seperation of rRNA from non-rRNA reads using sortmerna, either in a staged manner (first separate SSU and then LSU) or in a combined manner (SSU and LSU together)
   threads: 6
   sortmerna_staged:
-    options: "--fastx --paired_in --out2 --id 0.97 --coverage 0.97 --index 0 --dbg-level 2" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
+    options: "--fastx --paired_in --out2 --index 0 --dbg-level 2" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
     threads: 16
     pipeline:
       - ssu

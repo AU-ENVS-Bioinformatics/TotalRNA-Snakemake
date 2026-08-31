@@ -1,17 +1,29 @@
-from typing import List,Dict
+from typing import Dict, List
 from pathlib import Path
 from snakemake.io import expand
 
+
 # --------------------------
-# sortmeRNA stage logic
+# SortMeRNA stage logic
 # --------------------------
 
 def sortmerna_stages(config: dict) -> List[str]:
     base = config["RNA"]["sortmerna_staged"]["pipeline"]
-    return ["_".join(base[: i + 1]) for i in range(len(base))]
+
+    if not base:
+        raise ValueError(
+            "RNA.sortmerna_staged.pipeline cannot be empty"
+        )
+
+    return [
+        "_".join(base[:i + 1])
+        for i in range(len(base))
+    ]
 
 
-def previous_stage_map(stages: List[str]) -> Dict[str, str]:
+def previous_stage_map(
+    stages: List[str],
+) -> Dict[str, str]:
     return {
         stages[0]: "decontamination",
         **{
@@ -20,24 +32,33 @@ def previous_stage_map(stages: List[str]) -> Dict[str, str]:
         },
     }
 
+
 def sortmerna_input_r1(
     sample: str,
     stage: str,
     results_dir: Path,
     previous_stage: Dict[str, str],
 ) -> str:
-    qc_base = results_dir / "qc" / sample
-    rna_base = results_dir / "RNA" / sample
 
-    prev = previous_stage[stage]
+    previous = previous_stage[stage]
 
-    if prev == "decontamination":
+    if previous == "decontamination":
         return str(
-            qc_base / "decontamination" / f"{sample}_R1.cleaned.fastq.gz"
+            results_dir
+            / "Quality_Control"
+            / sample
+            / "decontamination"
+            / f"{sample}_R1.cleaned.fastq.gz"
         )
 
     return str(
-        rna_base / "sortmerna" / prev / f"{sample}_{prev}.nonaligned_fwd.fq.gz"
+        results_dir
+        / "RNA_Classification"
+        / "intermediate"
+        / sample
+        / "sortmerna"
+        / previous
+        / f"{sample}_{previous}.nonaligned_fwd.fq.gz"
     )
 
 
@@ -47,98 +68,114 @@ def sortmerna_input_r2(
     results_dir: Path,
     previous_stage: Dict[str, str],
 ) -> str:
-    qc_base = results_dir / "qc" / sample
-    rna_base = results_dir / "RNA" / sample
 
-    prev = previous_stage[stage]
+    previous = previous_stage[stage]
 
-    if prev == "decontamination":
+    if previous == "decontamination":
         return str(
-            qc_base / "decontamination" / f"{sample}_R2.cleaned.fastq.gz"
+            results_dir
+            / "Quality_Control"
+            / sample
+            / "decontamination"
+            / f"{sample}_R2.cleaned.fastq.gz"
         )
 
     return str(
-        rna_base
+        results_dir
+        / "RNA_Classification"
+        / "intermediate"
+        / sample
         / "sortmerna"
-        / prev
-        / f"{sample}_{prev}.nonaligned_rev.fq.gz"
+        / previous
+        / f"{sample}_{previous}.nonaligned_rev.fq.gz"
     )
 
-# --------------------------
-# Database lookup
-# --------------------------
-
-def get_sortmerna_db(stage: str, config: dict) -> str:
-    key = stage.split("_")[-1]
-    return config["databases"][f"sortmeRNA_{key}"]
-
-
-def get_sortmerna_db_idx(stage: str, config: dict) -> str:
-    key = stage.split("_")[-1]
-    return config["databases"][f"sortmeRNA_{key}_idx"]
 
 # --------------------------
-# Shared outputs for the filtered rRNA and non-rRNA reads, which are common across all methods
+# SortMeRNA database lookup
 # --------------------------
-def filtered_outputs(results_dir: Path, samples: List[str]) -> List[str]:
-    """
-    Outputs shared across RNA separation methods.
-    """
 
-    outputs: List[str] = []
+def get_sortmerna_db(
+    stage: str,
+    config: dict,
+) -> str:
+    database_name = stage.split("_")[-1]
+    return config["databases"][f"sortmeRNA_{database_name}"]
 
-    outputs += expand(
-    f"{results_dir}/classified/{{sample}}/rRNA/{{sample}}_rRNA_1.fastq.gz",
-    sample=samples,
-    )
 
-    outputs += expand(
-        f"{results_dir}/classified/{{sample}}/non_rRNA/{{sample}}_non_rRNA_1.fastq.gz",
-        sample=samples,
-    )
+def get_sortmerna_db_idx(
+    stage: str,
+    config: dict,
+) -> str:
+    database_name = stage.split("_")[-1]
+    return config["databases"][f"sortmeRNA_{database_name}_idx"]
 
-    return outputs
 
 # --------------------------
-# SortMeRNA outputs
+# Shared classified outputs
 # --------------------------
-def sortmerna_outputs(
+
+def filtered_outputs(
     results_dir: Path,
     samples: List[str],
-    refinement: str,
-    final_stages: List[str],
 ) -> List[str]:
 
     outputs: List[str] = []
 
-    if refinement == "staged":
+    for read in [1, 2]:
         outputs += expand(
-            f"{results_dir}/RNA/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
-            zip,
-            sample=samples,
-            stage=final_stages,
-        )
-
-    elif refinement == "combined":
-        outputs += expand(
-            f"{results_dir}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.sam",
+            f"{results_dir}/classified/{{sample}}/"
+            f"rRNA/{{sample}}_rRNA_{read}.fastq.gz",
             sample=samples,
         )
 
         outputs += expand(
-            f"{results_dir}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_SSU_filtered_taxonomy.tsv",
+            f"{results_dir}/classified/{{sample}}/"
+            f"non_rRNA/{{sample}}_non_rRNA_{read}.fastq.gz",
             sample=samples,
         )
-
-    else:
-        raise ValueError(f"Unsupported sortmerna refinement: {refinement}")
 
     return outputs
 
 
 # --------------------------
-# Ribodetector outputs
+# SortMeRNA classified outputs
 # --------------------------
+
+def sortmerna_outputs(
+    results_dir: Path,
+    samples: List[str],
+    refinement: str,
+) -> List[str]:
+
+    if refinement != "staged":
+        raise ValueError(
+            "Only staged SortMeRNA is currently supported "
+            "by sortmerna_outputs()."
+        )
+
+    outputs: List[str] = []
+
+    for classification in [
+        "SSU",
+        "LSU",
+        "non_SSU",
+    ]:
+        for read in [1, 2]:
+            outputs += expand(
+                f"{results_dir}/classified/{{sample}}/"
+                f"{classification}/"
+                f"{{sample}}_{classification}_{read}.fastq.gz",
+                sample=samples,
+            )
+
+    return outputs
+
+
+# --------------------------
+# RiboDetector outputs
+# --------------------------
+
 def ribodetector_outputs(
     results_dir: Path,
     samples: List[str],
@@ -147,77 +184,76 @@ def ribodetector_outputs(
 
     outputs: List[str] = []
 
-    # Intermediate RiboDetector outputs
+    for read in [1, 2]:
+        outputs += expand(
+            f"{results_dir}/intermediate/{{sample}}/"
+            f"ribodetector/{{sample}}_rRNA_{read}.fastq.gz",
+            sample=samples,
+        )
 
-    outputs += expand(
-        f"{results_dir}/intermediate/{{sample}}/ribodetector/{{sample}}_rRNA_1.fastq.gz",
-        sample=samples,
-    )
-
-    outputs += expand(
-        f"{results_dir}/intermediate/{{sample}}/ribodetector/{{sample}}_nonrRNA_1.fastq.gz",
-        sample=samples,
-    )
-
-    # BBDuk refinement
+        outputs += expand(
+            f"{results_dir}/intermediate/{{sample}}/"
+            f"ribodetector/{{sample}}_nonrRNA_{read}.fastq.gz",
+            sample=samples,
+        )
 
     if refinement == "bbduk":
-
-        outputs += expand(
-            f"{results_dir}/classified/{{sample}}/SSU/{{sample}}_SSU_1.fastq.gz",
-            sample=samples,
-        )
-
-        outputs += expand(
-            f"{results_dir}/classified/{{sample}}/non_SSU/{{sample}}_non_SSU_1.fastq.gz",
-            sample=samples,
-        )
+        for classification in [
+            "SSU",
+            "non_SSU",
+        ]:
+            for read in [1, 2]:
+                outputs += expand(
+                    f"{results_dir}/classified/{{sample}}/"
+                    f"{classification}/"
+                    f"{{sample}}_{classification}_{read}.fastq.gz",
+                    sample=samples,
+                )
 
     return outputs
+
 
 # --------------------------
 # BBMap outputs
 # --------------------------
+
 def bbmap_outputs(
     results_dir: Path,
     samples: List[str],
 ) -> List[str]:
 
-    outputs: List[str] = []
-
-    outputs += expand(
-        f"{results_dir}/intermediate/{{sample}}/bbmap/{{sample}}_all_reads.bam",
+    return expand(
+        f"{results_dir}/intermediate/{{sample}}/"
+        f"bbmap/{{sample}}_all_reads.bam",
         sample=samples,
     )
 
-    return outputs
 
 # --------------------------
-# output used in Snakefile
+# RNA-separation targets
 # --------------------------
+
 def rna_outputs(
     results_dir: Path,
     samples: List[str],
     config: dict,
-    final_stages: List[str],
 ) -> List[str]:
-    """
-    Return RNA separation outputs based on configuration.
-    """
 
-    method: str = config["RNA"]["method"]
-    refinement: str = config["RNA"]["refinement"]
+    method = config["RNA"]["method"]
+    refinement = config["RNA"]["refinement"]
 
-    print(f"[RNA separation] method={method}, refinement={refinement}")
+    print(
+        f"[RNA separation] "
+        f"method={method}, refinement={refinement}"
+    )
 
     outputs: List[str] = []
 
     if method == "sortmerna":
         outputs += sortmerna_outputs(
-            results_dir, 
-            samples, 
-            refinement, 
-            final_stages
+            results_dir,
+            samples,
+            refinement,
         )
 
     elif method == "ribodetector":
@@ -228,17 +264,19 @@ def rna_outputs(
         )
 
     elif method == "bbmap":
-        outputs += bbmap_outputs(results_dir, samples)
+        outputs += bbmap_outputs(
+            results_dir,
+            samples,
+        )
 
     else:
-        raise ValueError(f"Unsupported RNA method: {method}")
-
-    # those refinement methods which simply add links to the original files, e.g. bbduk, will not have 
-    # additional outputs, but the filtered outputs will be the same as for the other methods, 
-    # so we can add those as shared across all the methods
-    outputs += filtered_outputs(
-        results_dir, 
-        samples
+        raise ValueError(
+            f"Unsupported RNA method: {method}"
         )
+
+    outputs += filtered_outputs(
+        results_dir,
+        samples,
+    )
 
     return outputs

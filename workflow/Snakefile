@@ -140,9 +140,6 @@ PREVIOUS_STAGE = previous_stage_map(SORTMERNA_STAGES)
 FIRST_STAGE_NAME = SORTMERNA_STAGES[0]
 FINAL_STAGE_NAME = SORTMERNA_STAGES[-1]
 
-FIRST_SORTMERNA_STAGE = [FIRST_STAGE_NAME for _ in SAMPLES]
-FINAL_SORTMERNA_STAGE = [FINAL_STAGE_NAME for _ in SAMPLES]
-
 print(f"sortmerna stages {SORTMERNA_STAGES}")
 print(f"previous stage mapping {PREVIOUS_STAGE}")
 
@@ -240,7 +237,12 @@ if config["RNA"]["method"] == "sortmerna":
     if config["RNA"]["refinement"] == "staged":
         include: "RNA/rules/sortmerna_stages.smk"
         include: "RNA/rules/sortmerna_stages_postprocessing.smk"
-    
+        if config["RNA"]["sortmerna_staged"]["pipeline"] != ["ssu", "lsu"]:
+            raise ValueError(
+                "The current staged SortMeRNA postprocessing "
+                "requires pipeline: [ssu, lsu]"
+            )
+
     elif config["RNA"]["refinement"] == "combined":
         include: "RNA/rules/sortmerna_combined.smk"
         include: "RNA/rules/sortmerna_combined_postprocessing.smk"
@@ -342,7 +344,7 @@ rule Quality_Control_done:
 
 rule RNA_seperation_done:
     input:
-        rna_outputs(RNA_DIR, SAMPLES, config, FINAL_SORTMERNA_STAGE)
+        rna_outputs(RNA_DIR, SAMPLES, config)
     output:
         flag=f"{RNA_DIR}/rna_classification.done"
     shell:
