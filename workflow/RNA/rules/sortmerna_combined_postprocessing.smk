@@ -1,154 +1,143 @@
 from pathlib import Path
 
-RNA_ENVS_DIR = str(Path(workflow.basedir)/"RNA/envs")
-RNA_SCRIPTS_DIR = str(Path(workflow.basedir)/"RNA/scripts")
 
-print(f"sortmerna combined postprocessing defined RNA_ENVS_DIR as {RNA_ENVS_DIR} and RNA_SCRIPTS_DIR as {RNA_SCRIPTS_DIR}")
+RNA_ENVS_DIR = str(Path(workflow.basedir) / "RNA" / "envs")
 
-if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "combined":
-    
-    rule extract_all_aligned_ids:
+
+if (
+    config["RNA"]["method"] == "sortmerna"
+    and config["RNA"]["refinement"] == "combined"
+):
+
+    # =====================================================
+    # Extract aligned, SSU and LSU read IDs from SAM
+    # =====================================================
+
+    rule extract_sortmerna_combined_ids:
         conda:
             f"{RNA_ENVS_DIR}/seqkit.yaml"
         message:
-            "[Extract aligned and filtered reads] for {wildcards.sample} filtering reads of percentage of the read length and at least certain number of nucleotide matches to the reference, and extract the ENA accession number for each read id and assign taxonomy to each read based on the ncbi taxonomy table"
+            "[SortMeRNA] Extracting rRNA, SSU and LSU read IDs for {wildcards.sample}"
         input:
             sam=rules.sortmerna_combined.output.sam
         output:
-            readid_info_tsv=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}.all_aligned_ids.tsv",
-            read_ids=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}.all_aligned_ids.txt",
-        shell:  
+            alignment_info=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_alignment_info.tsv",
+            rrna_ids=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_rRNA_ids.txt",
+            ssu_ids=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_SSU_ids.txt"
+        log:
+            stdout=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/logs/sortmerna_combined_ids.log"
+        benchmark:
+            f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/sortmerna_combined_ids.txt"
+        shell:
             r"""
             set -euo pipefail
 
-            # full TSV for downstream filtering
-            samtools view {input.sam} | awk -v OFS="\t" '{{print $1,$3,$6,$12,$13,length($10)}}' | tee {output.readid_info_tsv} | cut -f1 | sort -u > {output.read_ids}
+            mkdir -p "$(dirname "{output.alignment_info}")"
+            mkdir -p "$(dirname "{log.stdout}")"
+
+            samtools view -F 4 "{input.sam}" \
+                | awk -v OFS="\t" \
+                    '{{print $1, $3, $6, $12, $13, length($10)}}' \
+                > "{output.alignment_info}" \
+                2> "{log.stdout}"
+
+            cut -f1 "{output.alignment_info}" \
+                | sort -u \
+                > "{output.rrna_ids}"
+
+            awk '$2 ~ /^SSU_/' "{output.alignment_info}" \
+                | cut -f1 \
+                | sort -u \
+                > "{output.ssu_ids}"
             """
-    
-    rule filter_and_assign_taxonomy:
-        conda:
-            f"{RNA_ENVS_DIR}/rna_python_tools.yaml"
-        message:
-            "[Filter and assign taxonomy] for {wildcards.sample} filtering reads of percentage of the read length and at least certain number of nucleotide matches to the reference, and extract the ENA accession number for each read id and assign taxonomy to each read based on the ncbi taxonomy table"
-        input:
-            id_info=rules.extract_all_aligned_ids.output.readid_info_tsv,
-            taxonomy=config["databases"]["taxonomy_table"]
-        output:
-            tsv=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_SSU_filtered_taxonomy.tsv",
-            read_ids=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_SSU_filtered_taxonomy_ids.txt",
-            failed_ids=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_failed_alignment_ids.txt",
-            discarded_ids=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_discarded_alignment_ids.txt",
-            taxonomy_discarded_id=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_discarded_taxonomy_ids.txt",
-            statistics=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_statistics.tsv"
-        log:
-            stdout = f"{RESULTS_DIR}/RNA/{{sample}}/logs/sortmerna_postprocessing_filter_taxonomy.log"
-        benchmark:
-            f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/sortmerna_postprocessing_filter_taxonomy.txt"
-        params:
-            fraction=0.8,
-            matches=10,
-            prefix="SSU_",
-            email=config["ncbi_email"],
-            options="Metazoa,Viridiplantae"
-        shell:
-            r"""
-            python {RNA_SCRIPTS_DIR}/filter_reads_assign_taxonomy.py \
-                --id_info {input.id_info} \
-                --fraction {params.fraction} \
-                --matches {params.matches} \
-                --prefix {params.prefix} \
-                --out {output.tsv} \
-                --read_id {output.read_ids} \
-                --failed_id {output.failed_ids} \
-                --discarded_id {output.discarded_ids} \
-                --taxonomy_discarded_id {output.taxonomy_discarded_id} \
-                --statistics {output.statistics} \
-                --discard {params.options} \
-                --email {params.email} \
-                --taxonomy {input.taxonomy} &> {log.stdout}
-            """
-        
-    rule rrna_extraction:
+
+    # =====================================================
+    # Extract non-rRNA reads
+    # =====================================================
+
+    rule extract_non_rRNA_sortmerna_combined:
         conda:
             f"{RNA_ENVS_DIR}/seqkit.yaml"
         message:
-            "[Seqkit] extract rRNA reads for {wildcards.sample}"
+            "[SortMeRNA] Extracting non-rRNA reads "
+            "for {wildcards.sample}"
         input:
-            cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
-            cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
-            read_ids=rules.filter_and_assign_taxonomy.output.read_ids
+            cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
+            cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
+            read_ids=rules.extract_sortmerna_combined_ids.output.rrna_ids
         output:
-            rrna_r1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-            rrna_r2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz"
+            r1=f"{RNA_CLASSIFIED_DIR}/{{sample}}/non_rRNA/{{sample}}_non_rRNA_1.fastq.gz",
+            r2=f"{RNA_CLASSIFIED_DIR}/{{sample}}/non_rRNA/{{sample}}_non_rRNA_2.fastq.gz"
         log:
-            stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/rrna_extraction.log"
+            stdout=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/logs/extract_sortmerna_combined_non_rRNA.log"
         benchmark:
-            f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/{{sample}}_rrna_extraction.txt"
+            f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/extract_sortmerna_combined_non_rRNA.txt"
         threads:
             config["RNA"]["threads"]
-        params:
-            prefix=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA"
         shell:
             r"""
             set -euo pipefail
 
-            mkdir -p $(dirname {output.rrna_r1})
+            mkdir -p "$(dirname "{output.r1}")"
+            mkdir -p "$(dirname "{log.stdout}")"
 
             seqkit grep \
-                -f {input.read_ids} \
+                -v \
+                -f "{input.read_ids}" \
                 --threads {threads} \
-                {input.cleaned_r1} \
-                -o {output.rrna_r1} \
-                2> {log.stdout}
+                "{input.cleaned_r1}" \
+                -o "{output.r1}" \
+                2> "{log.stdout}"
 
             seqkit grep \
-                -f {input.read_ids} \
+                -v \
+                -f "{input.read_ids}" \
                 --threads {threads} \
-                {input.cleaned_r2} \
-                -o {output.rrna_r2} \
-                2>> {log.stdout}
+                "{input.cleaned_r2}" \
+                -o "{output.r2}" \
+                2>> "{log.stdout}"
             """
     
-    rule non_rrna_extraction:
+    # =====================================================
+    # Extract SSU reads
+    # =====================================================
+
+    rule extract_SSU_sortmerna_combined:
         conda:
             f"{RNA_ENVS_DIR}/seqkit.yaml"
         message:
-            "[Seqkit] extract non-rRNA reads for {wildcards.sample}"
+            "[SortMeRNA] Extracting competitive SSU reads for {wildcards.sample}"
         input:
-            cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
-            cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
-            read_ids=rules.extract_all_aligned_ids.output.read_ids
+            cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
+            cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
+            read_ids=rules.extract_sortmerna_combined_ids.output.ssu_ids
         output:
-            non_rrna_r1=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_1.fastq.gz",
-            non_rrna_r2=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA_2.fastq.gz"
+            r1=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_1.fastq.gz",
+            r2=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_2.fastq.gz"
         log:
-            stdout=f"{RESULTS_DIR}/nonrRNA/{{sample}}/logs/non_rrna_extraction.log"
+            stdout=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/logs/extract_sortmerna_combined_SSU.log"
         benchmark:
-            f"{RESULTS_DIR}/nonrRNA/{{sample}}/benchmarks/{{sample}}_non_rrna_extraction.txt"
+            f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/extract_sortmerna_combined_SSU.txt"
         threads:
-                config["RNA"]["threads"]
-        params:
-            prefix=f"{RESULTS_DIR}/nonrRNA/{{sample}}/filtered/{{sample}}_nonrRNA"
+            config["RNA"]["threads"]
         shell:
             r"""
             set -euo pipefail
 
-            mkdir -p $(dirname {output.non_rrna_r1})
+            mkdir -p "$(dirname "{output.r1}")"
+            mkdir -p "$(dirname "{log.stdout}")"
 
             seqkit grep \
-                -f {input.read_ids} \
-                -v \
+                -f "{input.read_ids}" \
                 --threads {threads} \
-                {input.cleaned_r1} \
-                -o {output.non_rrna_r1} \
-                2> {log.stdout}
+                "{input.cleaned_r1}" \
+                -o "{output.r1}" \
+                2> "{log.stdout}"
 
             seqkit grep \
-                -f {input.read_ids} \
-                -v \
+                -f "{input.read_ids}" \
                 --threads {threads} \
-                {input.cleaned_r2} \
-                -o {output.non_rrna_r2} \
-                2>> {log.stdout}
+                "{input.cleaned_r2}" \
+                -o "{output.r2}" \
+                2>> "{log.stdout}"
             """
-

@@ -1,0 +1,6 @@
+name: vsearch
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - vsearch>=2.31.0

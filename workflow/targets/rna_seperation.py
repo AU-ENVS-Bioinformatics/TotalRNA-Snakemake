@@ -7,23 +7,31 @@ from snakemake.io import expand
 # SortMeRNA stage logic
 # --------------------------
 
-def sortmerna_stages(config: dict) -> List[str]:
-    base = config["RNA"]["sortmerna_staged"]["pipeline"]
+def sortmerna_stages(
+    config: dict,
+) -> List[str]:
 
-    if not base:
+    pipeline = config["RNA"]["sortmerna_staged"]["pipeline"]
+
+    if not pipeline:
         raise ValueError(
             "RNA.sortmerna_staged.pipeline cannot be empty"
         )
 
     return [
-        "_".join(base[:i + 1])
-        for i in range(len(base))
+        "_".join(pipeline[:i + 1])
+        for i in range(len(pipeline))
     ]
-
 
 def previous_stage_map(
     stages: List[str],
 ) -> Dict[str, str]:
+
+    if not stages:
+        raise ValueError(
+            "SortMeRNA stages cannot be empty"
+        )
+
     return {
         stages[0]: "decontamination",
         **{
@@ -32,6 +40,9 @@ def previous_stage_map(
         },
     }
 
+# =========================================================
+# SortMeRNA staged inputs
+# =========================================================
 
 def sortmerna_input_r1(
     sample: str,
@@ -99,17 +110,31 @@ def get_sortmerna_db(
     stage: str,
     config: dict,
 ) -> str:
-    database_name = stage.split("_")[-1]
-    return config["databases"][f"sortmeRNA_{database_name}"]
 
+    database_name = stage.split("_")[-1]
+    database_key = f"sortmeRNA_{database_name}"
+
+    if database_key not in config["databases"]:
+        raise ValueError(
+            f"Missing SortMeRNA database in config: {database_key}"
+        )
+
+    return config["databases"][database_key]
 
 def get_sortmerna_db_idx(
     stage: str,
     config: dict,
 ) -> str:
-    database_name = stage.split("_")[-1]
-    return config["databases"][f"sortmeRNA_{database_name}_idx"]
 
+    database_name = stage.split("_")[-1]
+    database_key = f"sortmeRNA_{database_name}_idx"
+
+    if database_key not in config["databases"]:
+        raise ValueError(
+            f"Missing SortMeRNA index in config: {database_key}"
+        )
+
+    return config["databases"][database_key]
 
 # --------------------------
 # Shared classified outputs
@@ -124,114 +149,85 @@ def filtered_outputs(
 
     for read in [1, 2]:
         outputs += expand(
-            f"{results_dir}/classified/{{sample}}/"
-            f"rRNA/{{sample}}_rRNA_{read}.fastq.gz",
+            f"{results_dir}/classified/{{sample}}/SSU/{{sample}}_SSU_{read}.fastq.gz",
             sample=samples,
         )
 
         outputs += expand(
-            f"{results_dir}/classified/{{sample}}/"
-            f"non_rRNA/{{sample}}_non_rRNA_{read}.fastq.gz",
+            f"{results_dir}/classified/{{sample}}/non_rRNA/{{sample}}_non_rRNA_{read}.fastq.gz",
             sample=samples,
         )
 
     return outputs
 
-
 # --------------------------
-# SortMeRNA classified outputs
+# ITS classified outputs
 # --------------------------
 
-def sortmerna_outputs(
+def ITS_candidates(
     results_dir: Path,
     samples: List[str],
-    refinement: str,
-) -> List[str]:
-
-    if refinement != "staged":
-        raise ValueError(
-            "Only staged SortMeRNA is currently supported "
-            "by sortmerna_outputs()."
-        )
-
-    outputs: List[str] = []
-
-    for classification in [
-        "SSU",
-        "LSU",
-        "non_SSU",
-    ]:
-        for read in [1, 2]:
-            outputs += expand(
-                f"{results_dir}/classified/{{sample}}/"
-                f"{classification}/"
-                f"{{sample}}_{classification}_{read}.fastq.gz",
-                sample=samples,
-            )
-
-    return outputs
-
-
-# --------------------------
-# RiboDetector outputs
-# --------------------------
-
-def ribodetector_outputs(
-    results_dir: Path,
-    samples: List[str],
-    refinement: str,
 ) -> List[str]:
 
     outputs: List[str] = []
 
     for read in [1, 2]:
         outputs += expand(
-            f"{results_dir}/intermediate/{{sample}}/"
-            f"ribodetector/{{sample}}_rRNA_{read}.fastq.gz",
+            f"{results_dir}/intermediate/{{sample}}/ITS_candidates/{{sample}}_ITS_candidates_{read}.fastq.gz",
             sample=samples,
         )
-
-        outputs += expand(
-            f"{results_dir}/intermediate/{{sample}}/"
-            f"ribodetector/{{sample}}_nonrRNA_{read}.fastq.gz",
-            sample=samples,
-        )
-
-    if refinement == "bbduk":
-        for classification in [
-            "SSU",
-            "non_SSU",
-        ]:
-            for read in [1, 2]:
-                outputs += expand(
-                    f"{results_dir}/classified/{{sample}}/"
-                    f"{classification}/"
-                    f"{{sample}}_{classification}_{read}.fastq.gz",
-                    sample=samples,
-                )
 
     return outputs
 
+# =========================================================
+# Validate RNA-separation configuration
+# =========================================================
 
-# --------------------------
-# BBMap outputs
-# --------------------------
+def validate_rna_config(
+    config: dict,
+) -> None:
 
-def bbmap_outputs(
-    results_dir: Path,
-    samples: List[str],
-) -> List[str]:
+    method = config["RNA"]["method"]
+    refinement = config["RNA"]["refinement"]
 
-    return expand(
-        f"{results_dir}/intermediate/{{sample}}/"
-        f"bbmap/{{sample}}_all_reads.bam",
-        sample=samples,
-    )
+    if method == "sortmerna":
+        supported_refinements = [
+            "staged",
+            "combined",
+        ]
 
+        if refinement not in supported_refinements:
+            raise ValueError(
+                "Unsupported SortMeRNA refinement: "
+                f"{refinement}. Supported refinements are: "
+                + ", ".join(supported_refinements)
+            )
 
-# --------------------------
-# RNA-separation targets
-# --------------------------
+    elif method == "ribodetector":
+        if refinement != "bbduk":
+            raise ValueError(
+                "RiboDetector must use refinement: bbduk "
+                "to produce the standardized SSU output."
+            )
+
+    elif method == "bbmap":
+        # BBMap must have downstream rules that publish
+        # both standardized SSU and non-rRNA FASTQs.
+        pass
+
+    elif method == "ITS":
+        # ITS candidates must have downstream rules that publish
+        # merged ITS candidate FASTAs.
+        pass
+
+    else:
+        raise ValueError(
+            f"Unsupported RNA-separation method: {method}"
+        )
+
+# =========================================================
+# RNA-separation outputs used by the Snakefile
+# =========================================================
 
 def rna_outputs(
     results_dir: Path,
@@ -241,42 +237,19 @@ def rna_outputs(
 
     method = config["RNA"]["method"]
     refinement = config["RNA"]["refinement"]
+    secondary_method = config["RNA"]["secondary_method"]
+    print(f"[RNA separation] method={method}, refinement={refinement}")
 
-    print(
-        f"[RNA separation] "
-        f"method={method}, refinement={refinement}"
-    )
+    validate_rna_config(config)
 
-    outputs: List[str] = []
-
-    if method == "sortmerna":
-        outputs += sortmerna_outputs(
-            results_dir,
-            samples,
-            refinement,
-        )
-
-    elif method == "ribodetector":
-        outputs += ribodetector_outputs(
-            results_dir,
-            samples,
-            refinement,
-        )
-
-    elif method == "bbmap":
-        outputs += bbmap_outputs(
-            results_dir,
-            samples,
-        )
-
-    else:
+    if method not in ["sortmerna", "ribodetector", "bbmap"]:
         raise ValueError(
-            f"Unsupported RNA method: {method}"
+            f"Unsupported RNA-separation method: {method}"
         )
 
-    outputs += filtered_outputs(
-        results_dir,
-        samples,
-    )
+    final_output = filtered_outputs(results_dir,samples)
 
-    return outputs
+    if secondary_method in ["ITS"]:
+        final_output += ITS_candidates(results_dir, samples)
+
+    return final_output

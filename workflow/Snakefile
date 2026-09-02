@@ -14,6 +14,8 @@ from targets.rna_seperation import (
     get_sortmerna_db_idx,
 )
 
+from targets.reconstruction import reconstruction_outputs
+
 from targets.rrna import (
     rrna_outputs,
     kraken_database_names,
@@ -272,6 +274,19 @@ else:
     )
 
 
+if config["RNA"]["secondary_method"] == "ITS":
+    include: "RNA/rules/its_candidates.smk"
+
+# =========================================================
+# Reconstruction module
+# =========================================================
+
+### Quality control and decontamination
+include: "reconstruction/rules/preprocessing.smk"
+include: "reconstruction/rules/rnaspades.smk"
+include: "reconstruction/rules/ITS_concatenation.smk"
+include: "reconstruction/rules/itsx.smk"
+
 # =========================================================
 # SSU rRNA taxonomic classification
 # =========================================================
@@ -284,8 +299,6 @@ include: "rRNA/rules/kraken_bracken_downstream.smk"
 # SSU rRNA reconstruction and phylogeny
 # =========================================================
 
-include: "phylogeny/rules/rnaspades.smk"
-include: "phylogeny/rules/assembly_postprocessing.smk"
 include: "phylogeny/rules/blastn.smk"
 include: "phylogeny/rules/blastn_postprocessing.smk"
 include: "phylogeny/rules/mafft.smk"
@@ -344,9 +357,22 @@ rule Quality_Control_done:
 
 rule RNA_seperation_done:
     input:
-        rna_outputs(RNA_DIR, SAMPLES, config)
+        rna_outputs(RNA_DIR,SAMPLES,config)
     output:
         flag=f"{RNA_DIR}/rna_classification.done"
+    shell:
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
+        """
+
+rule reconstruction_done:
+    input:
+        reconstruction_outputs(RESULTS_DIR, SAMPLES,config)
+    output:
+        flag=f"{ASSEMBLY_DIR}/reconstruction.done"
     shell:
         r"""
         set -euo pipefail

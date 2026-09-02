@@ -6,40 +6,40 @@ rule sortmerna_combined:
     message:
         "[SortMeRNA] seperate reads  for {wildcards.sample} according to the numerous databases at once"
     input:
-        cleaned_r1=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
-        cleaned_r2=f"{RESULTS_DIR}/qc/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
+        cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
+        cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
         db=config["databases"][f"sortmeRNA_ssu_lsu"],
         db_idx=config["databases"][f"sortmeRNA_ssu_lsu_idx"]
     output:
-        sam=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned.sam",
+        sam=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_ssu_lsu.aligned.sam"
     log:
-        stdout = f"{RESULTS_DIR}/RNA/{{sample}}/logs/sortmerna_aligned.log"
+        stdout=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/logs/sortmerna_combined.log"
     benchmark:
-        f"{RESULTS_DIR}/RNA/{{sample}}/benchmarks/sortmerna_aligned.txt"
+        f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/sortmerna_combined.txt"
     params:
-        workdir=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned",
-        options=config["RNA"]["sortmerna_combined"]["options"],
-        aligned_prefix=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.aligned",
-        nonaligned_prefix=f"{RESULTS_DIR}/RNA/{{sample}}/sortmerna/aligned/{{sample}}_ssu_lsu.nonaligned"
+        workdir=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined",
+        aligned_prefix=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_ssu_lsu.aligned",
+        options=config["RNA"]["sortmerna_combined"]["options"]
     threads:
         config["RNA"]["sortmerna_combined"]["threads"]
     shell:
         r"""
         set -euo pipefail
-        mkdir -p {params.workdir}
+
+        mkdir -p "{params.workdir}"
+        mkdir -p "$(dirname "{log.stdout}")"
 
         sortmerna \
-            --ref {input.db} \
-            --idx-dir {input.db_idx} \
-            --workdir {params.workdir} \
+            --ref "{input.db}" \
+            --idx-dir "{input.db_idx}" \
+            --workdir "{params.workdir}" \
             --threads {threads} \
-            --reads {input.cleaned_r1} \
-            --reads {input.cleaned_r2} \
+            --reads "{input.cleaned_r1}" \
+            --reads "{input.cleaned_r2}" \
+            --aligned "{params.aligned_prefix}" \
             {params.options} \
-            --index 0 \
-            --aligned {params.aligned_prefix} \
-            > {log.stdout} 2>&1
-        
+            > "{log.stdout}" 2>&1
+
         rm -rf {params.workdir}/kvdb || true
         rm -rf {params.workdir}/readb || true
         """
