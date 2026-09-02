@@ -4,18 +4,16 @@
 
 rule prefix_contigs_ids:
     message:
-        "[PhyloFlash postprocessing] prefix reconstructed SSU IDs for {wildcards.sample}"
+        "[ITS postprocessing] Prefixing reconstructed ITS IDs for {wildcards.sample}"
     input:
-        fasta=f"{PHYLOGENY_DIR}/{{sample}}/reconstructed/transcripts.fasta"
+        fasta=f"{ASSEMBLY_DIR}/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.full.fasta"
     output:
-        fasta=f"{PHYLOGENY_DIR}/{{sample}}/reconstructed/{{sample}}_SSU_prefixed.fasta"
+        fasta=f"{ASSEMBLY_DIR}/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITS_prefixed.fasta"
     params:
         sample=lambda wildcards: wildcards.sample
     shell:
         r"""
         set -euo pipefail
-
-        mkdir -p "$(dirname "{output.fasta}")"
 
         awk -v sample="{params.sample}" '
             /^>/ {{
@@ -26,21 +24,19 @@ rule prefix_contigs_ids:
         """
 
 ################################################################################
-# 3. COMBINE PREFIXED SSU RECONSTRUCTIONS ACROSS SAMPLES
+# 3. COMBINE PREFIXED ITS RECONSTRUCTIONS ACROSS SAMPLES
 ################################################################################
 
-rule combine_reconstructed_ssu:
+rule combine_reconstructed_its:
     message:
-        "[Phylogeny] combine reconstructed SSUs across all samples"
+        "[ITS postprocessing] Combining reconstructed ITS across all samples"
     input:
         fasta=expand(
-            f"{PHYLOGENY_DIR}/{{sample}}/reconstructed/{{sample}}_SSU_prefixed.fasta",
+            f"{ASSEMBLY_DIR}/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITS_prefixed.fasta",
             sample=SAMPLES
         )
     output:
-        fasta=f"{PHYLOGENY_DIR}/cross_sample/reconstructed_SSU_all_samples.fasta"
-    benchmark:
-        f"{PHYLOGENY_DIR}/cross_sample/benchmarks/combine_reconstructed_ssu.txt"
+        fasta=f"{ASSEMBLY_DIR}/concatenated/ITS/cross_sample_ITS.fasta"
     shell:
         r"""
         set -euo pipefail

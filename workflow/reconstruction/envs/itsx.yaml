@@ -1,0 +1,7 @@
+name: itsx
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - itsx>=1.1.3
