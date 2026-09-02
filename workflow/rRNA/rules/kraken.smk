@@ -4,15 +4,15 @@ rule kraken2:
     message:
         "[Kraken2] estimate species composition for {wildcards.sample} for taxonomic classification against {wildcards.database}"
     input:
-        rRNA_R1=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_1.fastq.gz",
-        rRNA_R2=f"{RESULTS_DIR}/rRNA/{{sample}}/filtered/{{sample}}_rRNA_2.fastq.gz",
+        rRNA_ssu_r1=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_1.fastq.gz",
+        rRNA_ssu_r2=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_2.fastq.gz",
     output:
-        report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.k2report",
-        kraken=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.kraken"
+        report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.k2report",
+        kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.kraken"
     log:
-        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/kraken2_{{database}}.log"
+        stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/logs/{{sample}}.{{database}}.kraken2.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/kraken2_{{database}}.txt"
+        f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/benchmarks/{{sample}}.{{database}}.kraken2.txt"
     params:
         db=kraken_db,
         options=config["rRNA"]["kraken2"].get("options","")
@@ -28,7 +28,7 @@ rule kraken2:
           --threads {threads} \
           --report {output.report} \
           --output {output.kraken} \
-          --paired {input.rRNA_R1} {input.rRNA_R2} \
+          --paired {input.rRNA_ssu_r1} {input.rRNA_ssu_r2} \
             {params.options} \
           > {log.stdout} 2>&1
         """

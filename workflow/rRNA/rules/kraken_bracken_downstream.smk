@@ -5,15 +5,15 @@ rule kraken_biom:
     conda:
         f"{ENVS_DIR}/kraken_biom.yaml"
     message:
-        "[Kraken-Biom] combines kraken reports across samples against {wildcards.database}"
+        "[Kraken-Biom] Combining SSU reports across samples against {wildcards.database}"
     input:
         reports=taxonomy_reports_for_database
     output:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/logs/kraken_biom.log"
+        stdout=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/kraken_biom.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/benchmarks/kraken_biom.txt"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/kraken_biom.txt"
     params:
         options=config["rRNA"]["kraken_biom"]["options"]
     shell:
@@ -23,7 +23,7 @@ rule kraken_biom:
         kraken-biom {input.reports} \
             -o {output.biom} \
             {params.options} \
-            > {log} 2>&1
+            > {log.stdout} 2>&1
         """
 
 #kraken-biom *.k2report -o bracken_genus.biom --min S --max D
@@ -31,15 +31,15 @@ rule biom_table_stats_qualitative:
     conda:
         f"{ENVS_DIR}/kraken_biom.yaml"
     message:
-        "[biom summarize-table] qualitative summary statistics across samples against {wildcards.database}"
+        "[biom summarize-table] Creating qualitative SSU summary for against {wildcards.database}"
     input:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
     output:
-        biom_qual=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy_qualitative.txt"
+        biom_qual=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy_qualitative.txt"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/logs/biom_summary_qualitative.log"
+        stdout=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_summary_qualitative.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/benchmarks/biom_summary_qualitative.txt"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/biom_summary_qualitative.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.biom_qual})
@@ -47,22 +47,22 @@ rule biom_table_stats_qualitative:
         biom summarize-table -i {input.biom} \
             -o {output.biom_qual} \
             --qualitative \
-            > {log} 2>&1
+            > {log.stdout} 2>&1
         """
 
 rule biom_table_stats_observations:
     conda:
         f"{ENVS_DIR}/kraken_biom.yaml"
     message:
-        "[biom summarize-table] Observational summary statistics across samples against {wildcards.database}"
+        "[biom summarize-table] Creating SSU observation summary for {wildcards.database}"
     input:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
     output:
-        biom_obs=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy_observations.txt"
+        biom_obs=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy_observations.txt"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/logs/biom_summary_observations.log"
+        stdout=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_summary_observations.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/benchmarks/biom_summary_observations.txt"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/biom_summary_observations.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.biom_obs})
@@ -70,22 +70,22 @@ rule biom_table_stats_observations:
         biom summarize-table -i {input.biom} \
             -o {output.biom_obs} \
             --observations \
-            > {log} 2>&1
+            > {log.stdout} 2>&1
         """
 
 rule kraken_biom_convert:
     conda:
         f"{ENVS_DIR}/kraken_biom.yaml"
     message:
-        "[biom convert] converts {wildcards.database} database biom object to TSV format for taxonomic classification"
+        "[biom convert] converting {wildcards.database} SSU BIOM to TSV"
     input:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
     output:
-        biom_tsv=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.tsv"
+        biom_tsv=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.tsv"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/logs/biom_convert.log"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_convert.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/benchmarks/biom_convert.txt"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/biom_convert.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.biom_tsv})
@@ -97,15 +97,15 @@ rule biom_to_phyloseq_raw:
     conda:
         f"{ENVS_DIR}/r_phyloseq.yaml"
     message:
-        "[phyloseq] convert BIOM into an unfiltered phyloseq object from {wildcards.database}"
+        "[phyloseq] Creating raw SSU phyloseq object from {wildcards.database}"
     input:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
     output:
-        rds=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/phyloseq_raw.rds"
+        rds=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/phyloseq_raw.rds"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/logs/biom_to_phyloseq_raw.log"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_to_phyloseq_raw.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/benchmarks/biom_to_phyloseq_raw.txt"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/biom_to_phyloseq_raw.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.rds})
@@ -130,17 +130,17 @@ rule biom_to_phyloseq_filtered:
     conda:
         f"{ENVS_DIR}/r_phyloseq.yaml"
     message:
-        "[phyloseq] convert BIOM into an filtered phyloseq object from {wildcards.database}, by removing multi-cellular organism "
+        "[phyloseq] Creating filtered SSU phyloseq object from {wildcards.database}, by removing multi-cellular organism "
     input:
-        biom=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
     output:
-        rds=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/phyloseq_filtered.rds"
+        rds=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/phyloseq_filtered.rds"
     log:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/logs/biom_to_phyloseq.log"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_to_phyloseq.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/benchmarks/biom_to_phyloseq.txt"
+        f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/biom_to_phyloseq.txt"
     params:
-        prefix=f"{RESULTS_DIR}/rRNA/taxonomy/{{database}}/"
+        prefix=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/"
     shell:
         r"""
         Rscript {SCRIPTS_DIR}/biom_to_phyloseq.R {input.biom} {output.rds} {params.prefix} > {log} 2>&1

@@ -102,9 +102,9 @@ def taxonomy_report(
 
     classification_dir = (
         Path(results_dir)
-        / "rRNA"
+        / "Taxonomy_Profiling"
         / sample
-        / "classification"
+        / "SSU"
         / database
     )
 
@@ -160,19 +160,13 @@ def kraken_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        (
-            f"{results_dir}/rRNA/{{sample}}/classification/"
-            "{database}/{sample}.{database}.k2report"
-        ),
+        f"{results_dir}/Taxonomy_Profiling/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.k2report",
         sample=samples,
         database=databases,
     )
 
     outputs += expand(
-        (
-            f"{results_dir}/rRNA/{{sample}}/classification/"
-            "{database}/{sample}.{database}.kraken"
-        ),
+        f"{results_dir}/Taxonomy_Profiling/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.kraken",
         sample=samples,
         database=databases,
     )
@@ -183,15 +177,13 @@ def kraken_outputs(
 # =========================================================
 # Expected Bracken outputs
 # =========================================================
-
 def bracken_outputs(
     results_dir: Path,
     samples: List[str],
     config: dict,
 ) -> List[str]:
     """
-    Return Bracken outputs only for databases where
-    run_bracken is true.
+    Return Bracken outputs for databases where Bracken is enabled.
     """
 
     databases = bracken_database_names(config)
@@ -202,19 +194,13 @@ def bracken_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        (
-            f"{results_dir}/rRNA/{{sample}}/classification/"
-            "{database}/{sample}.{database}.bracken.tsv"
-        ),
+        f"{results_dir}/Taxonomy_Profiling/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.bracken.tsv",
         sample=samples,
         database=databases,
     )
 
     outputs += expand(
-        (
-            f"{results_dir}/rRNA/{{sample}}/classification/"
-            "{database}/{sample}.{database}.bracken.k2report"
-        ),
+        f"{results_dir}/Taxonomy_Profiling/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.bracken.k2report",
         sample=samples,
         database=databases,
     )
@@ -225,70 +211,28 @@ def bracken_outputs(
 # =========================================================
 # Expected downstream outputs
 # =========================================================
-
 def downstream_outputs(
     results_dir: Path,
     config: dict,
 ) -> List[str]:
     """
-    Return downstream taxonomy outputs for every database.
+    Return combined SSU taxonomy outputs for every database.
     """
 
     databases = kraken_database_names(config)
 
-    outputs: List[str] = []
-
-    outputs += expand(
-        (
-            f"{results_dir}/rRNA/taxonomy/"
-            "{database}/taxonomy.biom"
-        ),
+    return expand(
+        f"{results_dir}/Taxonomy_Profiling/summary/SSU/{{database}}/{{filename}}",
         database=databases,
+        filename=[
+            "taxonomy.biom",
+            "taxonomy.tsv",
+            "taxonomy_qualitative.txt",
+            "taxonomy_observations.txt",
+            "phyloseq_raw.rds",
+            "phyloseq_filtered.rds",
+        ],
     )
-
-    outputs += expand(
-        (
-            f"{results_dir}/rRNA/taxonomy/"
-            "{database}/taxonomy.tsv"
-        ),
-        database=databases,
-    )
-
-    outputs += expand(
-        (
-            f"{results_dir}/rRNA/taxonomy/"
-            "{database}/taxonomy_qualitative.txt"
-        ),
-        database=databases,
-    )
-
-    outputs += expand(
-        (
-            f"{results_dir}/rRNA/taxonomy/"
-            "{database}/taxonomy_observations.txt"
-        ),
-        database=databases,
-    )
-
-    outputs += expand(
-        (
-            f"{results_dir}/rRNA/taxonomy/"
-            "{database}/phyloseq_raw.rds"
-        ),
-        database=databases,
-    )
-
-    outputs += expand(
-        (
-            f"{results_dir}/rRNA/taxonomy/"
-            "{database}/phyloseq_filtered.rds"
-        ),
-        database=databases,
-    )
-
-    return outputs
-
-
 # =========================================================
 # Main rRNA target function
 # =========================================================

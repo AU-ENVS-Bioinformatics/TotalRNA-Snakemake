@@ -103,19 +103,15 @@ rRNA:
   kraken2:
     threads: 10
     options: ""
-
     databases:
       silva:
         path: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
         run_bracken: true
-
       pr2:
         path: /data_2/Databases/Kraken2_PR2_5.1.1
         run_bracken: true
-
   bracken:
     options: "-r 150 -l G -t 10"
-
   kraken_biom:
     options: "--min G --max D --fmt hdf5"
     

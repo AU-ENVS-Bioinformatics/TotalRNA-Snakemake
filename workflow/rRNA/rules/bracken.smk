@@ -4,14 +4,14 @@ rule bracken:
     message:
         "[Bracken] re-estimate abundance for {wildcards.sample} for {wildcards.database}"
     input:
-        kraken_report=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.k2report",
+        kraken_report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.k2report"
     output:
-        bracken_output=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.bracken.tsv",
-        bracken_kreport_output=f"{RESULTS_DIR}/rRNA/{{sample}}/classification/{{database}}/{{sample}}.{{database}}.bracken.k2report"
+        bracken_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.bracken.tsv",
+        bracken_kreport_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.bracken.k2report"
     log:
-        stdout=f"{RESULTS_DIR}/rRNA/{{sample}}/logs/bracken_{{database}}.log"
+        stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/logs/{{sample}}.{{database}}.bracken.log"
     benchmark:
-        f"{RESULTS_DIR}/rRNA/{{sample}}/benchmarks/bracken_{{database}}.txt"
+        f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt"
     params:
         db=kraken_db,
         options=config["rRNA"]["bracken"]["options"]

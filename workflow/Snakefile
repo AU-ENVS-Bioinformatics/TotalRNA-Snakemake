@@ -216,7 +216,8 @@ rule all:
     input:
         f"{QC_DIR}/qualit_control.done",
         f"{RNA_DIR}/rna_classification.done",
-        f"{RESULTS_DIR}/rRNA/rRNA.done",
+        f"{ASSEMBLY_DIR}/reconstruction.done"
+        f"{TAXONOMY_DIR}/taxonomy.done",
         f"{RESULTS_DIR}/phylogeny/phylogeny.done",
         f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
 
@@ -381,11 +382,11 @@ rule reconstruction_done:
         touch "{output.flag}"
         """
 
-rule rRNA_done:
+rule taxonomy_done:
     input:
         rrna_outputs(RESULTS_DIR, SAMPLES,config)
     output:
-        flag=f"{RESULTS_DIR}/rRNA/rRNA.done"
+        flag=f"{TAXONOMY_DIR}/taxonomy.done"
     shell:
         r"""
         set -euo pipefail
