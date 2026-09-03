@@ -1,0 +1,5 @@
+name: taxonomy-postprocessing
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.11

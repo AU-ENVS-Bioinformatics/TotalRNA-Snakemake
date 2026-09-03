@@ -1,5 +1,7 @@
-ENVS_DIR = Path(workflow.basedir)/"rRNA/envs"
-SCRIPTS_DIR = Path(workflow.basedir)/"rRNA/scripts"
+from pathlib import Path
+
+ENVS_DIR = Path(workflow.basedir) / "taxonomy/envs"
+SCRIPTS_DIR = Path(workflow.basedir) / "taxonomy/scripts"
 
 rule kraken_biom:
     conda:
