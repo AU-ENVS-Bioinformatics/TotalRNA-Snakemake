@@ -1,12 +1,11 @@
 ################################################################################
 # 9. Maximum-likelihood phylogenetic tree with IQ-TREE2
 ################################################################################
-
 rule iqtree_ssu:
     conda:
         "../envs/iqtree.yaml"
     message:
-        "[IQ-TREE2] construct SSU phylogenetic tree across samples and SSU extracted references"
+        "[IQ-TREE2] Construct the cross-sample SSU phylogenetic tree"
     input:
         trimmed=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft_trim.fasta"
     output:
@@ -15,7 +14,7 @@ rule iqtree_ssu:
         model=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.model.gz"
     log:
         stdout=f"{PHYLOGENY_DIR}/tree/logs/iqtree.log",
-        benchmark_file=f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree_time.txt",
+        time=f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree_time.txt"
     benchmark:
         f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree.txt"
     params:
@@ -29,10 +28,11 @@ rule iqtree_ssu:
 
         mkdir -p $(dirname {output.tree})
 
-        /usr/bin/time -v -o {log.benchmark_file} \
+        /usr/bin/time -v -o {log.time} \
             iqtree2 \
                 -s {input.trimmed} \
                 -pre {params.prefix} \
                 -T {threads} \
+                {params.options} \
                 > {log.stdout} 2>&1
         """

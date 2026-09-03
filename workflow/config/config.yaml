@@ -20,7 +20,6 @@ databases:
   sortmeRNA_ssu_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta
   sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna5_idx/SSU_LSU/idx/
   SILVA_138.1_N99: /data_2/Databases/SILVA_138/SILVA_138.1_SSU_LSU_N99_tax_silva_trunc.fasta
-  SILVA_138.2_N99_blast: /data_2/Databases/SILVA_138.2_blast/SILVA_138.2_SSURef_NR99
   crest4_db: /data_2/Databases/crest4/silvamod138pr2
   kraken_decontamination_db: /data_2/Databases/kraken2_dbs
   kraken_rRNA_db: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
@@ -113,13 +112,20 @@ taxonomy:
       options: "--min G --max D --fmt hdf5"
   ITS:
     blastn:
+      database: /data_2/Databases/UNITE/blast/UNITE_dynamic_19.02.2025
       threads: 12
-      options: '-task blastn -evalue 1e-10 -max_target_seqs 20 -max_hsps 1'
-
+      options: '-task blastn -evalue 1e-10 -max_target_seqs 20 -max_hsps 1 '
       regions:
+        - full
         - ITS1
         - 5_8S
         - ITS2
+    postprocessing:
+      min_query_coverage: 80
+      min_identity: 80
+      top_bitscore_fraction: 0.99
+    summary:
+      taxonomic_rank: genus
 
 nonrRNA:
   nonrrna_module: coassembly # read | coassembly | assembly | both | all
@@ -154,20 +160,13 @@ nonrRNA:
     threads: 12
   
 phylogeny:
-  reconstruction_method: rnaspades # spades | rnaspades | phyloflash
-  secondary: PR2
-  phyloflash:
-    threads: 12
-    options: "-nokeeptmp -nozip"
-  rnaspades:
-    threads: 16
-    options: "--memory 200"
   blastn:
     threads: 12
     options: '-outfmt "6 qseqid sseqid pident length qlen slen qcovs evalue bitscore stitle" -evalue 1e-20 -max_target_seqs 100 -max_hsps 1'
+    database: /data_2/Databases/SILVA_138.2_blast/SILVA_138.2_SSURef_NR99
   blastn_postprocessing:
     top_n_hits: 20
-    nt_identify: 97
+    nt_identity: 97
     query_coverage: 90
   mafft:
     threads: 6

@@ -32,6 +32,11 @@ def reconstruction_outputs(
         sample=samples,
     )
 
+    # Combined SSU reconstruction
+    outputs.append(
+        f"{results_dir}/Assembly/concatenated/SSU/cross_sample_SSU.fasta"
+    )
+    
     # Optional sample-specific ITS-candidate reconstruction
     if secondary_method == "ITS":
         outputs += expand(

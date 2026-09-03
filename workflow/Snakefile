@@ -18,9 +18,11 @@ from targets.reconstruction import reconstruction_outputs
 
 from targets.taxonomy import (
     taxonomy_outputs,
-    kraken_database_names,
-    get_kraken_database,
     taxonomy_reports,
+    get_kraken_database,
+    kraken_database_names,
+    its_taxonomy_enabled,
+    its_blast_regions,
 )
 
 from targets.phylogeny import phylogeny_outputs
@@ -207,7 +209,7 @@ def taxonomy_reports_for_database(wc):
 
 rule all:
     input:
-        f"{QC_DIR}/qualit_control.done",
+        f"{QC_DIR}/quality_control.done",
         f"{RNA_DIR}/rna_classification.done",
         f"{ASSEMBLY_DIR}/reconstruction.done"
         f"{TAXONOMY_DIR}/taxonomy.done",
@@ -278,16 +280,20 @@ if config["RNA"]["secondary_method"] == "ITS":
 ### Quality control and decontamination
 include: "reconstruction/rules/preprocessing.smk"
 include: "reconstruction/rules/rnaspades.smk"
-include: "reconstruction/rules/ITS_concatenation.smk"
+include: "reconstruction/rules/concatenation.smk"
 include: "reconstruction/rules/itsx.smk"
 
 # =========================================================
 # SSU rRNA taxonomic classification
 # =========================================================
 
-include: "rRNA/rules/kraken.smk"
-include: "rRNA/rules/bracken.smk"
-include: "rRNA/rules/kraken_bracken_downstream.smk"
+TAXONOMY_SCRIPTS_DIR = Path(workflow.basedir) / "taxonomy/scripts"
+
+include: "taxonomy/rules/kraken.smk"
+include: "taxonomy/rules/bracken.smk"
+include: "taxonomy/rules/kraken_bracken_downstream.smk"
+include: "taxonomy/rules/blastn.smk"
+include: "taxonomy/rules/blastn_postprocessing.smk"
 
 # =========================================================
 # SSU rRNA reconstruction and phylogeny

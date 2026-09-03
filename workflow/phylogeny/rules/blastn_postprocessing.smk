@@ -32,14 +32,14 @@ rule filter_blast_ssu:
         blast_top=f"{PHYLOGENY_DIR}/cross_sample/blastn/cross_sample_SSU_blast_top20.tsv"
     params:
         top_n_hits=config["phylogeny"]["blastn_postprocessing"]["top_n_hits"],
-        nt_identify=config["phylogeny"]["blastn_postprocessing"]["nt_identify"],
+        nt_identity=config["phylogeny"]["blastn_postprocessing"]["nt_identity"],
         query_coverage=config["phylogeny"]["blastn_postprocessing"]["query_coverage"]
     shell:
         r"""
         set -euo pipefail
         mkdir -p $(dirname {output.blast_top})
 
-        awk '$3 >= {params.nt_identify} && $7 >= {params.query_coverage}' {input.blastn_tsv} | sort -k1,1 -k9,9nr | awk 'count[$1]++ < {params.top_n_hits}' > {output.blast_top}
+        awk '$3 >= {params.nt_identity} && $7 >= {params.query_coverage}' {input.blastn_tsv} | sort -k1,1 -k9,9nr | awk 'count[$1]++ < {params.top_n_hits}' > {output.blast_top}
         """
 
 ################################################################################
@@ -83,7 +83,7 @@ rule extract_silva_sequences:
     benchmark:
         f"{PHYLOGENY_DIR}/cross_sample/benchmarks/blastdbcmd.txt"
     params:
-        db=config["databases"]["SILVA_138.2_N99_blast"],
+        db=config["phylogeny"]["blastn"]["database"],
     shell:
         r"""
         set -euo pipefail
@@ -115,27 +115,25 @@ rule rename_silva_references:
         """
 
 ################################################################################
-# 6. Combine phyloFlash sequences and SILVA reference sequences
+# 6. COMBINE RECONSTRUCTED SSUs AND SILVA REFERENCES
 ################################################################################
 
 rule combine_ssu_references:
-    conda:
-        "../envs/blastn.yaml"
     message:
-        "[Phylogeny] combine reconstructed SSUs and SILVA references across samples"
+        "[Phylogeny] Combine reconstructed SSUs and SILVA references"
     input:
-        fasta_query=f"{PHYLOGENY_DIR}/cross_sample/reconstructed_SSU_all_samples.fasta",
-        fasta_ref=f"{PHYLOGENY_DIR}/references/cross_sample_acc_SSU_renamed.fasta"
+        query=f"{ASSEMBLY_DIR}/concatenated/SSU/cross_sample_SSU.fasta",
+        references=f"{PHYLOGENY_DIR}/references/cross_sample_acc_SSU_renamed.fasta"
     output:
-        fasta=f"{PHYLOGENY_DIR}/phyloflashreference/cross_sample_acc_SSU_with_references.fasta"
+        fasta=f"{PHYLOGENY_DIR}/references/cross_sample_SSU_with_references.fasta"
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.fasta})
+        mkdir -p "$(dirname "{output.fasta}")"
 
         cat \
-            {input.fasta_query} \
-            {input.fasta_ref} \
-            > {output.fasta}
+            "{input.query}" \
+            "{input.references}" \
+            > "{output.fasta}"
         """
