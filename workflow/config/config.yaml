@@ -97,24 +97,30 @@ reconstruction:
     regions: "ITS1,5.8S,ITS2"
     threads: 12
 
-rRNA:
-  method: kraken2
+taxonomy:
+  SSU:
+    kraken2:
+      threads: 10
+      options: ""
+      databases:
+        silva:
+          path: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
+        pr2:
+          path: /data_2/Databases/Kraken2_PR2_5.1.1
+    bracken:
+      options: "-r 150 -l G -t 10"
+    kraken_biom:
+      options: "--min G --max D --fmt hdf5"
+  ITS:
+    blastn:
+      threads: 12
+      options: '-task blastn -evalue 1e-10 -max_target_seqs 20 -max_hsps 1'
 
-  kraken2:
-    threads: 10
-    options: ""
-    databases:
-      silva:
-        path: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
-        run_bracken: true
-      pr2:
-        path: /data_2/Databases/Kraken2_PR2_5.1.1
-        run_bracken: true
-  bracken:
-    options: "-r 150 -l G -t 10"
-  kraken_biom:
-    options: "--min G --max D --fmt hdf5"
-    
+      regions:
+        - ITS1
+        - 5_8S
+        - ITS2
+
 nonrRNA:
   nonrrna_module: coassembly # read | coassembly | assembly | both | all
   read_method: humann # humann | metaphlan

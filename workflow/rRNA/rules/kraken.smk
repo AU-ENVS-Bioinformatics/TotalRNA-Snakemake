@@ -7,17 +7,17 @@ rule kraken2:
         rRNA_ssu_r1=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_1.fastq.gz",
         rRNA_ssu_r2=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_2.fastq.gz",
     output:
-        report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.k2report",
-        kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.kraken"
+        report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/kraken/{{sample}}.{{database}}.k2report",
+        kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/kraken/{{sample}}.{{database}}.kraken"
     log:
         stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/logs/{{sample}}.{{database}}.kraken2.log"
     benchmark:
         f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/benchmarks/{{sample}}.{{database}}.kraken2.txt"
     params:
         db=kraken_db,
-        options=config["rRNA"]["kraken2"].get("options","")
+        options=config["taxonomy"]["SSU"]["kraken2"].get("options","")
     threads:
-        config["rRNA"]["kraken2"].get("threads", 2)
+        config["taxonomy"]["SSU"]["kraken2"].get("threads", 2)
     shell:
         r"""
         set -euo pipefail

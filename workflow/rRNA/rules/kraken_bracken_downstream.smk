@@ -9,13 +9,13 @@ rule kraken_biom:
     input:
         reports=taxonomy_reports_for_database
     output:
-        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.biom"
     log:
         stdout=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/kraken_biom.log"
     benchmark:
         f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/kraken_biom.txt"
     params:
-        options=config["rRNA"]["kraken_biom"]["options"]
+        options=config["taxonomy"]["SSU"]["kraken_biom"]["options"]
     shell:
         r"""
         mkdir -p $(dirname {output.biom})
@@ -33,9 +33,9 @@ rule biom_table_stats_qualitative:
     message:
         "[biom summarize-table] Creating qualitative SSU summary for against {wildcards.database}"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.biom"
     output:
-        biom_qual=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy_qualitative.txt"
+        biom_qual=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/statistics/taxonomy_qualitative.txt"
     log:
         stdout=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_summary_qualitative.log"
     benchmark:
@@ -56,9 +56,9 @@ rule biom_table_stats_observations:
     message:
         "[biom summarize-table] Creating SSU observation summary for {wildcards.database}"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.biom"
     output:
-        biom_obs=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy_observations.txt"
+        biom_obs=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/statistics/taxonomy_observations.txt"
     log:
         stdout=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_summary_observations.log"
     benchmark:
@@ -79,9 +79,9 @@ rule kraken_biom_convert:
     message:
         "[biom convert] converting {wildcards.database} SSU BIOM to TSV"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.biom"
     output:
-        biom_tsv=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.tsv"
+        biom_tsv=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.tsv"
     log:
         f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_convert.log"
     benchmark:
@@ -99,9 +99,9 @@ rule biom_to_phyloseq_raw:
     message:
         "[phyloseq] Creating raw SSU phyloseq object from {wildcards.database}"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.biom"
     output:
-        rds=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/phyloseq_raw.rds"
+        rds=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/phyloseq/phyloseq_raw.rds"
     log:
         f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_to_phyloseq_raw.log"
     benchmark:
@@ -132,9 +132,9 @@ rule biom_to_phyloseq_filtered:
     message:
         "[phyloseq] Creating filtered SSU phyloseq object from {wildcards.database}, by removing multi-cellular organism "
     input:
-        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy.biom"
+        biom=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/taxonomy/taxonomy.biom"
     output:
-        rds=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/phyloseq_filtered.rds"
+        rds=f"{TAXONOMY_DIR}/summary/SSU/{{database}}/phyloseq/phyloseq_filtered.rds"
     log:
         f"{TAXONOMY_DIR}/summary/SSU/{{database}}/logs/biom_to_phyloseq.log"
     benchmark:

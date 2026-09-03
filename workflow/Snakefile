@@ -16,8 +16,8 @@ from targets.rna_seperation import (
 
 from targets.reconstruction import reconstruction_outputs
 
-from targets.rrna import (
-    rrna_outputs,
+from targets.taxonomy import (
+    taxonomy_outputs,
     kraken_database_names,
     get_kraken_database,
     taxonomy_reports,
@@ -179,16 +179,10 @@ def sortmerna_db_idx(wc):
 # =========================================================
 
 def kraken_db(wc):
-    """
-    Return the Kraken2 database path corresponding to
-    the {database} wildcard.
-    """
-
     return get_kraken_database(
         database=wc.database,
         config=config,
     )
-
 
 def taxonomy_reports_for_database(wc):
     """
@@ -205,7 +199,6 @@ def taxonomy_reports_for_database(wc):
         results_dir=RESULTS_DIR,
         samples=SAMPLES,
         database=wc.database,
-        config=config,
     )
 
 # =========================================================
@@ -384,7 +377,11 @@ rule reconstruction_done:
 
 rule taxonomy_done:
     input:
-        rrna_outputs(RESULTS_DIR, SAMPLES,config)
+        taxonomy_outputs(
+            results_dir=RESULTS_DIR,
+            samples=SAMPLES,
+            config=config,
+        )
     output:
         flag=f"{TAXONOMY_DIR}/taxonomy.done"
     shell:

@@ -4,17 +4,17 @@ rule bracken:
     message:
         "[Bracken] re-estimate abundance for {wildcards.sample} for {wildcards.database}"
     input:
-        kraken_report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.k2report"
+        kraken_report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/kraken/{{sample}}.{{database}}.k2report"
     output:
-        bracken_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.bracken.tsv",
-        bracken_kreport_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/{{sample}}.{{database}}.bracken.k2report"
+        bracken_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
+        bracken_kreport_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report"
     log:
         stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/logs/{{sample}}.{{database}}.bracken.log"
     benchmark:
         f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt"
     params:
         db=kraken_db,
-        options=config["rRNA"]["bracken"]["options"]
+        options=config["taxonomy"]["SSU"]["bracken"]["options"]
     shell:
         r"""
         set -euo pipefail
