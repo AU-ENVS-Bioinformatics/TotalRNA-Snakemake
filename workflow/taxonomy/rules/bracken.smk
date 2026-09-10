@@ -14,6 +14,7 @@ rule bracken:
         f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt"
     params:
         db=kraken_db,
+        level=bracken_level,
         options=config["taxonomy"]["SSU"]["bracken"]["options"]
     shell:
         r"""
@@ -25,6 +26,7 @@ rule bracken:
           -i {input.kraken_report} \
           -o {output.bracken_output} \
           -w {output.bracken_kreport_output} \
+          {params.level} \
           {params.options} \
           > {log.stdout} 2>&1
         """

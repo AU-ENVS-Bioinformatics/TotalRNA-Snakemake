@@ -107,12 +107,20 @@ taxonomy:
         pr2:
           path: /data_2/Databases/Kraken2_PR2_5.1.1
     bracken:
-      options: "-r 150 -l G -t 10"
+      options: "-r 150 -t 10"
+      silva:
+        level: "-l G"
+      pr2:
+        level: "-l S"
     kraken_biom:
-      options: "--min G --max D --fmt hdf5"
+      options: "--max D --fmt hdf5"
+      silva:
+        level: "--min G"
+      pr2:
+        level: "--min S"
   ITS:
     blastn:
-      database: /data_2/Databases/UNITE/blast/UNITE_dynamic_19.02.2025
+      database: /data_2/Databases/UNITE/UNITE_BLAST/UNITE_dynamic_19.02.2025 #/data_2/Databases/UNITE/blast/UNITE_dynamic_19.02.2025
       threads: 12
       options: '-task blastn -evalue 1e-10 -max_target_seqs 20 -max_hsps 1 '
       regions:
@@ -127,21 +135,15 @@ taxonomy:
     summary:
       taxonomic_rank: genus
 
-nonrRNA:
-  nonrrna_module: coassembly # read | coassembly | assembly | both | all
+functional_profiling:
+  module: assembly # read | coassembly | assembly | both | all
   read_method: humann # humann | metaphlan
-  assembly_method: spades # spades | rnaspades | trinity
-  assembly_predictor: transdecoder #prodigal | transdecoder
+  viral_module: virsorter2 # none |virsorter2 | virfinder | virdetect | other methods to be added in the future
+  ORF_predictor: transdecoder #prodigal | transdecoder
   threads: 24
-  metaphlan:
-    threads: 14
-    options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307 --add_viruses" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
   humann:
     threads: 3
     options: "--diamond-options=--fast --prescreen-threshold 0.05 --translated-query-coverage-threshold 50"
-  rnaspades:
-    threads: 16
-    options: "--rna"
   diamond_blastp:
     threads: 24
     options: "--outfmt 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore --evalue 1e-5 --max-target-seqs 1 --sensitive"
@@ -155,7 +157,10 @@ nonrRNA:
     options: "-p meta -f gff -m -c -n"
   eggnog:
     threads: 24
-    options: "--itype proteins -m diamond --sensmode sensitive"
+    options: "--itype proteins -m diamond --sensmode sensitive --override"
+  metaphlan:
+    threads: 14
+    options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307 --add_viruses" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
   salmon:
     threads: 12
   

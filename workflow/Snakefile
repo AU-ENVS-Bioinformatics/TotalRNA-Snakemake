@@ -102,9 +102,9 @@ RNA_INTERMEDIATE_DIR = RNA_DIR / "intermediate"
 
 ASSEMBLY_DIR = str(RESULTS_DIR / "Assembly")
 TAXONOMY_DIR = str(RESULTS_DIR / "Taxonomy_Profiling")
-FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
 QUANT_DIR = str(RESULTS_DIR / "Quantification")
 PHYLOGENY_DIR = str(RESULTS_DIR / "Phylogeny")
+FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
 
 #####
 
@@ -186,6 +186,41 @@ def kraken_db(wc):
         config=config,
     )
 
+
+def bracken_level(wc):
+    """
+    Return the database-specific Bracken taxonomic level.
+
+    silva -> -l G
+    pr2   -> -l S
+    """
+    database = wc.database
+
+    try:
+        return config["taxonomy"]["SSU"]["bracken"][database]["level"]
+    except KeyError:
+        available = config["taxonomy"]["SSU"]["bracken"].keys()
+
+        raise ValueError(f"No Bracken level configured for database '{database}'. Available configurations: {', '.join(available)}"
+        )
+
+def biom_level(wc):
+    """
+    Return the database-specific Bracken taxonomic level.
+
+    silva -> -l G
+    pr2   -> -l S
+    """
+    database = wc.database
+
+    try:
+        return config["taxonomy"]["SSU"]["kraken_biom"][database]["level"]
+    except KeyError:
+        available = config["taxonomy"]["SSU"]["kraken_biom"].keys()
+
+        raise ValueError(f"No Bracken level configured for database '{database}'. Available configurations: {', '.join(available)}"
+        )
+
 def taxonomy_reports_for_database(wc):
     """
     Return all reports for one Kraken2 database.
@@ -213,8 +248,8 @@ rule all:
         f"{RNA_DIR}/rna_classification.done",
         f"{ASSEMBLY_DIR}/reconstruction.done"
         f"{TAXONOMY_DIR}/taxonomy.done",
-        f"{RESULTS_DIR}/phylogeny/phylogeny.done",
-        f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
+        f"{PHYLOGENY_DIR}/phylogeny.done",
+        f"{FUNCTION_DIR}/functional_profiling.done"
 
 # =========================================================
 # Quality-control module
@@ -309,34 +344,28 @@ include: "phylogeny/rules/iqtree.smk"
 # Non-rRNA module
 # =========================================================
 
-### non-rRNA read-based functional profiling / ORF functional annotation
-include: "nonrRNA/rules/preprocessing.smk"
+functional_module = config["functional_profiling"]["module"]
 
-nonrrna_module = config["nonrRNA"]["nonrrna_module"]
-
-if nonrrna_module in ["read", "both", "all"]:
-
-    if config["nonrRNA"]["read_method"] in ["metaphlan", "humann"]:
+#if functional_module in ["read", "both", "all"]:
+#    if config["functional_profiling"]["read_method"] in ["metaphlan", "humann"]:
         # Metaphlan is ALWAYS required (taxonomy baseline)
-        include: "nonrRNA/rules/metaphlan.smk"
+#        include: "nonrRNA/rules/metaphlan.smk"
         # HUMANN is ALWAYS downstream of metaphlan in your design
-        include: "nonrRNA/rules/humann.smk"
-        include: "nonrRNA/rules/humann_postprocessing.smk"
+#        include: "nonrRNA/rules/humann.smk"
+#        include: "nonrRNA/rules/humann_postprocessing.smk"
 
-if nonrrna_module in ["coassembly", "both", "all"]:
-    if config["nonrRNA"]["assembly_method"] in ["spades","rnaspades"]:
-        # Co assembly
-        include: "nonrRNA/rules/co_assembly.smk"
-    if config["nonrRNA"]["assembly_predictor"] in ["transdecoder"]:
+if functional_module in ["assembly", "both", "all"]:
+    include: "nonrRNA/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
+    if config["functional_profiling"]["ORF_predictor"] in ["transdecoder"]:
         include: "nonrRNA/rules/diamond.smk"
         include: "nonrRNA/rules/hmmscan.smk"
         include: "nonrRNA/rules/hmmscan_processing.smk"
-        include: "nonrRNA/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
-    include: "nonrRNA/rules/salmon.smk"
     include: "nonrRNA/rules/eggnog.smk"
+    include: "nonrRNA/rules/salmon.smk"
+    include: "nonrRNA/rules/Abundance_Matrix.smk"
 
-if nonrrna_module not in ["read", "coassembly", "both", "all"]:
-    raise ValueError(f"Unsupported nonrRNA module: {nonrrna_module}")
+if functional_module not in ["read", "assembly", "both", "all"]:
+    raise ValueError(f"Unsupported functional module: {functional_module}")
 
 # =========================================================
 # Module completion targets
@@ -346,7 +375,7 @@ rule Quality_Control_done:
     input:
         qc_outputs(QC_DIR, SAMPLES)
     output:
-        flag=f"{QC_DIR}/qualit_control.done"
+        flag=f"{QC_DIR}/quality_control.done"
     shell:
         r"""
         set -euo pipefail
@@ -402,7 +431,7 @@ rule Phylogeny_done:
     input:
         phylogeny_outputs(RESULTS_DIR, SAMPLES,config)
     output:
-        flag=f"{RESULTS_DIR}/phylogeny/phylogeny.done"
+        flag=f"{PHYLOGENY_DIR}/phylogeny.done"
     shell:
         r"""
         set -euo pipefail
@@ -411,17 +440,17 @@ rule Phylogeny_done:
         touch "{output.flag}"
         """
 
-rule nonrRNA_done:
+rule functional_profiling_done:
     input:
-        non_rrna_outputs(RESULTS_DIR,SAMPLES,config)
+        non_rrna_outputs(RESULTS_DIR,SAMPLES,config,)
     output:
-        flag=f"{RESULTS_DIR}/nonrRNA/nonrRNA.done"
+        flag=f"{FUNCTION_DIR}/functional_profiling.done"
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p "$(dirname "{output.flag}")"
-        touch "{output.flag}"
+        mkdir -p $(dirname {output.flag})
+        touch {output.flag}
         """
 
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going

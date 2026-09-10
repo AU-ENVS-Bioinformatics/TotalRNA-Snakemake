@@ -17,13 +17,15 @@ rule kraken_biom:
     benchmark:
         f"{TAXONOMY_DIR}/summary/SSU/{{database}}/benchmarks/kraken_biom.txt"
     params:
-        options=config["taxonomy"]["SSU"]["kraken_biom"]["options"]
+        options=config["taxonomy"]["SSU"]["kraken_biom"]["options"],
+        level=biom_level,
     shell:
         r"""
         mkdir -p $(dirname {output.biom})
 
         kraken-biom {input.reports} \
             -o {output.biom} \
+            {params.level} \
             {params.options} \
             > {log.stdout} 2>&1
         """
