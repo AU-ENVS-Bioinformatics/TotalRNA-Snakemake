@@ -1,117 +1,68 @@
 from typing import List
 from pathlib import Path
-from snakemake.io import expand
-import os
-from snakemake.io import glob_wildcards
 
-METRICS = ["genefamilies", "pathabundance", "pathcoverage"]
 
-# translate the sequences to be quantified with salmon into a keyword 
-# (used to look up in the dictionary in salmon.smk), to do both original assembled contigs and predicted CDS
+SALMON_REFERENCES = [
+    "transcripts",
+    "cds",
+]
 
-SALMON_REFERENCES = {
-    "transcripts": "transcripts.fasta",
-    "cds": "transcripts.fasta.transdecoder.cds",
-}
+SALMON_METRICS = [
+    "TPM",
+    "NumReads",
+]
 
-SALMON_REFERENCE_NAMES = list(SALMON_REFERENCES.keys())
 
 def non_rrna_outputs(
     results_dir: Path,
     samples: List[str],
     config: dict,
 ) -> List[str]:
+    """
+    Return expected assembly-based functional profiling outputs.
+    """
+
+    functional_module = config["functional_profiling"]["module"]
+    orf_predictor = config["functional_profiling"]["ORF_predictor"]
+
+    if functional_module != "assembly":
+        raise ValueError(
+            "Only functional_profiling.module: assembly is currently implemented"
+        )
+
+    if orf_predictor not in ["prodigal", "transdecoder"]:
+        raise ValueError(
+            f"Unsupported functional_profiling.ORF_predictor: {orf_predictor}"
+        )
+
+    functional_dir = f"{results_dir}/Functional_Profiling"
 
     outputs: List[str] = []
-    nonrrna_module = config["nonrRNA"]["nonrrna_module"]
 
-    # --------------------------
-    # READ-BASED
-    # --------------------------
-    if nonrrna_module in ["read", "both", "all"]:
-        if config["nonrRNA"]["read_method"] in ["metaphlan", "humann"]:
-            # --------------------------
-            # 1. raw per-sample outputs
-            # --------------------------
-            outputs += expand(
-                f"{results_dir}/nonrRNA/{{sample}}/metaphlan/{{sample}}_metaphlan_profile.tsv",
-                sample=samples,
+    # Standardized final ORF outputs
+    outputs += [
+        f"{functional_dir}/ORF_prediction/final_orf/ORF_proteins.faa",
+        f"{functional_dir}/ORF_prediction/final_orf/ORF_genes.fasta",
+        f"{functional_dir}/ORF_prediction/final_orf/ORF_genes.gff3",
+    ]
+
+    # TransDecoder evidence outputs
+    if orf_predictor == "transdecoder":
+        outputs += [
+            f"{functional_dir}/diamond/transdecoder/transdecoder.blastp.outfmt6",
+            f"{functional_dir}/hmmscan/merged/pfam.domtblout",
+        ]
+
+    # eggNOG functional annotation
+    outputs += [
+        f"{functional_dir}/eggnog/eggnog.emapper.annotations",
+    ]
+
+    # Salmon abundance matrices
+    for reference in SALMON_REFERENCES:
+        for metric in SALMON_METRICS:
+            outputs.append(
+                f"{functional_dir}/salmon/{reference}/{metric}.tsv"
             )
-
-            outputs += expand(
-                f"{results_dir}/nonrRNA/{{sample}}/humann/{{sample}}_genefamilies.tsv",
-                sample=samples,
-            )
-
-            # --------------------------
-            # 1. link/join input files (IMPORTANT)
-            # --------------------------
-            outputs += expand(
-                f"{results_dir}/nonrRNA/humann_merged/humann_link_input/{{sample}}_{{metric}}.tsv",
-                sample=samples,
-                metric=METRICS,
-            )
-
-            # --------------------------
-            # 2. merged (join_tables)
-            # --------------------------
-            outputs += [
-                f"{results_dir}/nonrRNA/humann_merged/merged_{metric}.tsv"
-                for metric in METRICS
-            ]
-
-            # --------------------------
-            # 3. unstratified (MOST IMPORTANT)
-            # --------------------------
-            outputs += [
-                f"{results_dir}/nonrRNA/humann_merged/merged_{metric}_unstratified.tsv"
-                for metric in METRICS
-            ]
-
-            # --------------------------
-            # 4. renormalized
-            # --------------------------
-            outputs += [
-                f"{results_dir}/nonrRNA/humann_merged/merged_{metric}_relab.tsv"
-                for metric in METRICS
-            ]
-
-            # --------------------------
-            # 5. genefamilies KO (optional but common)
-            # --------------------------
-            outputs += [
-                f"{results_dir}/nonrRNA/humann_merged/merged_genefamilies_xrn.tsv"
-            ]
-    
-    if nonrrna_module in ["coassembly", "both", "all"]:
-
-        outputs += [f"{results_dir}/nonrRNA/coassembly/transcripts.fasta"]
-
-        if config["nonrRNA"]["assembly_predictor"] == "transdecoder":
-            # DIAMOND Blastp 
-            outputs += [f"{results_dir}/nonrRNA/diamond/transdecoder.blastp.outfmt6"]
-
-            # Hmmer scan against Pfam 
-            # remember for now hmmscan is run on chunks, so internally it creates temporary files which are then merged into the final output file below
-            outputs += [f"{results_dir}/nonrRNA/hmmscan/pfam.domtblout"] 
-
-            # Transdecoder Predict
-            outputs += [f"{results_dir}/nonrRNA/predicted/transdecoder.done"]
-
-            # Abundance quantification of samples against assembled contigs and predicted CDS
-            outputs += expand(
-                f"{results_dir}/nonrRNA/salmon/{{reference}}/{{sample}}/quant.sf",
-                sample=samples,
-                reference=SALMON_REFERENCE_NAMES,
-            )
-
-        #annotations
-        outputs += [f"{results_dir}/nonrRNA/eggnog/eggnog.emapper.annotations"]
-    
-    # --------------------------
-    # VALIDATION
-    # --------------------------
-    if nonrrna_module not in ["read", "coassembly", "both", "all"]:
-        raise ValueError(f"Unsupported nonrRNA module: {nonrrna_module}")
 
     return outputs
