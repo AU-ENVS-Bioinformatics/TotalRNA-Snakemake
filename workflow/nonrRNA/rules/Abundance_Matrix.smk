@@ -1,36 +1,61 @@
-SALMON_METRICS = [
+################################################################################
+# SALMON ABUNDANCE MATRICES
+################################################################################
+
+FUNCTIONAL_MODULE = config["functional_profiling"]["module"]
+
+SALMON_MATRIX_REFERENCES = [
+    "transcripts",
+    "cds",
+]
+
+SALMON_MATRIX_METRICS = [
     "TPM",
     "NumReads",
 ]
 
-def salmon_quants(wc):
+SALMON_MATRIX_REFERENCE_PATTERN = "|".join(SALMON_MATRIX_REFERENCES)
+SALMON_MATRIX_METRIC_PATTERN = "|".join(SALMON_MATRIX_METRICS)
+
+FUNCTIONAL_SCRIPTS_DIR = f"{workflow.basedir}/nonrRNA/scripts"
+
+
+def salmon_quants(wildcards):
     return expand(
-        f"{RESULTS_DIR}/nonrRNA/salmon/{wc.reference}/{{sample}}/quant.sf",
+        f"{FUNCTION_DIR}/salmon/{wildcards.reference}/{{sample}}/quant.sf",
         sample=SAMPLES,
     )
 
-rule salmon_matrix:
-    conda:
-        "../envs/r_env.yaml"
-    message:
-        "[Salmon] Build {wildcards.metric} matrix for {wildcards.reference}"
-    input:
-        quants=salmon_quants
-    output:
-        abundance_matrix=f"{RESULTS_DIR}/nonrRNA/salmon/{{reference}}/{{metric}}.tsv"
-    log:
-        stdout=f"{RESULTS_DIR}/nonrRNA/salmon/logs/salmon_matrix_{reference}_{metric}.log"
-    benchmark:
-        f"{RESULTS_DIR}/nonrRNA/salmon/benchmarks/salmon_matrix_{reference}_{metric}.txt"
-    shell:
-        r"""
-        set -euo pipefail
 
-        mkdir -p $(dirname {output.abundance_matrix})
+if FUNCTIONAL_MODULE in ["assembly", "both", "all"]:
 
-        Rscript workflow/scripts/build_salmon_matrix.R \
-            {wildcards.metric} \
-            {output.abundance_matrix} \
-            {input.quants} \
-            > {log.stdout} 2>&1
-        """
+    rule salmon_matrix:
+        conda:
+            "../envs/r_env.yaml"
+        wildcard_constraints:
+            reference=SALMON_MATRIX_REFERENCE_PATTERN,
+            metric=SALMON_MATRIX_METRIC_PATTERN
+        message:
+            "[Salmon] Build {wildcards.metric} matrix for {wildcards.reference}"
+        input:
+            quants=salmon_quants
+        output:
+            matrix=f"{FUNCTION_DIR}/salmon/{{reference}}/{{metric}}.tsv"
+        log:
+            stdout=f"{FUNCTION_DIR}/salmon/logs/salmon_matrix_{{reference}}_{{metric}}.log"
+        benchmark:
+            f"{FUNCTION_DIR}/salmon/benchmarks/salmon_matrix_{{reference}}_{{metric}}.txt"
+        params:
+            script=f"{FUNCTIONAL_SCRIPTS_DIR}/build_salmon_matrix.R"
+        shell:
+            r"""
+            set -euo pipefail
+
+            mkdir -p $(dirname {output.matrix})
+
+            Rscript {params.script} \
+                {wildcards.metric} \
+                {output.matrix} \
+                {input.quants} \
+                > {log.stdout} 2>&1
+            """

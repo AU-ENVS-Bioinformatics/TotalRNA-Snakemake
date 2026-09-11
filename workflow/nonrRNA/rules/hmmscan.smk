@@ -1,38 +1,45 @@
-nonrrna_module = config["nonrRNA"]["nonrrna_module"]
+################################################################################
+# HMMscan PFAM EVIDENCE FOR TRANSDECODER
+################################################################################
 
-if nonrrna_module in ["coassembly", "both", "all"]:
-    if config["nonrRNA"]["assembly_predictor"] == "transdecoder":
+FUNCTIONAL_MODULE = config["functional_profiling"]["module"]
+ORF_PREDICTOR = config["functional_profiling"]["ORF_predictor"]
 
-        rule hmmscan_chunk:
-            conda:
-                "../envs/hmmer.yaml"
-            input:
-                pep=f"{RESULTS_DIR}/nonrRNA/hmmscan/chunks/{{chunk}}.pep"
-            output:
-                domtblout=f"{RESULTS_DIR}/nonrRNA/hmmscan/results/{{chunk}}.pfam.domtblout",
-                direct_output=f"{RESULTS_DIR}/nonrRNA/hmmscan/results/{{chunk}}.hmmscan.out"
-            log:
-                stdout=f"{RESULTS_DIR}/nonrRNA/hmmscan/logs/{{chunk}}.hmmscan.log",
-                benchmark_file=f"{RESULTS_DIR}/nonrRNA/hmmscan/benchmarks/{{chunk}}.hmmscan_time.txt",
-            benchmark:
-                f"{RESULTS_DIR}/nonrRNA/hmmscan/benchmarks/{{chunk}}.hmmscan.txt"
-            params:
-                db=config["databases"]["Pfam_db"],
-                options=config["nonrRNA"]["hmmscan"]["options"]
-            threads:
-                config["nonrRNA"]["hmmscan"].get("threads", 2)
-            shell:
-                r"""
-                mkdir -p $(dirname {output.domtblout})
-                mkdir -p $(dirname {log.stdout})
+if FUNCTIONAL_MODULE in ["assembly", "both", "all"] and ORF_PREDICTOR == "transdecoder":
 
-                /usr/bin/time -v -o {log.benchmark_file} \
-                    hmmscan \
-                        --cpu {threads} \
-                        --domtblout {output.domtblout} \
-                        {params.options} \
-                        -o {output.direct_output} \
-                        {params.db} \
-                        {input.pep} \
-                        > {log.stdout} 2>&1
-                """
+    rule hmmscan_chunk:
+        conda:
+            "../envs/hmmer.yaml"
+        message:
+            "[HMMscan] Search peptide chunk {wildcards.chunk} against Pfam"
+        input:
+            pep=f"{FUNCTION_DIR}/hmmscan/chunks/{{chunk}}.pep"
+        output:
+            domtblout=f"{FUNCTION_DIR}/hmmscan/results/{{chunk}}.pfam.domtblout",
+            report=f"{FUNCTION_DIR}/hmmscan/results/{{chunk}}.hmmscan.out"
+        log:
+            stdout=f"{FUNCTION_DIR}/hmmscan/logs/{{chunk}}.hmmscan.log",
+            time=f"{FUNCTION_DIR}/hmmscan/benchmarks/{{chunk}}.hmmscan_time.txt"
+        benchmark:
+            f"{FUNCTION_DIR}/hmmscan/benchmarks/{{chunk}}.hmmscan.txt"
+        params:
+            db=config["databases"]["Pfam_db"],
+            options=config["functional_profiling"]["hmmscan"]["options"]
+        threads:
+            config["functional_profiling"]["hmmscan"].get("threads", 2)
+        shell:
+            r"""
+            set -euo pipefail
+
+            mkdir -p $(dirname {output.domtblout})
+
+            /usr/bin/time -v -o {log.time} \
+                hmmscan \
+                    --cpu {threads} \
+                    --domtblout {output.domtblout} \
+                    {params.options} \
+                    -o {output.report} \
+                    {params.db} \
+                    {input.pep} \
+                    > {log.stdout} 2>&1
+            """

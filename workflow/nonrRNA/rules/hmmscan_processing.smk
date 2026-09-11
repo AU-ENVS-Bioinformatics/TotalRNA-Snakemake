@@ -2,6 +2,44 @@ from pathlib import Path
 from snakemake.io import expand
 
 
+################################################################################
+# SPLIT TRANSDECODER CANDIDATE PROTEINS
+################################################################################
+
+checkpoint hmmscan_split:
+    conda:
+        "../envs/seqkit.yaml"
+    message:
+        "[HMMscan] Split candidate proteins into chunks"
+    input:
+        pep=f"{FUNCTION_DIR}/ORF_prediction/transdecoder/longorfs/longest_orfs.pep"
+    output:
+        chunks=directory(f"{FUNCTION_DIR}/hmmscan/chunks")
+    log:
+        stdout=f"{FUNCTION_DIR}/hmmscan/logs/split.log"
+    benchmark:
+        f"{FUNCTION_DIR}/hmmscan/benchmarks/split.txt"
+    params:
+        chunk_size=config["functional_profiling"]["hmmscan"]["chunk_size"]
+    shell:
+        r"""
+        set -euo pipefail
+
+        mkdir -p $(dirname {output.chunks}) 
+
+        seqkit split2 \
+            -t protein \
+            -s {params.chunk_size} \
+            -O {output.chunks} \
+            {input.pep} \
+            > {log.stdout} 2>&1
+        """
+
+
+################################################################################
+# DISCOVER HMMscan CHUNK OUTPUTS
+################################################################################
+
 def get_hmmscan_outputs(wildcards):
 
     checkpoint_output = checkpoints.hmmscan_split.get()
@@ -9,61 +47,44 @@ def get_hmmscan_outputs(wildcards):
 
     chunk_files = sorted(chunk_dir.glob("*.pep"))
 
-    print(f"[DEBUG] found {len(chunk_files)} chunks")
-
     if not chunk_files:
         raise ValueError(
-            f"No chunk files found in {chunk_dir}"
+            f"No peptide chunks found in {chunk_dir}"
         )
 
     return expand(
-        f"{RESULTS_DIR}/nonrRNA/hmmscan/results/{{chunk}}.pfam.domtblout",
-        chunk=[f.stem for f in chunk_files]
+        f"{FUNCTION_DIR}/hmmscan/results/{{chunk}}.pfam.domtblout",
+        chunk=[chunk.stem for chunk in chunk_files],
     )
 
-checkpoint hmmscan_split:
-    conda:
-        "../envs/seqkit.yaml"
-    input:
-        pep=f"{RESULTS_DIR}/nonrRNA/predicted/longest_orfs.pep"
-    output:
-        chunks=directory(
-            f"{RESULTS_DIR}/nonrRNA/hmmscan/chunks"
-        )
-    params:
-        chunk_size=config["nonrRNA"]["hmmscan"]["chunk_size"]
-    shell:
-        r"""
-        rm -rf {output.chunks}
 
-        mkdir -p {output.chunks}
-
-        seqkit split2 \
-            -t protein \
-            -s {params.chunk_size} \
-            -O {output.chunks} \
-            {input.pep}
-        """
-
+################################################################################
+# MERGE HMMscan RESULTS
+################################################################################
 
 rule merge_hmmscan:
+    message:
+        "[HMMscan] Merge Pfam domain results"
     input:
-        get_hmmscan_outputs
+        domtblout=get_hmmscan_outputs
     output:
-        pfam=f"{RESULTS_DIR}/nonrRNA/hmmscan/pfam.domtblout"
+        pfam=f"{FUNCTION_DIR}/hmmscan/merged/pfam.domtblout"
     run:
         Path(output.pfam).parent.mkdir(
             parents=True,
-            exist_ok=True
+            exist_ok=True,
         )
-        first = True
-        with open(output.pfam, "w") as out:
-            for infile in input:
-                with open(infile) as fin:
-                    for line in fin:
+
+        first_file = True
+
+        with open(output.pfam, "w") as outfile:
+            for infile in input.domtblout:
+                with open(infile) as source:
+                    for line in source:
                         if line.startswith("#"):
-                            if first:
-                                out.write(line)
+                            if first_file:
+                                outfile.write(line)
                         else:
-                            out.write(line)
-                first = False
+                            outfile.write(line)
+
+                first_file = False

@@ -1,41 +1,40 @@
-nonrrna_module = config["nonrRNA"]["nonrrna_module"]
+################################################################################
+# DIAMOND EVIDENCE FOR TRANSDECODER
+################################################################################
 
-if nonrrna_module in ["coassembly", "both", "all"]:
-    if config["nonrRNA"]["assembly_predictor"] == "transdecoder":
-        rule diamond_blastp:
-            conda:
-                "../envs/diamond.yaml"
-            message:
-                "[DIAMOND] protein alignment (UniRef90)"
-            input:
-                pep=f"{RESULTS_DIR}/nonrRNA/predicted/longest_orfs.pep"
-            output:
-                diamond_uniref90=f"{RESULTS_DIR}/nonrRNA/diamond/transdecoder.blastp.outfmt6",
-            log:
-                stdout=f"{RESULTS_DIR}/nonrRNA/diamond/logs/diamond.log"
-            benchmark:
-                f"{RESULTS_DIR}/nonrRNA/diamond/benchmarks/diamond.txt"
-            params:
-                db=config["databases"]["diamond_proteindb"],
-                options=config["nonrRNA"]["diamond_blastp"]["options"]
-            threads:
-                config["nonrRNA"]["diamond_blastp"].get("threads", 14)
-            shell:
-                r"""
-                set -euo pipefail
-                mkdir -p $(dirname {output.diamond_uniref90})
+FUNCTIONAL_MODULE = config["functional_profiling"]["module"]
+ORF_PREDICTOR = config["functional_profiling"]["ORF_predictor"]
 
-                diamond blastp \
-                    -q {input.pep} \
-                    -d {params.db} \
-                    -o {output.diamond_uniref90} \
-                    --threads {threads} \
-                    {params.options} \
-                    > {log.stdout} 2>&1
-                """
+if FUNCTIONAL_MODULE in ["assembly", "both", "all"] and ORF_PREDICTOR == "transdecoder":
+    rule diamond_blastp:
+        conda:
+            "../envs/diamond.yaml"
+        message:
+            "[DIAMOND] Search candidate TransDecoder ORFs against UniRef90"
+        input:
+            pep=f"{FUNCTION_DIR}/ORF_prediction/transdecoder/longorfs/longest_orfs.pep"
+        output:
+            diamond=f"{FUNCTION_DIR}/diamond/transdecoder/transdecoder.blastp.outfmt6"
+        log:
+            stdout=f"{FUNCTION_DIR}/diamond/transdecoder/logs/diamond.log"
+        benchmark:
+            f"{FUNCTION_DIR}/diamond/transdecoder/benchmarks/diamond.txt"
+        params:
+            db=config["databases"]["diamond_proteindb"],
+            options=config["functional_profiling"]["diamond_blastp"]["options"]
+        threads:
+            config["functional_profiling"]["diamond_blastp"].get("threads", 14)
+        shell:
+            r"""
+            set -euo pipefail
 
-#diamond blastp -q longest_orfs.pep 
-#--db /data_2/Databases/uniref90_db/uniref90.dmnd 
-#--out transdecoder.blastp.outfmt6 
-#--outfmt 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore 
-#--evalue 1e-5 --max-target-seqs 1 --sensitive --threads 16
+            mkdir -p $(dirname {output.diamond}) 
+
+            diamond blastp \
+                -q {input.pep} \
+                -d {params.db} \
+                -o {output.diamond} \
+                --threads {threads} \
+                {params.options} \
+                > {log.stdout} 2>&1
+            """
