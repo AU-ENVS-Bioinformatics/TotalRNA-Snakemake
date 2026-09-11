@@ -246,7 +246,7 @@ rule all:
     input:
         f"{QC_DIR}/quality_control.done",
         f"{RNA_DIR}/rna_classification.done",
-        f"{ASSEMBLY_DIR}/reconstruction.done"
+        f"{ASSEMBLY_DIR}/reconstruction.done",
         f"{TAXONOMY_DIR}/taxonomy.done",
         f"{PHYLOGENY_DIR}/phylogeny.done",
         f"{FUNCTION_DIR}/functional_profiling.done"

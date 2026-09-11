@@ -178,3 +178,16 @@ phylogeny:
   iqtree:
     threads: 12
     options: "-m MFP -B 1000 -alrt 1000"
+
+viral_sequence_analysis:
+  seqkit:
+    options: --min-len 1500
+  geNomad:
+    db: /data_2/Databases/genomad_db_2026/genomad_db
+    options: "--cleanup"
+    threads: 16
+  virsorter2:
+    options:
+    threads: 
+  host_prediction: disabled #enabled | disabled | true | false
+  method: "iphop"
