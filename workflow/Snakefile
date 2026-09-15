@@ -21,13 +21,18 @@ from targets.taxonomy import (
     taxonomy_reports,
     get_kraken_database,
     kraken_database_names,
-    its_taxonomy_enabled,
+    taxonomy_markers,
     its_blast_regions,
+    validate_taxonomy_config,
 )
 
 from targets.phylogeny import phylogeny_outputs
 
 from targets.nonrrna import non_rrna_outputs
+
+from targets.viral_sequence_analysis import viral_output
+
+from targets.habitats import habitat_refinement_outputs
 
 configfile: "config/config.yaml"
 
@@ -105,14 +110,22 @@ TAXONOMY_DIR = str(RESULTS_DIR / "Taxonomy_Profiling")
 QUANT_DIR = str(RESULTS_DIR / "Quantification")
 PHYLOGENY_DIR = str(RESULTS_DIR / "Phylogeny")
 FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
+VIRAL_ANALYSIS_DIR = str(RESULTS_DIR / "Viral_Sequence_Analysis")
+HABITAT_ANALYSIS_DIR = str(RESULTS_DIR / "Habitat_refinement")
 
 #####
 
-KRAKEN_DATABASES = kraken_database_names(config)
+validate_taxonomy_config(config)
 
-print(f"Shared results directory: {RESULTS_DIR}")
-print(f"Shared results directory: {RESULTS_DIR}")
-print(f"Kraken2 databases: {KRAKEN_DATABASES}")
+TAXONOMY_MARKERS = taxonomy_markers(config)
+
+KRAKEN_DATABASES = {
+    marker: kraken_database_names(marker, config)
+    for marker in TAXONOMY_MARKERS
+}
+
+print(f"Taxonomy markers: {TAXONOMY_MARKERS}")
+print(f"Taxonomy databases: {KRAKEN_DATABASES}")
 
 # --------------------------
 # Helpers (raw reads)
@@ -182,60 +195,121 @@ def sortmerna_db_idx(wc):
 
 def kraken_db(wc):
     return get_kraken_database(
+        marker=wc.marker,
         database=wc.database,
         config=config,
     )
 
 
+def kraken_options(wc):
+    return (
+        config["taxonomy"][wc.marker]["kraken2"]
+        .get("options", "")
+    )
+
+
+def kraken_threads(wc):
+    return (
+        config["taxonomy"][wc.marker]["kraken2"]
+        .get("threads", 2)
+    )
+
+
+def bracken_options(wc):
+    return (
+        config["taxonomy"][wc.marker]["bracken"]
+        .get("options", "")
+    )
+
+
 def bracken_level(wc):
-    """
-    Return the database-specific Bracken taxonomic level.
-
-    silva -> -l G
-    pr2   -> -l S
-    """
-    database = wc.database
-
     try:
-        return config["taxonomy"]["SSU"]["bracken"][database]["level"]
-    except KeyError:
-        available = config["taxonomy"]["SSU"]["bracken"].keys()
+        return config["taxonomy"][wc.marker][
+            "bracken"
+        ][wc.database]["level"]
 
-        raise ValueError(f"No Bracken level configured for database '{database}'. Available configurations: {', '.join(available)}"
+    except KeyError as error:
+        available = (
+            config["taxonomy"][wc.marker]["bracken"]
+            .keys()
         )
+
+        raise ValueError(
+            f"No Bracken level configured for "
+            f"{wc.marker}/{wc.database}. "
+            f"Available entries: {', '.join(available)}"
+        ) from error
+
+
+def biom_options(wc):
+    return (
+        config["taxonomy"][wc.marker]["kraken_biom"]
+        .get("options", "")
+    )
+
 
 def biom_level(wc):
-    """
-    Return the database-specific Bracken taxonomic level.
-
-    silva -> -l G
-    pr2   -> -l S
-    """
-    database = wc.database
-
     try:
-        return config["taxonomy"]["SSU"]["kraken_biom"][database]["level"]
-    except KeyError:
-        available = config["taxonomy"]["SSU"]["kraken_biom"].keys()
+        return config["taxonomy"][wc.marker][
+            "kraken_biom"
+        ][wc.database]["level"]
 
-        raise ValueError(f"No Bracken level configured for database '{database}'. Available configurations: {', '.join(available)}"
-        )
+    except KeyError as error:
+        raise ValueError(
+            f"No kraken-biom level configured for "
+            f"{wc.marker}/{wc.database}"
+        ) from error
+
 
 def taxonomy_reports_for_database(wc):
-    """
-    Return all reports for one Kraken2 database.
-
-    SILVA:
-        Bracken reports are returned.
-
-    PR2:
-        Raw Kraken2 reports are returned.
-    """
-
     return taxonomy_reports(
         results_dir=RESULTS_DIR,
         samples=SAMPLES,
+        marker=wc.marker,
         database=wc.database,
+    )
+
+def taxonomy_read_1(wc):
+    if wc.marker == "SSU":
+        return str(
+            RNA_CLASSIFIED_DIR
+            / wc.sample
+            / "SSU"
+            / f"{wc.sample}_SSU_1.fastq.gz"
+        )
+
+    if wc.marker == "ITS":
+        return str(
+            RNA_INTERMEDIATE_DIR
+            / wc.sample
+            / "ITS_candidates"
+            / f"{wc.sample}_ITS_candidates_1.fastq.gz"
+        )
+
+    raise ValueError(
+        f"Unsupported taxonomy marker '{wc.marker}'"
+    )
+
+
+def taxonomy_read_2(wc):
+    if wc.marker == "SSU":
+        return str(
+            RNA_CLASSIFIED_DIR
+            / wc.sample
+            / "SSU"
+            / f"{wc.sample}_SSU_2.fastq.gz"
+        )
+
+    if wc.marker == "ITS":
+        return str(
+            RNA_INTERMEDIATE_DIR
+            / wc.sample
+            / "ITS_candidates"
+            / f"{wc.sample}_ITS_candidates_2.fastq.gz"
+        )
+
+    raise ValueError(
+        f"Unsupported taxonomy marker '{wc.marker}'"
     )
 
 # =========================================================
@@ -249,7 +323,8 @@ rule all:
         f"{ASSEMBLY_DIR}/reconstruction.done",
         f"{TAXONOMY_DIR}/taxonomy.done",
         f"{PHYLOGENY_DIR}/phylogeny.done",
-        f"{FUNCTION_DIR}/functional_profiling.done"
+        f"{FUNCTION_DIR}/functional_profiling.done",
+        f"{HABITAT_ANALYSIS_DIR}/habitat_taxonomy.done"
 
 # =========================================================
 # Quality-control module
@@ -319,16 +394,26 @@ include: "reconstruction/rules/concatenation.smk"
 include: "reconstruction/rules/itsx.smk"
 
 # =========================================================
-# SSU rRNA taxonomic classification
+# Taxonomic classification
 # =========================================================
 
-TAXONOMY_SCRIPTS_DIR = Path(workflow.basedir) / "taxonomy/scripts"
+TAXONOMY_SCRIPTS_DIR = (
+    Path(workflow.basedir) / "taxonomy/scripts"
+)
 
+# Kraken2/Bracken are shared by SSU and ITS.
 include: "taxonomy/rules/kraken.smk"
 include: "taxonomy/rules/bracken.smk"
 include: "taxonomy/rules/kraken_bracken_downstream.smk"
-include: "taxonomy/rules/blastn.smk"
-include: "taxonomy/rules/blastn_postprocessing.smk"
+
+# Reconstructed ITS/ITSx BLAST taxonomy.
+if "ITS" in TAXONOMY_MARKERS:
+
+    ITS_REGIONS = its_blast_regions(config)
+    ITS_REGION_PATTERN = "|".join(ITS_REGIONS)
+
+    include: "taxonomy/rules/blastn.smk"
+    include: "taxonomy/rules/blastn_postprocessing.smk"
 
 # =========================================================
 # SSU rRNA reconstruction and phylogeny
@@ -366,6 +451,22 @@ if functional_module in ["assembly", "both", "all"]:
 
 if functional_module not in ["read", "assembly", "both", "all"]:
     raise ValueError(f"Unsupported functional module: {functional_module}")
+
+
+# =========================================================
+# Viral Sequence Analysis module
+# =========================================================
+
+include: "viral_sequence_analysis/rules/prefilter.smk"
+include: "viral_sequence_analysis/rules/geNomad.smk"
+include: "viral_sequence_analysis/rules/checkv.smk"
+
+# =========================================================
+# Habitat Refinement Taxonomy module
+# =========================================================
+
+include: "habitat_refinement/rules/SoilKraken.smk"
+include: "habitat_refinement/rules/SoilBracken.smk"
 
 # =========================================================
 # Module completion targets
@@ -442,7 +543,7 @@ rule Phylogeny_done:
 
 rule functional_profiling_done:
     input:
-        non_rrna_outputs(RESULTS_DIR,SAMPLES,config,)
+        non_rrna_outputs(RESULTS_DIR,SAMPLES,config)
     output:
         flag=f"{FUNCTION_DIR}/functional_profiling.done"
     shell:
@@ -453,16 +554,32 @@ rule functional_profiling_done:
         touch {output.flag}
         """
 
-# snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --cores 35 --rerun-incomplete --keep-going
-# snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --cores 35 --rerun-incomplete --keep-going --dry-run
-# snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --cores 35 --rerun-incomplete --keep-going --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv
+rule viral_sequence_analysis_done:
+    input:
+        viral_output(RESULTS_DIR,config)
+    output:
+        flag=f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done"
+    shell:
+        r"""
+        set -euo pipefail
 
-#mamba create -n eggnog_env_dev -c conda-forge -c bioconda eggnog-mapper=2.1.13
-#mamba create -n prodigal_env -c bioconda prodigal
-#mamba create -n transdecoder_env -c bioconda transdecoder
+        mkdir -p $(dirname {output.flag})
+        touch {output.flag}
+        """
 
-#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done
+rule habitat_refinement_done:
+    input:
+        habitat_refinement_outputs(RESULTS_DIR, SAMPLES,config)
+    output:
+        flag=f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done"
+    shell:
+        r"""
+        set -euo pipefail
 
-#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 35 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/RNA/RNA_seperation.done
+        mkdir -p $(dirname {output.flag})
+        touch {output.flag}
+        """
 
-#snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv --cores 50 --rerun-incomplete /data/rasmus/Dev/SnakeResDev/phylogeny/phylogeny.done
+# snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v3.tsv --cores 14 --rerun-incomplete --keep-going --printshellcmds /data/rasmus/Dev/SnakeResDev/Functional_Profiling/functional_profiling.done
+
+# snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data_3/rasmus/Analysis/Lars/metatranscriptomics/italy_samplesheet.tsv shared_results_dir=/data_3/lvd/projects/MDP/TotalRNA_2026/Italy_v2 --cores 55 --rerun-incomplete --keep-going --printshellcmds /data_3/lvd/projects/MDP/TotalRNA_2026/Italy_v2/Taxonomy_Profiling/taxonomy.done --dry-run

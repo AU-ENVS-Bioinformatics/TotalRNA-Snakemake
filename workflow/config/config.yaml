@@ -97,6 +97,7 @@ reconstruction:
     threads: 12
 
 taxonomy:
+  module: all # SSU | ITS | all | both
   SSU:
     kraken2:
       threads: 10
@@ -105,7 +106,7 @@ taxonomy:
         silva:
           path: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
         pr2:
-          path: /data_2/Databases/Kraken2_PR2_5.1.1
+          path: /data_2/Databases/PR2_5.1.1/pr2_kraken_db/pr2_kraken2
     bracken:
       options: "-r 150 -t 10"
       silva:
@@ -134,11 +135,24 @@ taxonomy:
       top_bitscore_fraction: 0.99
     summary:
       taxonomic_rank: genus
+    kraken2:
+      threads: 10
+      options: ""
+      databases:
+        unite:
+          path: /data_2/Databases/UNITE/unite_kraken_db
+    bracken:
+      options: "-r 150 -t 10"
+      unite:
+        level: "-l S"
+    kraken_biom:
+      options: "--max D --fmt hdf5"
+      unite:
+        level: "--min S"
 
 functional_profiling:
   module: assembly # read | coassembly | assembly | both | all
   read_method: humann # humann | metaphlan
-  viral_module: virsorter2 # none |virsorter2 | virfinder | virdetect | other methods to be added in the future
   ORF_predictor: transdecoder #prodigal | transdecoder
   threads: 24
   humann:
@@ -179,15 +193,36 @@ phylogeny:
     threads: 12
     options: "-m MFP -B 1000 -alrt 1000"
 
+#Of the abundance assigned to pathway X, how much is associated with putative viral transcripts?
 viral_sequence_analysis:
   seqkit:
     options: --min-len 1500
   geNomad:
     db: /data_2/Databases/genomad_db_2026/genomad_db
     options: "--cleanup"
-    threads: 16
-  virsorter2:
-    options:
-    threads: 
-  host_prediction: disabled #enabled | disabled | true | false
-  method: "iphop"
+    threads: 20
+  checkv:
+    db: "/data_2/Databases/CheckV/checkv-db-v1.5"
+    threads: 15
+
+Habitat_refinement:
+  habitat: Soil # Soil | Glacier | Marine_eukaryotes | Marine_prokaryotes | Marine | Ocean?
+  Glacier:
+    databases:
+      GGG_16S:
+        path: 
+  Marine_eukaryotes:
+    db: 
+  Marine_prokaryotes:
+    db: 
+  Soil:
+    kraken2:
+      databases:
+        SoilMicrobeDB: 
+          path: /data_2/rasmus/db_dev/SoilMicrobeDB/kraken2/
+      threads: 10
+      options: ""
+    bracken:
+      options: "-r 150 -t 10"
+      SoilMicrobeDB:
+        level: "-l S"

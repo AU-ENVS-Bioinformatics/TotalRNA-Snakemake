@@ -1,24 +1,27 @@
 rule bracken:
     conda:
         "../envs/bracken.yaml"
+    wildcard_constraints:
+        marker="SSU|ITS"
     message:
-        "[Bracken] re-estimate abundance for {wildcards.sample} for {wildcards.database}"
+        "[Bracken] Re-estimating {wildcards.marker} abundance for {wildcards.sample} against {wildcards.database}"
     input:
-        kraken_report=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/kraken/{{sample}}.{{database}}.k2report"
+        kraken_report=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.k2report"
     output:
-        bracken_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
-        bracken_kreport_output=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report"
+        bracken_output=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
+        bracken_kreport_output=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report",
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/logs/{{sample}}.{{database}}.bracken.log"
+        stdout=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/logs/{{sample}}.{{database}}.bracken.log",
     benchmark:
-        f"{TAXONOMY_DIR}/{{sample}}/SSU/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt"
+        f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt",
     params:
         db=kraken_db,
         level=bracken_level,
-        options=config["taxonomy"]["SSU"]["bracken"]["options"]
+        options=bracken_options,
     shell:
         r"""
         set -euo pipefail
+
         mkdir -p $(dirname {output.bracken_output})
 
         bracken \
@@ -30,5 +33,3 @@ rule bracken:
           {params.options} \
           > {log.stdout} 2>&1
         """
-#bracken -d /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db -i ANN11.report.txt -o test.genus.tsv -w test.k2report -r 150 -l G -t 10
-#kraken-biom *.k2report -o bracken_genus.biom --min S --max D
