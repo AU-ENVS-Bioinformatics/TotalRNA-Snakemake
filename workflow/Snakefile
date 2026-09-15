@@ -32,7 +32,10 @@ from targets.nonrrna import non_rrna_outputs
 
 from targets.viral_sequence_analysis import viral_output
 
-from targets.habitats import habitat_refinement_outputs
+from targets.habitats import (
+    habitat_refinement_outputs,
+    habitat_taxonomy_reports,
+)
 
 configfile: "config/config.yaml"
 
@@ -269,6 +272,14 @@ def taxonomy_reports_for_database(wc):
         database=wc.database,
     )
 
+def habitat_taxonomy_reports_for_database(wc):
+    return habitat_taxonomy_reports(
+        results_dir=RESULTS_DIR,
+        samples=SAMPLES,
+        habitat="Soil",
+        database=wc.database,
+    )
+
 def taxonomy_read_1(wc):
     if wc.marker == "SSU":
         return str(
@@ -467,6 +478,7 @@ include: "viral_sequence_analysis/rules/checkv.smk"
 
 include: "habitat_refinement/rules/SoilKraken.smk"
 include: "habitat_refinement/rules/SoilBracken.smk"
+include: "habitat_refinement/rules/SoilBrackenDownstream.smk"
 
 # =========================================================
 # Module completion targets

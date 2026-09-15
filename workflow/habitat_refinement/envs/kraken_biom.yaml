@@ -1,0 +1,8 @@
+name: kraken_biom
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - kraken-biom
+  - python==3.10

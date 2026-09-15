@@ -207,14 +207,6 @@ viral_sequence_analysis:
 
 Habitat_refinement:
   habitat: Soil # Soil | Glacier | Marine_eukaryotes | Marine_prokaryotes | Marine | Ocean?
-  Glacier:
-    databases:
-      GGG_16S:
-        path: 
-  Marine_eukaryotes:
-    db: 
-  Marine_prokaryotes:
-    db: 
   Soil:
     kraken2:
       databases:
@@ -226,3 +218,7 @@ Habitat_refinement:
       options: "-r 150 -t 10"
       SoilMicrobeDB:
         level: "-l S"
+    kraken_biom:
+      options: "--max D --fmt hdf5"
+      SoilMicrobeDB:
+        level: "--min S"
