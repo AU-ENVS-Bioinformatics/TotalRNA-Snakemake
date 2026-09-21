@@ -35,6 +35,10 @@ from targets.viral_sequence_analysis import viral_output
 from targets.habitats import (
     habitat_refinement_outputs,
     habitat_taxonomy_reports,
+    selected_habitat,
+    habitat_database_names,
+    get_habitat_kraken_database,
+    validate_habitat_config,
 )
 
 configfile: "config/config.yaml"
@@ -129,6 +133,30 @@ KRAKEN_DATABASES = {
 
 print(f"Taxonomy markers: {TAXONOMY_MARKERS}")
 print(f"Taxonomy databases: {KRAKEN_DATABASES}")
+
+# =========================================================
+# Habitat refinement configuration
+# =========================================================
+
+validate_habitat_config(config)
+
+SELECTED_HABITAT = selected_habitat(config)
+
+if SELECTED_HABITAT is None:
+    HABITAT_DATABASES = []
+    print("Habitat refinement: disabled")
+else:
+    HABITAT_DATABASES = habitat_database_names(
+        habitat=SELECTED_HABITAT,
+        config=config,
+    )
+
+    print(
+        f"Habitat refinement: {SELECTED_HABITAT}"
+    )
+    print(
+        f"Habitat databases: {HABITAT_DATABASES}"
+    )
 
 # --------------------------
 # Helpers (raw reads)
@@ -272,14 +300,6 @@ def taxonomy_reports_for_database(wc):
         database=wc.database,
     )
 
-def habitat_taxonomy_reports_for_database(wc):
-    return habitat_taxonomy_reports(
-        results_dir=RESULTS_DIR,
-        samples=SAMPLES,
-        habitat="Soil",
-        database=wc.database,
-    )
-
 def taxonomy_read_1(wc):
     if wc.marker == "SSU":
         return str(
@@ -300,7 +320,6 @@ def taxonomy_read_1(wc):
     raise ValueError(
         f"Unsupported taxonomy marker '{wc.marker}'"
     )
-
 
 def taxonomy_read_2(wc):
     if wc.marker == "SSU":
@@ -324,6 +343,136 @@ def taxonomy_read_2(wc):
     )
 
 # =========================================================
+# Habitat refinement wrappers
+# =========================================================
+
+def habitat_kraken_db(wc):
+    return get_habitat_kraken_database(
+        habitat=wc.habitat,
+        database=wc.database,
+        config=config,
+    )
+
+
+def habitat_kraken_options(wc):
+    return (
+        config["Habitat_refinement"][wc.habitat]["kraken2"].get("options", "")
+    )
+
+
+def habitat_kraken_threads(wc):
+    return (
+        config["Habitat_refinement"][wc.habitat]["kraken2"].get("threads", 2)
+    )
+
+
+def habitat_bracken_options(wc):
+    return (
+        config["Habitat_refinement"][wc.habitat]["bracken"].get("options", "")
+    )
+
+
+def habitat_bracken_level(wc):
+    try:
+        return (
+            config["Habitat_refinement"][wc.habitat]["bracken"][wc.database]["level"]
+        )
+
+    except KeyError as error:
+        raise ValueError(
+            f"No Bracken level configured for {wc.habitat}/{wc.database}"
+        ) from error
+
+
+def habitat_biom_options(wc):
+    return (
+        config["Habitat_refinement"]
+        [wc.habitat]["kraken_biom"]
+        .get("options", "")
+    )
+
+
+def habitat_biom_level(wc):
+    try:
+        return (
+            config["Habitat_refinement"]
+            [wc.habitat]["kraken_biom"]
+            [wc.database]["level"]
+        )
+
+    except KeyError as error:
+        raise ValueError(
+            f"No kraken-biom level configured for "
+            f"{wc.habitat}/{wc.database}"
+        ) from error
+
+
+def habitat_reports_for_database(wc):
+    return habitat_taxonomy_reports(
+        results_dir=RESULTS_DIR,
+        samples=SAMPLES,
+        habitat=wc.habitat,
+        database=wc.database,
+    )
+
+def habitat_read_1(wc):
+    """
+    Select habitat-refinement R1 input.
+
+    Soil    -> non-rRNA reads
+    Glacier -> SSU reads
+    """
+
+    if wc.habitat == "Soil":
+        return str(
+            RNA_CLASSIFIED_DIR
+            / wc.sample
+            / "non_rRNA"
+            / f"{wc.sample}_non_rRNA_1.fastq.gz"
+        )
+
+    if wc.habitat == "Glacier":
+        return str(
+            RNA_CLASSIFIED_DIR
+            / wc.sample
+            / "SSU"
+            / f"{wc.sample}_SSU_1.fastq.gz"
+        )
+
+    raise ValueError(
+        f"No R1 input mapping has been defined for habitat '{wc.habitat}'"
+    )
+
+
+def habitat_read_2(wc):
+    """
+    Select habitat-refinement R2 input.
+
+    Soil    -> non-rRNA reads
+    Glacier -> SSU reads
+    """
+
+    if wc.habitat == "Soil":
+        return str(
+            RNA_CLASSIFIED_DIR
+            / wc.sample
+            / "non_rRNA"
+            / f"{wc.sample}_non_rRNA_2.fastq.gz"
+        )
+
+    if wc.habitat == "Glacier":
+        return str(
+            RNA_CLASSIFIED_DIR
+            / wc.sample
+            / "SSU"
+            / f"{wc.sample}_SSU_2.fastq.gz"
+        )
+
+    raise ValueError(
+        f"No R2 input mapping has been defined for habitat '{wc.habitat}'"
+    )
+
+# =========================================================
 # Final workflow target
 # =========================================================
 
@@ -335,7 +484,7 @@ rule all:
         f"{TAXONOMY_DIR}/taxonomy.done",
         f"{PHYLOGENY_DIR}/phylogeny.done",
         f"{FUNCTION_DIR}/functional_profiling.done",
-        f"{HABITAT_ANALYSIS_DIR}/habitat_taxonomy.done"
+        f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done"
 
 # =========================================================
 # Quality-control module
@@ -476,9 +625,10 @@ include: "viral_sequence_analysis/rules/checkv.smk"
 # Habitat Refinement Taxonomy module
 # =========================================================
 
-include: "habitat_refinement/rules/SoilKraken.smk"
-include: "habitat_refinement/rules/SoilBracken.smk"
-include: "habitat_refinement/rules/SoilBrackenDownstream.smk"
+if SELECTED_HABITAT is not None:
+    include: "habitat_refinement/rules/habitat_kraken.smk"
+    include: "habitat_refinement/rules/habitat_bracken.smk"
+    include: "habitat_refinement/rules/habitat_bracken_downstream.smk"
 
 # =========================================================
 # Module completion targets

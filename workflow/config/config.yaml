@@ -206,12 +206,12 @@ viral_sequence_analysis:
     threads: 15
 
 Habitat_refinement:
-  habitat: Soil # Soil | Glacier | Marine_eukaryotes | Marine_prokaryotes | Marine | Ocean?
+  habitat: Glacier # Soil | Glacier | Marine_eukaryotes | Marine_prokaryotes | Marine | Ocean?
   Soil:
     kraken2:
       databases:
         SoilMicrobeDB: 
-          path: /data_2/rasmus/db_dev/SoilMicrobeDB/kraken2/
+          path: /data_2/rasmus/db_dev/SoilMicrobeDB/kraken2
       threads: 10
       options: ""
     bracken:
@@ -221,4 +221,19 @@ Habitat_refinement:
     kraken_biom:
       options: "--max D --fmt hdf5"
       SoilMicrobeDB:
+        level: "--min S"
+  Glacier:
+    kraken2:
+      databases:
+        GGGG_16S_db:
+          path: /data_2/rasmus/db_dev/GlobalGlacier_4Gdb/GGG_Isolates_and_MAGs_genomes/16S_kraken_database/kraken2_db
+      threads: 10
+      options: ""
+    bracken:
+      options: "-r 150 -t 10"
+      GGGG_16S_db:
+        level: "-l S"
+    kraken_biom:
+      options: "--max D --fmt hdf5"
+      GGGG_16S_db:
         level: "--min S"
