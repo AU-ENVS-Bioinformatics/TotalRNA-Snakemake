@@ -11,7 +11,7 @@ rule export_tsv:
     benchmark:
         "results/benchmarks/export_tsv_{folder}_{model}_{threshold}.txt",
     params:
-        model=lambda wc: wc.model,
-        threshold=lambda wc: wc.threshold,
+        model=lambda wildcards: wildcards.model,
+        threshold=lambda wildcards: wildcards.threshold,
     script:
         "../scripts/export_tsv.py"
