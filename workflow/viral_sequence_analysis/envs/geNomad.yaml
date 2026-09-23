@@ -1,0 +1,7 @@
+name: geNomad
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - genomad>=1.12.0
