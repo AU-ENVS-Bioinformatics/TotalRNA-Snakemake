@@ -120,13 +120,12 @@ with open(log, "w") as f:
     print("Step 1: Annotating accessions...", file=sys.stderr)
     
     # Load input data
-    counts = pd.read_csv(counts_file, sep="\t", header=0, index_col='ContigID')
     diamond_results = pd.read_csv(diamond_results_file, sep="\t", header=0, 
                                   usecols=['qseqid', 'sseqid', 'evalue', 'bitscore'])
     
     # Rename columns to standard names
     diamond_results.rename(columns={
-        'qseqid': 'Query_id',
+        'qseqid': 'ContigID',
         'sseqid': 'Subject_id',
         'evalue': 'e-value',
         'bitscore': 'score'
@@ -137,7 +136,7 @@ with open(log, "w") as f:
     
     # Keep only hits within threshold of the best score for each query
     diamond_results = diamond_results[
-        diamond_results.groupby('Query_id')['score'].transform(
+        diamond_results.groupby('ContigID')['score'].transform(
             lambda x: x >= threshold * x.max()
         )
     ].reset_index(drop=True)
@@ -145,23 +144,21 @@ with open(log, "w") as f:
     
     print(f"Filtered to {len(diamond_results)} DIAMOND hits", file=sys.stderr)
     
-    # Merge with read counts
-    results = diamond_results.merge(counts, left_on='Query_id', right_index=True)
     
     # Get annotations from database
     conn = sqlite3.connect(mapping_db)
-    annotations = annotate_accessions(conn, set(results['Subject_id']))
+    annotations = annotate_accessions(conn, set(diamond_results['Subject_id']))
     conn.close()
     
     print(f"Retrieved {len(annotations)} annotations from database", file=sys.stderr)
     
     # Merge annotations with results
-    results = results.merge(annotations, left_on='Subject_id', right_on='Accession', how='left')
+    results = diamond_results.merge(annotations, left_on='Subject_id', right_on='Accession', how='left')
     results.rename(columns={'Taxonomy': 'NCBI_TaxID'}, inplace=True)
     
-    # Reorder columns with Query_id and Subject_id first
-    column_order = ['Query_id', 'Subject_id'] + [
-        col for col in results.columns if col not in ['Query_id', 'Subject_id', 'Accession']
+    # Reorder columns with ContigID and Subject_id first
+    column_order = ['ContigID', 'Subject_id'] + [
+        col for col in results.columns if col not in ['ContigID', 'Subject_id', 'Accession']
     ]
     results = results[column_order]
     
@@ -169,10 +166,10 @@ with open(log, "w") as f:
     print("Step 2: Computing Lowest Common Ancestor...", file=sys.stderr)
     
     df = results.sort_values(by=["e-value", "score"], ascending=[True, False])
-    df_lca = df.groupby('Query_id')['NCBI_TaxID'].apply(lowest_common_ancestor).rename('LCA').to_frame()
+    df_lca = df.groupby('ContigID')['NCBI_TaxID'].apply(lowest_common_ancestor).rename('LCA').to_frame()
     df_lca['Taxonomy'] = [get_taxonomy_row(int(taxid)) for taxid in df_lca['LCA']]
     
-    df = df.merge(df_lca, left_on='Query_id', right_index=True)
+    df = df.merge(df_lca, left_on='ContigID', right_index=True)
     
     # ===== STEP 3: FUNCTIONAL ANNOTATION =====
     print("Step 3: Adding functional annotations...", file=sys.stderr)
@@ -181,8 +178,7 @@ with open(log, "w") as f:
     print(f"There are {(df['KEGG'] == '').sum()} rows with no KEGG identifier", file=sys.stderr)
     print(f"There are {(df['INTERPRO2GO'] == '').sum()} rows with no INTERPRO2GO identifier", file=sys.stderr)
     
-    df = df.sort_values(by=["e-value", "score"], ascending=[True, False]).drop_duplicates("Query_id", keep="first")
-    df.drop(columns=['e-value', 'score'], inplace=True)
+    df = df.sort_values(by=["e-value", "score"], ascending=[True, False]).drop_duplicates("ContigID", keep="first")
     
     # Load BRITE hierarchy
     with open(brite_json, 'r') as json_file:
