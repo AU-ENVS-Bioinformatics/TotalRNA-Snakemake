@@ -17,7 +17,7 @@ output_brite = snakemake.output.brite
 output_meta = snakemake.output.meta
 log = snakemake.log[0]
 
-ncbi = NCBITaxa()
+ncbi = NCBITaxa(snakemake.params.ncbi_db)
 
 
 def annotate_accessions(conn, accessions):

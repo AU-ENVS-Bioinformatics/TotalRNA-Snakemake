@@ -39,6 +39,7 @@ rule annotree:
         min_score_threshold=80,
         max_evalue_threshold=1e-10,
         threshold=0.95,
+        ncbi_db="NCBI_db/taxa.sqlite",
     conda:
         "../envs/annotree.yaml"
     script:
