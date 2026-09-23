@@ -65,6 +65,7 @@ def init_database(database):
 
     log_message("Dropping old tables if they exist")
     conn.execute("DROP TABLE IF EXISTS mapped_reads")
+    conn.execute("DROP TABLE IF EXISTS filtered_mapped_reads")
     conn.execute("DROP TABLE IF EXISTS read_length")
     conn.execute("DROP TABLE IF EXISTS contig_length")
 
@@ -98,6 +99,18 @@ def init_database(database):
 
     return conn
 
+def drop_views(conn):
+    log_message("Dropping old views if they exist")
+    views = conn.execute("""
+        SELECT schema_name, view_name
+        FROM duckdb_views()
+        WHERE internal = false
+    """).fetchall()
+
+    for schema, view in views:
+        conn.execute(f'DROP VIEW "{schema}"."{view}"')
+    log_message("Old views dropped successfully")
+
 
 with open(log[0], "w") as f:
     sys.stderr = sys.stdout = f
@@ -121,6 +134,9 @@ with open(log[0], "w") as f:
         log_message("Committing transaction")
         conn.commit()
         log_message("Commit completed successfully")
+
+        log_message("Dropping old views")
+        drop_views(conn)
     finally:
         if conn is not None:
             log_message("Closing database connection")
