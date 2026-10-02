@@ -31,9 +31,71 @@ rule kraken2:
           --threads {threads} \
           --report {output.report} \
           --output {output.kraken} \
-          --paired \
           {input.read_1} \
           {input.read_2} \
           {params.options} \
           > {log.stdout} 2>&1
+        """
+
+rule kraken2_group_reads:
+    conda:
+        "../envs/krakentools.yaml"
+    message:
+        "[KrakenTools] Separating SILVA-classified SSU reads from {wildcards.sample} into prokaryotes and eukaryotes"
+    input:
+        read_1=lambda wc: original_ssu_read(wc, 1),
+        read_2=lambda wc: original_ssu_read(wc, 2),
+        report=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.k2report",
+        kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.kraken",
+    output:
+        prokaryotes_1=grouped_ssu_read("{sample}", "prokaryotes", 1),
+        prokaryotes_2=grouped_ssu_read("{sample}", "prokaryotes", 2),
+        eukaryotes_1=grouped_ssu_read("{sample}", "eukaryotes", 1),
+        eukaryotes_2=grouped_ssu_read("{sample}", "eukaryotes", 2),
+    log:
+        stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/logs/{{sample}}.group_reads.log",
+    params:
+        prokaryote_taxids=" ".join(map(str, config["taxonomy"]["SSU"]["domain_split"]["prokaryotes"])),
+        eukaryote_taxids=" ".join(map(str, config["taxonomy"]["SSU"]["domain_split"]["eukaryotes"])),
+    shell:
+        r"""
+        set -euo pipefail
+
+        mkdir -p "$(dirname {output.prokaryotes_1})"
+        mkdir -p "$(dirname {output.eukaryotes_1})"
+
+        (
+            extract_kraken_reads.py \
+                -k {input.kraken} \
+                -r {input.report} \
+                -s1 {input.read_1} \
+                -s2 {input.read_2} \
+                -t {params.prokaryote_taxids} \
+                --include-children \
+                --fastq-output \
+                -o {output.prokaryotes_1}.tmp.fastq \
+                -o2 {output.prokaryotes_2}.tmp.fastq
+
+            extract_kraken_reads.py \
+                -k {input.kraken} \
+                -r {input.report} \
+                -s1 {input.read_1} \
+                -s2 {input.read_2} \
+                -t {params.eukaryote_taxids} \
+                --include-children \
+                --fastq-output \
+                -o {output.eukaryotes_1}.tmp.fastq \
+                -o2 {output.eukaryotes_2}.tmp.fastq
+
+            gzip -c {output.prokaryotes_1}.tmp.fastq > {output.prokaryotes_1}
+            gzip -c {output.prokaryotes_2}.tmp.fastq > {output.prokaryotes_2}
+            gzip -c {output.eukaryotes_1}.tmp.fastq > {output.eukaryotes_1}
+            gzip -c {output.eukaryotes_2}.tmp.fastq > {output.eukaryotes_2}
+
+            rm -- \
+                {output.prokaryotes_1}.tmp.fastq \
+                {output.prokaryotes_2}.tmp.fastq \
+                {output.eukaryotes_1}.tmp.fastq \
+                {output.eukaryotes_2}.tmp.fastq
+        ) > {log.stdout} 2>&1
         """
