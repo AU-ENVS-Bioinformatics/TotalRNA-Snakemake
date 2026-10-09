@@ -6,12 +6,13 @@ rule geNomad:
     input:
         viral_filter_contigs=f"{VIRAL_ANALYSIS_DIR}/transcript/transcripts.filtered.fasta"
     output:
-        plasmid_summary=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts_summary/transcripts_plasmid_summary.tsv",
-        virus_summary=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts_summary/transcripts_virus_summary.tsv",
-        viral_fasta=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts_summary/transcripts_virus.fna",
+        plasmid_summary=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts.filtered_summary/transcripts.filtered_plasmid_summary.tsv",
+        virus_summary=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts.filtered_summary/transcripts.filtered_virus_summary.tsv",
+        viral_fasta=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts.filtered_summary/transcripts.filtered_virus.fna",
+        viral_genes=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts.filtered_summary/transcripts.filtered_virus_genes.tsv",
     params:
+        output_dir=f"{VIRAL_ANALYSIS_DIR}/identification/genomad",
         db=config["viral_sequence_analysis"]["geNomad"]["db"],
-        output_dir = f"{VIRAL_ANALYSIS_DIR}/identification/genomad/",
         options=config["viral_sequence_analysis"]["geNomad"].get("options", "")
     threads:
         config["viral_sequence_analysis"]["geNomad"].get("threads", 1)
@@ -23,7 +24,7 @@ rule geNomad:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.viral_fasta})
+        mkdir -p $(dirname {output.plasmid_summary})
 
         genomad end-to-end \
             {input.viral_filter_contigs} \

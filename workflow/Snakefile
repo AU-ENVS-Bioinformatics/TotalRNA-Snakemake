@@ -120,6 +120,8 @@ FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
 VIRAL_ANALYSIS_DIR = str(RESULTS_DIR / "Viral_Sequence_Analysis")
 HABITAT_ANALYSIS_DIR = str(RESULTS_DIR / "Habitat_refinement")
 
+TAXONOMY_ENVS_DIR = Path(workflow.basedir) / "taxonomy" / "envs"
+
 #####
 
 validate_taxonomy_config(config)
@@ -233,10 +235,7 @@ def kraken_db(wc):
 
 
 def kraken_options(wc):
-    return (
-        config["taxonomy"][wc.marker]["kraken2"]
-        .get("options", "")
-    )
+    return (config["taxonomy"][wc.marker]["kraken2"].get("options", ""))
 
 
 def kraken_threads(wc):
@@ -300,47 +299,48 @@ def taxonomy_reports_for_database(wc):
         database=wc.database,
     )
 
-def taxonomy_read_1(wc):
+def original_ssu_read(wc, mate):
+    return str(
+        RNA_CLASSIFIED_DIR
+        / wc.sample
+        / "SSU"
+        / f"{wc.sample}_SSU_{mate}.fastq.gz"
+    )
+
+def grouped_ssu_read(sample, group, mate):
+    return (
+        f"{TAXONOMY_DIR}/{sample}/SSU/silva/grouped_reads/{sample}.{group}_R{mate}.fastq.gz"
+    )
+
+def taxonomy_read(wc, mate):
     if wc.marker == "SSU":
-        return str(
-            RNA_CLASSIFIED_DIR
-            / wc.sample
-            / "SSU"
-            / f"{wc.sample}_SSU_1.fastq.gz"
-        )
+        if wc.database == "pr2":
+            return grouped_ssu_read(
+                wc.sample, "eukaryotes", mate
+            )
+
+        # SILVA and other SSU databases use the original SSU reads.
+        return original_ssu_read(wc, mate)
 
     if wc.marker == "ITS":
         return str(
             RNA_INTERMEDIATE_DIR
             / wc.sample
             / "ITS_candidates"
-            / f"{wc.sample}_ITS_candidates_1.fastq.gz"
+            / f"{wc.sample}_ITS_candidates_{mate}.fastq.gz"
         )
 
     raise ValueError(
         f"Unsupported taxonomy marker '{wc.marker}'"
     )
+
+
+def taxonomy_read_1(wc):
+    return taxonomy_read(wc, 1)
+
 
 def taxonomy_read_2(wc):
-    if wc.marker == "SSU":
-        return str(
-            RNA_CLASSIFIED_DIR
-            / wc.sample
-            / "SSU"
-            / f"{wc.sample}_SSU_2.fastq.gz"
-        )
-
-    if wc.marker == "ITS":
-        return str(
-            RNA_INTERMEDIATE_DIR
-            / wc.sample
-            / "ITS_candidates"
-            / f"{wc.sample}_ITS_candidates_2.fastq.gz"
-        )
-
-    raise ValueError(
-        f"Unsupported taxonomy marker '{wc.marker}'"
-    )
+    return taxonomy_read(wc, 2)
 
 # =========================================================
 # Habitat refinement wrappers
@@ -433,10 +433,7 @@ def habitat_read_1(wc):
 
     if wc.habitat == "Glacier":
         return str(
-            RNA_CLASSIFIED_DIR
-            / wc.sample
-            / "SSU"
-            / f"{wc.sample}_SSU_1.fastq.gz"
+            f"{HABITAT_ANALYSIS_DIR}/{wc.sample}/Glacier/grouped_reads/{wc.sample}.glacial_orders_R1.fastq.gz"
         )
 
     raise ValueError(
@@ -461,30 +458,12 @@ def habitat_read_2(wc):
         )
 
     if wc.habitat == "Glacier":
-        return str(
-            RNA_CLASSIFIED_DIR
-            / wc.sample
-            / "SSU"
-            / f"{wc.sample}_SSU_2.fastq.gz"
+        return str(f"{HABITAT_ANALYSIS_DIR}/{wc.sample}/Glacier/grouped_reads/{wc.sample}.glacial_orders_R2.fastq.gz"
         )
 
     raise ValueError(
         f"No R2 input mapping has been defined for habitat '{wc.habitat}'"
     )
-
-# =========================================================
-# Final workflow target
-# =========================================================
-
-rule all:
-    input:
-        f"{QC_DIR}/quality_control.done",
-        f"{RNA_DIR}/rna_classification.done",
-        f"{ASSEMBLY_DIR}/reconstruction.done",
-        f"{TAXONOMY_DIR}/taxonomy.done",
-        f"{PHYLOGENY_DIR}/phylogeny.done",
-        f"{FUNCTION_DIR}/functional_profiling.done",
-        f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done"
 
 # =========================================================
 # Quality-control module
@@ -614,18 +593,41 @@ if functional_module not in ["read", "assembly", "both", "all"]:
 
 
 # =========================================================
-# Viral Sequence Analysis module
+# Viral sequence analysis module
 # =========================================================
 
-include: "viral_sequence_analysis/rules/prefilter.smk"
-include: "viral_sequence_analysis/rules/geNomad.smk"
-include: "viral_sequence_analysis/rules/checkv.smk"
+VIRAL_CONFIG = config.get("viral_sequence_analysis",{},)
+
+VIRAL_ENABLED = VIRAL_CONFIG.get("enabled",True)
+
+VIRAL_POSTPROCESSING = VIRAL_CONFIG.get("postprocessing",True)
+
+if VIRAL_POSTPROCESSING:
+    if functional_module not in ["assembly", "both", "all"]:
+        raise ValueError(
+            "Viral post-processing requires assembly-based functional profiling because it reuses TransDecoder, eggNOG and Salmon."
+        )
+
+    if config["functional_profiling"]["ORF_predictor"] != "transdecoder":
+        raise ValueError(
+            "Viral post-processing currently requires functional_profiling.ORF_predictor: transdecoder."
+        )
+
+if VIRAL_ENABLED:
+    include: "viral_sequence_analysis/rules/prefilter.smk"
+    include: "viral_sequence_analysis/rules/geNomad.smk"
+    include: "viral_sequence_analysis/rules/checkv.smk"
+
+    if VIRAL_POSTPROCESSING:
+        include: "viral_sequence_analysis/rules/postprocessing.smk"
 
 # =========================================================
 # Habitat Refinement Taxonomy module
 # =========================================================
 
 if SELECTED_HABITAT is not None:
+    if SELECTED_HABITAT == "Glacier":
+        include: "habitat_refinement/rules/Preprocess_habitat_taxonomy.smk"
     include: "habitat_refinement/rules/habitat_kraken.smk"
     include: "habitat_refinement/rules/habitat_bracken.smk"
     include: "habitat_refinement/rules/habitat_bracken_downstream.smk"
@@ -718,7 +720,7 @@ rule functional_profiling_done:
 
 rule viral_sequence_analysis_done:
     input:
-        viral_output(RESULTS_DIR,config)
+        viral_output(RESULTS_DIR,SAMPLES,config)
     output:
         flag=f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done"
     shell:
@@ -742,6 +744,27 @@ rule habitat_refinement_done:
         touch {output.flag}
         """
 
+# =========================================================
+# Final workflow target
+# =========================================================
+FINAL_TARGETS = [
+    f"{QC_DIR}/quality_control.done",
+    f"{RNA_DIR}/rna_classification.done",
+    f"{ASSEMBLY_DIR}/reconstruction.done",
+    f"{TAXONOMY_DIR}/taxonomy.done",
+    f"{PHYLOGENY_DIR}/phylogeny.done",
+    f"{FUNCTION_DIR}/functional_profiling.done",
+    f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done",
+]
+
+if VIRAL_ENABLED:
+    FINAL_TARGETS.append(f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done")
+
+
+rule all:
+    input:
+        FINAL_TARGETS
+        
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v3.tsv --cores 14 --rerun-incomplete --keep-going --printshellcmds /data/rasmus/Dev/SnakeResDev/Functional_Profiling/functional_profiling.done
 
 # snakemake --use-conda --conda-prefix /data_2/rasmus/snakemake-conda --configfile config/config.yaml --config samples_file=/data_3/rasmus/Analysis/Lars/metatranscriptomics/italy_samplesheet.tsv shared_results_dir=/data_3/lvd/projects/MDP/TotalRNA_2026/Italy_v2 --cores 55 --rerun-incomplete --keep-going --printshellcmds /data_3/lvd/projects/MDP/TotalRNA_2026/Italy_v2/Taxonomy_Profiling/taxonomy.done --dry-run

@@ -4,7 +4,7 @@ rule viral_checkv:
     conda:
         "../envs/checkv.yaml"
     input:
-        viral_fasta=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts_summary/transcripts_virus.fna"
+        viral_fasta=rules.geNomad.output.viral_fasta
     output:
         quality=f"{VIRAL_ANALYSIS_DIR}/quality/checkv/quality_summary.tsv",
         completeness=f"{VIRAL_ANALYSIS_DIR}/quality/checkv/completeness.tsv",
@@ -24,6 +24,7 @@ rule viral_checkv:
 
         mkdir -p $(dirname {output.quality})
 
+        #FASTA contains no sequence headers, so CheckV will fail. Create empty output files and exit without snakemake reporting missing output.
         if ! grep -q '^>' {input.viral_fasta}; then
             printf \
                 "contig_id\tcontig_length\tprovirus\tproviral_length\tgene_count\tviral_genes\thost_genes\tcheckv_quality\tmiuvig_quality\tcompleteness\tcompleteness_method\tcontamination\tkmer_freq\twarnings\n" \

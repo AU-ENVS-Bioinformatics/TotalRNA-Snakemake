@@ -40,7 +40,7 @@ rule viral_contigs_stats:
         stdout=f"{VIRAL_ANALYSIS_DIR}/transcript/logs/stats_contigs.log"
     shell:
         r"""
-        mkdir -p {params.output_dir}
+        mkdir -p $(dirname {output.stats})
 
         seqkit stats \
             --tabular \

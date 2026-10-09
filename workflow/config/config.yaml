@@ -99,9 +99,12 @@ reconstruction:
 taxonomy:
   module: all # SSU | ITS | all | both
   SSU:
+    domain_split:
+      prokaryotes: [3, 2]
+      eukaryotes: [4]
     kraken2:
       threads: 10
-      options: ""
+      options: "--paired --gzip-compressed"
       databases:
         silva:
           path: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
@@ -137,7 +140,7 @@ taxonomy:
       taxonomic_rank: genus
     kraken2:
       threads: 10
-      options: ""
+      options: "--paired --gzip-compressed"
       databases:
         unite:
           path: /data_2/Databases/UNITE/unite_kraken_db
@@ -195,6 +198,8 @@ phylogeny:
 
 #Of the abundance assigned to pathway X, how much is associated with putative viral transcripts?
 viral_sequence_analysis:
+  enabled: true
+  postprocessing: true
   seqkit:
     options: --min-len 1500
   geNomad:
@@ -223,6 +228,7 @@ Habitat_refinement:
       SoilMicrobeDB:
         level: "--min S"
   Glacier:
+    order_taxids: /data_2/rasmus/db_dev/GlobalGlacier_4Gdb/GGG_Isolates_and_MAGs_genomes/16S_kraken_database/glacier_silva_order_taxids.txt
     kraken2:
       databases:
         GGGG_16S_db:
