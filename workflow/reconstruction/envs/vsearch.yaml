@@ -1,0 +1,7 @@
+name: vsearch
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - vsearch
