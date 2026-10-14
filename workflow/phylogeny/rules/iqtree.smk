@@ -4,22 +4,25 @@
 rule iqtree_ssu:
     conda:
         "../envs/iqtree.yaml"
+    wildcard_constraints:
+        kingdom=BARRNAP_KINGDOM_PATTERN
     message:
         "[IQ-TREE2] Construct the cross-sample SSU phylogenetic tree"
     input:
-        trimmed=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft_trim.fasta"
+        trimmed=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft_trim.fasta"
     output:
-        tree=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.treefile",
-        iqtree=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.iqtree",
-        model=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU.model.gz"
+        tree=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}.treefile",
+        iqtree=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}.iqtree",
+        model=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}.model.gz"
     log:
-        stdout=f"{PHYLOGENY_DIR}/tree/logs/iqtree.log",
-        time=f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree_time.txt"
+        stdout=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/logs/iqtree.log",
+        time=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/benchmarks/iqtree_time.txt"
     benchmark:
-        f"{PHYLOGENY_DIR}/tree/benchmarks/iqtree.txt"
+        f"{PHYLOGENY_DIR}/{{kingdom}}/tree/benchmarks/iqtree.txt"
     params:
-        prefix=f"{PHYLOGENY_DIR}/tree/cross_sample_SSU",
-        options=config["phylogeny"]["iqtree"]["options"]
+        prefix=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}",
+        options=lambda wc: config["phylogeny"]["iqtree"][wc.kingdom].get("options"),
+        seed=config["phylogeny"]["iqtree"].get("seed", 42)
     threads:
         config["phylogeny"]["iqtree"].get("threads", 8)
     shell:
@@ -34,5 +37,6 @@ rule iqtree_ssu:
                 -pre {params.prefix} \
                 -T {threads} \
                 {params.options} \
+                -seed {params.seed} \
                 > {log.stdout} 2>&1
         """

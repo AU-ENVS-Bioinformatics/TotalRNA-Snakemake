@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import re
 from pathlib import Path
 
@@ -17,8 +18,8 @@ UNINFORMATIVE_PATTERNS = (
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=(
-            "Rename SILVA FASTA headers using the lowest informative "
-            "taxonomic rank and accession number."
+            "Rename FASTA headers using an optional accession-to-lineage "
+            "TSV file."
         )
     )
 
@@ -26,7 +27,7 @@ def parse_arguments():
         "--in_fasta",
         required=True,
         type=Path,
-        help="Input SILVA reference FASTA file.",
+        help="Input reference FASTA file.",
     )
 
     parser.add_argument(
@@ -34,6 +35,12 @@ def parse_arguments():
         required=True,
         type=Path,
         help="Output FASTA file with renamed headers.",
+    )
+
+    parser.add_argument(
+        "--taxonomy_tsv",
+        type=Path,
+        help="Optional two-column TSV: accession and lineage. A header row is allowed."
     )
 
     return parser.parse_args()
@@ -52,6 +59,86 @@ def is_informative(taxon):
         for pattern in UNINFORMATIVE_PATTERNS
     )
 
+
+def load_taxonomy(taxonomy_tsv):
+    """Read accession-to-lineage mappings from a two-column TSV file."""
+
+    if not taxonomy_tsv.is_file():
+        raise FileNotFoundError(
+            f"Taxonomy TSV does not exist: {taxonomy_tsv}"
+        )
+
+    taxonomy = {}
+    with taxonomy_tsv.open("r", encoding="utf-8", newline="") as tsv_file:
+        reader = csv.reader(tsv_file, delimiter="\t")
+        first_row = True
+
+        for row in reader:
+            if not row or not any(cell.strip() for cell in row):
+                continue
+            if row[0].lstrip().startswith("#"):
+                continue
+
+            if first_row and len(row) == 2 and (
+                row[0].strip().lower() in {
+                    "accession", "accession_id", "accession number"
+                }
+                and row[1].strip().lower() in {"lineage", "taxonomy", "taxon"}
+            ):
+                first_row = False
+                continue
+
+            first_row = False
+            if len(row) != 2:
+                raise ValueError(
+                    f"Taxonomy TSV line {reader.line_num} must have exactly "
+                    "two tab-separated columns."
+                )
+
+            accession, lineage = (cell.strip() for cell in row)
+            if not accession or not lineage:
+                raise ValueError(
+                    f"Taxonomy TSV line {reader.line_num} has an empty "
+                    "accession or lineage."
+                )
+            if accession in taxonomy:
+                raise ValueError(
+                    f"Duplicate accession in taxonomy TSV line "
+                    f"{reader.line_num}: {accession}"
+                )
+
+            taxonomy[accession] = lineage
+
+    if not taxonomy:
+        raise ValueError(f"No accession mappings found in {taxonomy_tsv}")
+
+    return taxonomy
+
+
+def compile_accession_pattern(accessions):
+    """Compile a literal, whole-accession matcher for FASTA headers."""
+
+    alternatives = "|".join(
+        re.escape(accession)
+        for accession in sorted(accessions, key=len, reverse=True)
+    )
+    return re.compile(
+        rf"(?<![A-Za-z0-9_.-])(?P<accession>{alternatives})"
+        r"(?![A-Za-z0-9_.-])"
+    )
+
+
+def informative_taxon(lineage):
+    """Select and sanitize the most specific informative lineage component."""
+
+    for rank in reversed(lineage.split(";")):
+        rank = re.sub(r"^[A-Za-z]+__", "", rank.strip())
+        if is_informative(rank):
+            return sanitize_taxon(rank)
+
+    return ""
+
+
 def sanitize_taxon(taxon):
     """
     Convert a taxonomic name into a FASTA-safe identifier.
@@ -59,7 +146,7 @@ def sanitize_taxon(taxon):
     Examples
     --------
 
-    Rule 1: Collapse 'Genus sp. ...' to genus level
+    Rule 1: Collapse any rank ending in 'sp. ...' to the name before 'sp.'
 
         Phormidium sp. D1 2
             -> Phormidium
@@ -69,6 +156,9 @@ def sanitize_taxon(taxon):
 
         Radiococcaceae sp. enrichment culture clone GOGrpn K43
             -> Radiococcaceae
+
+        Parafrigoribacterium_sp.
+            -> Parafrigoribacterium
 
     Rule 2: Keep species names but remove strain / isolate identifiers
 
@@ -102,14 +192,16 @@ def sanitize_taxon(taxon):
 
     # -------------------------------------------------------------
     # Rule 1:
-    # Collapse "Genus sp. anything" -> "Genus"
+    # Collapse "Name sp. anything" -> "Name". This is applied to the
+    # selected lineage rank, regardless of whether it is species or genus.
     #
     # Examples:
     #   Phormidium sp. D1 2 -> Phormidium
     #   Nostoc sp. cyanobiont UK53 -> Nostoc
+    #   Parafrigoribacterium_sp. -> Parafrigoribacterium
     # -------------------------------------------------------------
     taxon = re.sub(
-        r"^(.+?)\s+sp\..*$",
+        r"^(.+?)(?:\s+|_+)sp\..*$",
         r"\1",
         taxon,
         flags=re.IGNORECASE,
@@ -180,54 +272,41 @@ def sanitize_taxon(taxon):
 
     return taxon
 
-def rename_header(header, line_number):
-    """
-    Convert a SILVA header such as:
+def rename_header(header, line_number, accession_pattern=None, taxonomy=None):
+    """Rename a header to its accession and, when available, taxon."""
 
-    >AB113665.1.1450 Bacteria;...;Nostoc;Nostoc commune
-
-    into:
-
-    >Nostoc_commune(AB113665.1.1450)
-    """
-
-    header = header.removeprefix(">").strip()
-
-    try:
-        accession, taxonomy = header.split(maxsplit=1)
-    except ValueError as error:
+    header_fields = header.removeprefix(">").strip().split(maxsplit=1)
+    if not header_fields:
         raise ValueError(
-            f"Line {line_number}: header does not contain both an "
-            f"accession and taxonomy: >{header}"
-        ) from error
-
-    #accession = accession.split(".", 1)[0]
-    accession = accession.replace(".", "_") #accession CP016282.767613.769121 -> CP016282_767613_769121
-
-    ranks = [
-        rank.strip()
-        for rank in taxonomy.split(";")
-        if rank.strip()
-    ]
-
-    if not ranks:
-        selected_taxon = "Unresolved"
-    else:
-        selected_taxon = next(
-            (
-                rank
-                for rank in reversed(ranks)
-                if is_informative(rank)
-            ),
-            "Unresolved",
+            f"Line {line_number}: FASTA header is missing an accession: "
+            f"{header.rstrip()}"
         )
 
-    selected_taxon = sanitize_taxon(selected_taxon)
+    if accession_pattern is None or taxonomy is None:
+        return f">{header_fields[0]}", False
 
-    return f">{selected_taxon}({accession})"
+    matches = {
+        match.group("accession")
+        for match in accession_pattern.finditer(header)
+    }
+    if len(matches) > 1:
+        raise ValueError(
+            f"Line {line_number}: FASTA header contains multiple mapped "
+            f"accessions: {', '.join(sorted(matches))}"
+        )
+
+    if not matches:
+        return f">{header_fields[0]}", False
+
+    accession = matches.pop()
+    taxon = informative_taxon(taxonomy[accession])
+    if taxon:
+        return f">{accession}_{taxon}", True
+
+    return f">{accession}", True
 
 
-def rename_fasta(input_fasta, output_fasta):
+def rename_fasta(input_fasta, output_fasta, taxonomy_tsv=None):
     """Rename all sequence headers while preserving the sequences."""
 
     if not input_fasta.is_file():
@@ -235,17 +314,32 @@ def rename_fasta(input_fasta, output_fasta):
             f"Input FASTA does not exist: {input_fasta}"
         )
 
+    taxonomy = load_taxonomy(taxonomy_tsv) if taxonomy_tsv else None
+    accession_pattern = (
+        compile_accession_pattern(taxonomy)
+        if taxonomy is not None
+        else None
+    )
+
     output_fasta.parent.mkdir(parents=True, exist_ok=True)
 
     sequence_count = 0
+    mapped_count = 0
 
     with input_fasta.open("r", encoding="utf-8") as infile, \
          output_fasta.open("w", encoding="utf-8") as outfile:
 
         for line_number, line in enumerate(infile, start=1):
             if line.startswith(">"):
-                outfile.write(rename_header(line, line_number) + "\n")
+                renamed_header, mapped = rename_header(
+                    line,
+                    line_number,
+                    accession_pattern,
+                    taxonomy,
+                )
+                outfile.write(renamed_header + "\n")
                 sequence_count += 1
+                mapped_count += mapped
             else:
                 outfile.write(line)
 
@@ -256,13 +350,15 @@ def rename_fasta(input_fasta, output_fasta):
         )
 
     print(f"Renamed {sequence_count} FASTA headers")
+    if taxonomy_tsv:
+        print(f"Matched taxonomy for {mapped_count} FASTA headers")
     print(f"Input:  {input_fasta}")
     print(f"Output: {output_fasta}")
 
 
 def main():
     args = parse_arguments()
-    rename_fasta(args.in_fasta, args.out_fasta)
+    rename_fasta(args.in_fasta, args.out_fasta, args.taxonomy_tsv)
 
 
 if __name__ == "__main__":

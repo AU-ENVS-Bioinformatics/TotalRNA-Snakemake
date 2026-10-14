@@ -7,6 +7,7 @@ def reconstruction_outputs(
     results_dir: Path,
     samples: List[str],
     config: dict,
+    active_kingdoms: List[str],
 ) -> List[str]:
     """
     Return all expected reconstruction output files.
@@ -35,6 +36,34 @@ def reconstruction_outputs(
     # Combined SSU reconstruction
     outputs.append(
         f"{results_dir}/Assembly/concatenated/SSU/cross_sample_SSU.fasta"
+    )
+
+    # rRNA predictions for each configured Barrnap kingdom
+    outputs += expand(
+        f"{results_dir}/Assembly/SSU_candidates/barrnap/{{kingdom}}/cross_sample_SSU_{{kingdom}}.barrnap.gff",
+        kingdom=config["reconstruction"]["barrnap"]["kingdom"],
+    )
+
+    outputs.append(f"{results_dir}/Assembly/SSU_candidates/barrnap/barrnap_kingdom_status.tsv")
+
+    outputs += expand(
+        f"{results_dir}/Assembly/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_filtered.fasta",
+        kingdom=active_kingdoms,
+    )
+
+    outputs += expand(
+        f"{results_dir}/Assembly/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_dereplicated.fasta",
+        kingdom=active_kingdoms,
+    )
+
+    outputs += expand(
+        f"{results_dir}/Assembly/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_nonchimeras.fasta",
+        kingdom=active_kingdoms,
+    )
+
+    outputs += expand(
+        f"{results_dir}/Assembly/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_catalogue.fasta",
+        kingdom=active_kingdoms,
     )
     
     # Optional sample-specific ITS-candidate reconstruction

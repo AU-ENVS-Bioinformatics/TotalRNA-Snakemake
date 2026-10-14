@@ -1,43 +1,40 @@
 ################################################################################
-# BLASTN PHYLOGENETIC CLASSIFICATION
+# BLAST RECONSTRUCTED SSUs AGAINST KINGDOM-SPECIFIC REFERENCES
 ################################################################################
 
-################################################################################
-# BLAST RECONSTRUCTED SSU SEQUENCES AGAINST SILVA
-################################################################################
-
-rule blast_cross_sample_ssu:
+rule blast_samples_SSU_kingdoms:
     conda:
         "../envs/blastn.yaml"
+    wildcard_constraints:
+        kingdom=BARRNAP_KINGDOM_PATTERN
     message:
-        "[BLASTN] Identify SILVA references for combined reconstructed SSUs"
+        "[BLASTN] Identify SSU references for kingdom: {wildcards.kingdom}"
     input:
-        query=f"{ASSEMBLY_DIR}/concatenated/SSU/cross_sample_SSU.fasta"
+        query=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_catalogue.fasta"
     output:
-        tsv=f"{PHYLOGENY_DIR}/cross_sample/blastn/cross_sample_SSU_blastn.tsv"
+        tsv=f"{PHYLOGENY_DIR}/{{kingdom}}/blastn/SSU_blastn_{{kingdom}}.tsv"
     log:
-        stdout=f"{PHYLOGENY_DIR}/cross_sample/logs/cross_sample_blastn.log",
-        time=f"{PHYLOGENY_DIR}/cross_sample/benchmarks/cross_sample_blastn_time.txt"
+        stdout=f"{PHYLOGENY_DIR}/{{kingdom}}/blastn/logs/blastn.log",
+        time=f"{PHYLOGENY_DIR}/{{kingdom}}/blastn/benchmarks/blastn_time.txt"
     benchmark:
-        f"{PHYLOGENY_DIR}/cross_sample/benchmarks/cross_sample_blastn.txt"
+        f"{PHYLOGENY_DIR}/{{kingdom}}/blastn/benchmarks/blastn_benchmark.tsv"
     params:
-        db=config["phylogeny"]["blastn"]["database"],
-        options=config["phylogeny"]["blastn"]["options"]
+        db=lambda wc: config["phylogeny"]["blastn"]["databases"][wc.kingdom],
+        options=config["phylogeny"]["blastn"].get("options", "")
     threads:
         config["phylogeny"]["blastn"].get("threads", 12)
-
     shell:
         r"""
         set -euo pipefail
 
         mkdir -p $(dirname {output.tsv})
 
-        /usr/bin/time -v -o "{log.time}" \
+        /usr/bin/time -v -o {log.time} \
             blastn \
-                -query "{input.query}" \
-                -db "{params.db}" \
-                -out "{output.tsv}" \
+                -query {input.query} \
+                -db {params.db} \
+                -out {output.tsv} \
                 -num_threads {threads} \
                 {params.options} \
-                > "{log.stdout}" 2>&1
+                > {log.stdout} 2>&1
         """

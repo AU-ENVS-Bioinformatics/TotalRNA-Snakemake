@@ -1,16 +1,22 @@
+################################################################################
+# 7. Trim the multiple sequence alignment with trimAl
+################################################################################
+
 rule trimal_ssu:
     conda:
         "../envs/trimal.yaml"
+    wildcard_constraints:
+        kingdom=BARRNAP_KINGDOM_PATTERN
     message:
         "[trimAl] Trim the cross-sample SSU alignment"
     input:
-        alignment=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft.fasta"
+        alignment=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft.fasta"
     output:
-        trimmed=f"{PHYLOGENY_DIR}/mafft/cross_sample_SSU_reference_mafft_trim.fasta"
+        trimmed=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft_trim.fasta"
     log:
-        stdout=f"{PHYLOGENY_DIR}/mafft/logs/trimal.log"
+        stdout=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/logs/trimal.log"
     benchmark:
-        f"{PHYLOGENY_DIR}/mafft/benchmarks/trimal.txt"
+        f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/benchmarks/trimal.txt"
     shell:
         r"""
         set -euo pipefail

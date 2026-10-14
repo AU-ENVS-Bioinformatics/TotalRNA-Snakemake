@@ -48,6 +48,8 @@ rule dereplicate_ssu:
         uc=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_dereplicated.uc"
     log:
         stdout=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/logs/dereplication.log"
+    params:
+        options=config["reconstruction"]["ssu_postprocessing"]["dereplication"].get("options", "")
     threads:
         config["reconstruction"]["ssu_postprocessing"]["dereplication"].get("threads", 1)
     shell:
@@ -65,12 +67,8 @@ rule dereplicate_ssu:
                 --derep_fulllength {input.fasta} \
                 --output {output.fasta} \
                 --uc {output.uc} \
-                --strand plus \
-                --minseqlength 1 \
-                --sizeout \
-                --maxseqlength 1000000 \
                 --threads {threads} \
-                --fasta_width 0 \
+                {params.options} \
                 > {log.stdout} 2>&1
         fi
         """
@@ -121,10 +119,7 @@ rule screen_ssu_chimeras:
                 --chimeras {output.chimeras} \
                 --borderline {output.borderline} \
                 --uchimeout {output.report} \
-                --minseqlength 1 \
-                --maxseqlength 1000000 \
                 --threads {threads} \
-                --fasta_width 0 \
                 {params.options} \
                 > {log.stdout} 2>&1
         fi
@@ -155,7 +150,7 @@ rule concatenate_ssu:
 
         mkdir -p $(dirname {output.fasta})
 
-        seqkit concat \
+        cat \
             {input.nonchimeras} \
             {input.borderline} \
             > {output.fasta} \

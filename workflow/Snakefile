@@ -28,7 +28,7 @@ from targets.taxonomy import (
 
 from targets.phylogeny import phylogeny_outputs
 
-from targets.nonrrna import non_rrna_outputs
+from targets.functional_profiling import functional_profiling_outputs
 
 from targets.viral_sequence_analysis import viral_output
 
@@ -117,6 +117,8 @@ TAXONOMY_DIR = str(RESULTS_DIR / "Taxonomy_Profiling")
 QUANT_DIR = str(RESULTS_DIR / "Quantification")
 PHYLOGENY_DIR = str(RESULTS_DIR / "Phylogeny")
 FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
+FUNCTION_DIR_ASM = str(RESULTS_DIR / "Functional_Profiling/assembly_based")
+FUNCTION_DIR_READS = str(RESULTS_DIR / "Functional_Profiling/read_based")
 VIRAL_ANALYSIS_DIR = str(RESULTS_DIR / "Viral_Sequence_Analysis")
 HABITAT_ANALYSIS_DIR = str(RESULTS_DIR / "Habitat_refinement")
 
@@ -532,6 +534,48 @@ include: "reconstruction/rules/rnaspades.smk"
 include: "reconstruction/rules/concatenation.smk"
 include: "reconstruction/rules/itsx.smk"
 
+################################################################################
+# BARRNAP RECONSTRUCTION SETTINGS
+################################################################################
+
+BARRNAP_KINGDOMS = config["reconstruction"]["barrnap"]["kingdom"]
+
+if not isinstance(BARRNAP_KINGDOMS, list) or not BARRNAP_KINGDOMS:
+    raise ValueError("reconstruction.barrnap.kingdom must be a non-empty list.")
+
+BARRNAP_KINGDOM_PATTERN = "|".join(re.escape(kingdom) for kingdom in BARRNAP_KINGDOMS)
+
+include: "reconstruction/rules/barrnap_ssu.smk"
+include: "reconstruction/rules/ssu_postprocessing.smk"
+
+def active_barrnap_kingdoms(wildcards):
+    import csv
+
+    checkpoint_result = checkpoints.check_barrnap_ssu.get()
+
+    with open(checkpoint_result.output.status) as handle:
+        active = [row["kingdom"] for row in csv.DictReader(handle, delimiter="\t") if row["status"] == "present"]
+
+    print(f"[Barrnap] Active kingdoms: {active}")
+
+    return active
+
+
+def kingdoms_with_blast_hits(wildcards):
+    kingdoms_with_hits = []
+
+    for kingdom in active_barrnap_kingdoms(wildcards):
+        checkpoint_result = checkpoints.check_blast_top_ssu.get(
+            kingdom=kingdom
+        )
+
+        with open(checkpoint_result.output.status) as status_file:
+            if status_file.read().strip() == "present":
+                kingdoms_with_hits.append(kingdom)
+
+    print(f"[BLASTN] Kingdoms with filtered hits: {kingdoms_with_hits}")
+    return kingdoms_with_hits
+
 # =========================================================
 # Taxonomic classification
 # =========================================================
@@ -567,30 +611,30 @@ include: "phylogeny/rules/iqtree.smk"
 # =========================================================
 # Non-rRNA module
 # =========================================================
+FUNCTIONAL_SCRIPTS_DIR = (Path(workflow.basedir) / "functional_profiling" / "scripts")
 
 functional_module = config["functional_profiling"]["module"]
 
-#if functional_module in ["read", "both", "all"]:
-#    if config["functional_profiling"]["read_method"] in ["metaphlan", "humann"]:
+if functional_module in ["read", "both", "all"]:
+    if config["functional_profiling"]["read_method"] in ["metaphlan", "humann"]:
         # Metaphlan is ALWAYS required (taxonomy baseline)
-#        include: "nonrRNA/rules/metaphlan.smk"
+        include: "functional_profiling/rules/metaphlan.smk"
         # HUMANN is ALWAYS downstream of metaphlan in your design
-#        include: "nonrRNA/rules/humann.smk"
-#        include: "nonrRNA/rules/humann_postprocessing.smk"
+        include: "functional_profiling/rules/humann.smk"
+        include: "functional_profiling/rules/humann_postprocessing.smk"
 
 if functional_module in ["assembly", "both", "all"]:
-    include: "nonrRNA/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
+    include: "functional_profiling/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
     if config["functional_profiling"]["ORF_predictor"] in ["transdecoder"]:
-        include: "nonrRNA/rules/diamond.smk"
-        include: "nonrRNA/rules/hmmscan.smk"
-        include: "nonrRNA/rules/hmmscan_processing.smk"
-    include: "nonrRNA/rules/eggnog.smk"
-    include: "nonrRNA/rules/salmon.smk"
-    include: "nonrRNA/rules/Abundance_Matrix.smk"
+        include: "functional_profiling/rules/diamond.smk"
+        include: "functional_profiling/rules/hmmscan.smk"
+        include: "functional_profiling/rules/hmmscan_processing.smk"
+    include: "functional_profiling/rules/eggnog.smk"
+    include: "functional_profiling/rules/salmon.smk"
+    include: "functional_profiling/rules/Abundance_Matrix.smk"
 
 if functional_module not in ["read", "assembly", "both", "all"]:
     raise ValueError(f"Unsupported functional module: {functional_module}")
-
 
 # =========================================================
 # Viral sequence analysis module
@@ -602,17 +646,6 @@ VIRAL_ENABLED = VIRAL_CONFIG.get("enabled",True)
 
 VIRAL_POSTPROCESSING = VIRAL_CONFIG.get("postprocessing",True)
 
-if VIRAL_POSTPROCESSING:
-    if functional_module not in ["assembly", "both", "all"]:
-        raise ValueError(
-            "Viral post-processing requires assembly-based functional profiling because it reuses TransDecoder, eggNOG and Salmon."
-        )
-
-    if config["functional_profiling"]["ORF_predictor"] != "transdecoder":
-        raise ValueError(
-            "Viral post-processing currently requires functional_profiling.ORF_predictor: transdecoder."
-        )
-
 if VIRAL_ENABLED:
     include: "viral_sequence_analysis/rules/prefilter.smk"
     include: "viral_sequence_analysis/rules/geNomad.smk"
@@ -620,6 +653,16 @@ if VIRAL_ENABLED:
 
     if VIRAL_POSTPROCESSING:
         include: "viral_sequence_analysis/rules/postprocessing.smk"
+
+        if functional_module not in ["assembly", "both", "all"]:
+            raise ValueError(
+                "Viral post-processing requires assembly-based functional profiling because it reuses TransDecoder, eggNOG and Salmon."
+            )
+
+        if config["functional_profiling"]["ORF_predictor"] != "transdecoder":
+            raise ValueError(
+                "Viral post-processing currently requires functional_profiling.ORF_predictor: transdecoder."
+            )
 
 # =========================================================
 # Habitat Refinement Taxonomy module
@@ -664,15 +707,15 @@ rule RNA_seperation_done:
 
 rule reconstruction_done:
     input:
-        reconstruction_outputs(RESULTS_DIR, SAMPLES,config)
+        lambda wc: reconstruction_outputs(RESULTS_DIR, SAMPLES, config, active_barrnap_kingdoms(wc))
     output:
         flag=f"{ASSEMBLY_DIR}/reconstruction.done"
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p "$(dirname "{output.flag}")"
-        touch "{output.flag}"
+        mkdir -p $(dirname {output.flag})
+        touch {output.flag}
         """
 
 rule taxonomy_done:
@@ -694,20 +737,25 @@ rule taxonomy_done:
 
 rule Phylogeny_done:
     input:
-        phylogeny_outputs(RESULTS_DIR, SAMPLES,config)
+        lambda wc: phylogeny_outputs(
+            RESULTS_DIR,
+            config,
+            active_barrnap_kingdoms(wc),
+            kingdoms_with_blast_hits(wc),
+        )
     output:
         flag=f"{PHYLOGENY_DIR}/phylogeny.done"
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p "$(dirname "{output.flag}")"
-        touch "{output.flag}"
+        mkdir -p $(dirname {output.flag})
+        touch {output.flag}
         """
 
 rule functional_profiling_done:
     input:
-        non_rrna_outputs(RESULTS_DIR,SAMPLES,config)
+        functional_profiling_outputs(RESULTS_DIR,SAMPLES,config)
     output:
         flag=f"{FUNCTION_DIR}/functional_profiling.done"
     shell:
@@ -759,7 +807,6 @@ FINAL_TARGETS = [
 
 if VIRAL_ENABLED:
     FINAL_TARGETS.append(f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done")
-
 
 rule all:
     input:
