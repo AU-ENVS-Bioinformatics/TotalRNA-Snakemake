@@ -1,0 +1,34 @@
+functional_profiling:
+  module: assembly # read | coassembly | assembly | both | all
+  read_method: humann # humann | metaphlan
+  ORF_predictor: transdecoder #prodigal | transdecoder
+  threads: 24
+  diamond_blastp:
+    threads: 24
+    database: /data_2/Databases/uniref90_db/uniref90.dmnd #protein database for diamond blastp
+    options: "--outfmt 6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore --evalue 1e-5 --max-target-seqs 1 --sensitive"
+  hmmscan:
+    threads: 3
+    chunk_size: 50000
+    database: /data_2/Databases/Pfam/Pfam-A.hmm
+    options: "--cut_ga --noali --acc"
+  transdecoder:
+    options: "-m 100"
+  prodigal:
+    options: "-p meta -f gff -m -c -n"
+  eggnog:
+    threads: 24
+    database: /data_2/Databases/eggnog_mapper #protein database
+    options: "--itype proteins -m diamond --sensmode sensitive --override"
+  metaphlan:
+    threads: 14
+    database: /data_2/Databases/humann/metaphlan/
+    options: "--input_type fastq --index mpa_vJun23_CHOCOPhlAnSGB_202307" #the index here is directly related to the humann_bowtie2dbs database used for metaphlan
+  humann:
+    threads: 8
+    nucleotide_database: /data_2/Databases/humann/chocophlan/
+    protein_database: /data_2/Databases/humann/uniref/
+    options: "--diamond-options=--fast --prescreen-threshold 0.05 --translated-query-coverage-threshold 50"
+  salmon:
+    threads: 12
+  

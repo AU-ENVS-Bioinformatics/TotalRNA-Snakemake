@@ -1,0 +1,13 @@
+#Of the abundance assigned to pathway X, how much is associated with putative viral transcripts?
+viral_sequence_analysis:
+  enabled: false
+  postprocessing: true
+  seqkit:
+    options: --min-len 1500
+  geNomad:
+    database: /data_2/Databases/genomad_db_2026/genomad_db
+    options: "--cleanup"
+    threads: 20
+  checkv:
+    database: "/data_2/Databases/CheckV/checkv-db-v1.5"
+    threads: 15

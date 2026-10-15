@@ -1,0 +1,37 @@
+
+reconstruction:
+  method: rnaspades
+  targets:
+    - SSU
+    - ITS_candidates
+  rnaspades:
+    options: "--memory 400"
+    threads: 10
+  itsx:
+    options: "--detailed_results T --summary T --graphical T --fasta T"
+    species: "Fungi"
+    regions: "ITS1,5.8S,ITS2"
+    threads: 12
+  barrnap:
+    kingdom: # bac | arc 
+      - bac
+      - arc
+      - fun
+    options: "--rrna"
+    threads: 12
+  ssu_postprocessing:
+    min_length: 1000
+    features:
+      bac: "16S_rRNA"
+      arc: "16S_rRNA"
+      fun: "18S_rRNA"
+    dereplication:
+      threads: 1
+      options: "--strand plus --minseqlength 1000 --sizeout --maxseqlength 1000000  --fasta_width 0"
+    chimera:
+      threads: 12
+      options: "--minseqlength 1000 --maxseqlength 1000000 --fasta_width 0"
+      references:
+        bac: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/SILVA_138.2_bacteria_SSU.dna.fasta
+        arc: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/SILVA_138.2_archaea_SSU.dna.fasta
+        fun: /data_2/Databases/PR2_5.1.1/pr2_version_5.1.1_SSU_mothur.fasta

@@ -1,0 +1,39 @@
+RNA_classification:
+  method: ribodetector # sortmerna | ribodetector | bbmap | other methods to be added in the future, e.g. based on mapping or something else
+  refinement: bbduk #staged | combined | bbduk
+  # Seperation of rRNA from non-rRNA reads using sortmerna, either in a staged manner (first separate SSU and then LSU) or in a combined manner (SSU and LSU together)
+  secondary_method: ITS # none | ITS
+  threads: 6
+  databases:
+    sortmeRNA_ssu: /data_2/Databases/SILVA_138/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta
+    sortmeRNA_ssu_idx: /data_2/Databases/sortmerna_idx/SSU
+    sortmeRNA_ssu_ids: /data_2/Databases/sortmerna_idx/SSU/SILVA_138.1_SSURef_NR99_tax_silva_trunc.contigs_ids
+    sortmeRNA_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta
+    sortmeRNA_lsu_idx: /data_2/Databases/sortmerna_idx/LSU
+    sortmeRNA_ssu_lsu: /data_2/Databases/SILVA_138/SILVA_138.1_LSU_SSU_Ref_NR99_tax_silva_trunc.fasta
+    sortmeRNA_ssu_lsu_idx: /data_2/Databases/sortmerna5_idx/SSU_LSU/idx/
+  sortmerna_staged:
+    options: "--fastx --paired_in --out2 --index 0 --dbg-level 2" # should we add the 0.97 identity as well to ensure if we change in the rRNA section, then the sortmerna created OTU would be comparable to the qiime2 created OTU?
+    threads: 16
+    pipeline:
+      - ssu
+      - lsu
+  sortmerna_combined:
+    options: "--sam --SQ --print_all_reads --zip-out 0 --min_lis 3 --num_seeds 3 -e 1e-3 --max_pos 500"    
+    threads: 16
+  # rRNA filtration method based on ribodetector, which is a tool that uses a combination of k-mer based and alignment based methods to identify rRNA reads. Consider adding additional refinement steps, e.g. using bbduk or bbmap to get more rRNA reads or to get higher confidence rRNA reads.
+  ribodetector:
+    options: "--ensure rrna"
+    threads: 15
+  bbduk:
+    options: "k=31 hdist=0 qhdist=1 maskmiddle=f mincovfraction=0.95 prealloc=t ordered=t removeifeitherbad=t -Xmx40g"
+    threads: 12
+  # General alignment based method for rRNA read refinement, which can be used to get more rRNA reads or to get higher confidence rRNA reads. Consider adding additional options, e.g. minid, maxindel, etc.
+  bbmap:
+    options: "minid=0.90 ambiguous=best unpigz=t maxindel=100 minhits=2" # consider adding minhits, and increase the minid, or look into additional reads
+    threads: 16
+  ITS:
+    Fungi_UNITE_db: /data_2/Databases/UNITE/sh_general_release_dynamic_19.02.2025.fasta
+    bbduk:
+      options: "k=27 hdist=0 minkmerhits=1 maskmiddle=f removeifeitherbad=t ordered=t -Xmx20g"
+      threads: 12

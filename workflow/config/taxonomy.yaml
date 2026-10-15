@@ -1,0 +1,57 @@
+
+taxonomy:
+  module: all # SSU | ITS | all | both
+  SSU:
+    domain_split:
+      prokaryotes: [3, 2]
+      eukaryotes: [4]
+    kraken2:
+      threads: 10
+      options: "--paired --gzip-compressed"
+      databases:
+        silva:
+          path: /data_2/Databases/silva_kraken_db/SILVA_138_2_k2db
+        pr2:
+          path: /data_2/Databases/PR2_5.1.1/pr2_kraken_db/pr2_kraken2
+    bracken:
+      options: "-r 150 -t 10"
+      silva:
+        level: "-l G"
+      pr2:
+        level: "-l S"
+    kraken_biom:
+      options: "--max D --fmt hdf5"
+      silva:
+        level: "--min G"
+      pr2:
+        level: "--min S"
+  ITS:
+    blastn:
+      database: /data_2/Databases/UNITE/UNITE_BLAST/UNITE_dynamic_19.02.2025 #/data_2/Databases/UNITE/blast/UNITE_dynamic_19.02.2025
+      threads: 12
+      options: '-task blastn -evalue 1e-10 -max_target_seqs 20 -max_hsps 1 '
+      regions:
+        - full
+        - ITS1
+        - 5_8S
+        - ITS2
+    postprocessing: #https://pmc.ncbi.nlm.nih.gov/articles/PMC10387565/ potentially 97%?? but best with ITS
+      min_query_coverage: 80 
+      min_identity: 80
+      top_bitscore_fraction: 0.99
+    summary:
+      taxonomic_rank: genus
+    kraken2:
+      threads: 10
+      options: "--paired --gzip-compressed"
+      databases:
+        unite:
+          path: /data_2/Databases/UNITE/unite_kraken_db
+    bracken:
+      options: "-r 150 -t 10"
+      unite:
+        level: "-l S"
+    kraken_biom:
+      options: "--max D --fmt hdf5"
+      unite:
+        level: "--min S"
