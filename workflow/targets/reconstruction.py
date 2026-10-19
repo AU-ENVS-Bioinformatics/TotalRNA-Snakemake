@@ -1,7 +1,7 @@
 from typing import List
 from pathlib import Path
 from snakemake.io import expand
-
+from utils.reconstruction import validate_reconstruction_config
 
 def reconstruction_outputs(
     results_dir: Path,
@@ -13,17 +13,11 @@ def reconstruction_outputs(
     Return all expected reconstruction output files.
     """
 
-    reconstruction_method = config["reconstruction"]["method"]
-    secondary_method = config["RNA"].get(
-        "secondary_method",
-        "none",
-    )
+    validate_reconstruction_config(config)
 
-    if reconstruction_method != "rnaspades":
-        raise ValueError(
-            f"Unsupported reconstruction method: "
-            f"{reconstruction_method}"
-        )
+    secondary_method = config["RNA_classification"].get(
+        "secondary_method", "none"
+    )
 
     outputs: List[str] = []
 

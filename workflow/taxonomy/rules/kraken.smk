@@ -6,8 +6,14 @@ rule kraken2:
     message:
         "[Kraken2] Classifying {wildcards.marker} reads from {wildcards.sample} against {wildcards.database}"
     input:
-        read_1=taxonomy_read_1,
-        read_2=taxonomy_read_2,
+        read_1=lambda wc: taxonomy_read_1(
+            wc,
+            results_dir=RESULTS_DIR,
+        ),
+        read_2=lambda wc: taxonomy_read_2(
+            wc,
+            results_dir=RESULTS_DIR,
+        ),
     output:
         report=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.k2report",
         kraken=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.kraken",
@@ -16,10 +22,10 @@ rule kraken2:
     benchmark:
         f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.kraken2.txt",
     params:
-        db=kraken_db,
-        options=kraken_options,
+        db=lambda wc: kraken_db(wc, config=config),
+        options=lambda wc: kraken_options(wc, config=config),
     threads:
-        kraken_threads
+        lambda wc: kraken_threads(wc, config=config)
     shell:
         r"""
         set -euo pipefail
@@ -43,15 +49,43 @@ rule kraken2_group_reads:
     message:
         "[KrakenTools] Separating SILVA-classified SSU reads from {wildcards.sample} into prokaryotes and eukaryotes"
     input:
-        read_1=lambda wc: original_ssu_read(wc, 1),
-        read_2=lambda wc: original_ssu_read(wc, 2),
+        read_1=lambda wc: original_ssu_read(
+            wc,
+            1,
+            results_dir=RESULTS_DIR,
+        ),
+        read_2=lambda wc: original_ssu_read(
+            wc,
+            2,
+            results_dir=RESULTS_DIR,
+        ),
         report=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.k2report",
         kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.kraken",
     output:
-        prokaryotes_1=grouped_ssu_read("{sample}", "prokaryotes", 1),
-        prokaryotes_2=grouped_ssu_read("{sample}", "prokaryotes", 2),
-        eukaryotes_1=grouped_ssu_read("{sample}", "eukaryotes", 1),
-        eukaryotes_2=grouped_ssu_read("{sample}", "eukaryotes", 2),
+        prokaryotes_1=grouped_ssu_read(
+            "{sample}",
+            "prokaryotes",
+            1,
+            results_dir=RESULTS_DIR,
+        ),
+        prokaryotes_2=grouped_ssu_read(
+            "{sample}",
+            "prokaryotes",
+            2,
+            results_dir=RESULTS_DIR,
+        ),
+        eukaryotes_1=grouped_ssu_read(
+            "{sample}",
+            "eukaryotes",
+            1,
+            results_dir=RESULTS_DIR,
+        ),
+        eukaryotes_2=grouped_ssu_read(
+            "{sample}",
+            "eukaryotes",
+            2,
+            results_dir=RESULTS_DIR,
+        ),
     log:
         stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/logs/{{sample}}.group_reads.log",
     params:

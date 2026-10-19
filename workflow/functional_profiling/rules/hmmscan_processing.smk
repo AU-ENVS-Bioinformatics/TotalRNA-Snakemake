@@ -1,6 +1,4 @@
 from pathlib import Path
-from snakemake.io import expand
-
 
 ################################################################################
 # SPLIT TRANSDECODER CANDIDATE PROTEINS
@@ -35,29 +33,6 @@ checkpoint hmmscan_split:
             > {log.stdout} 2>&1
         """
 
-
-################################################################################
-# DISCOVER HMMscan CHUNK OUTPUTS
-################################################################################
-
-def get_hmmscan_outputs(wildcards):
-
-    checkpoint_output = checkpoints.hmmscan_split.get()
-    chunk_dir = Path(checkpoint_output.output.chunks)
-
-    chunk_files = sorted(chunk_dir.glob("*.pep"))
-
-    if not chunk_files:
-        raise ValueError(
-            f"No peptide chunks found in {chunk_dir}"
-        )
-
-    return expand(
-        f"{FUNCTION_DIR}/hmmscan/results/{{chunk}}.pfam.domtblout",
-        chunk=[chunk.stem for chunk in chunk_files],
-    )
-
-
 ################################################################################
 # MERGE HMMscan RESULTS
 ################################################################################
@@ -66,7 +41,10 @@ rule merge_hmmscan:
     message:
         "[HMMscan] Merge Pfam domain results"
     input:
-        domtblout=get_hmmscan_outputs
+        domtblout=lambda wc: get_hmmscan_outputs(
+            checkpoints=checkpoints,
+            results_dir=RESULTS_DIR,
+        )
     output:
         pfam=f"{FUNCTION_DIR}/hmmscan/merged/pfam.domtblout"
     run:

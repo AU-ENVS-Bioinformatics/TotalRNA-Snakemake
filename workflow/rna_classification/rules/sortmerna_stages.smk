@@ -9,10 +9,24 @@ rule sortmerna_staged:
     message:
         "[SortMeRNA] Separating {wildcards.stage} reads for {wildcards.sample}"
     input:
-        r1=sortmerna_r1,
-        r2=sortmerna_r2,
-        db=sortmerna_db,
-        db_idx=sortmerna_db_idx
+        r1=lambda wc: sortmerna_r1(
+            wc,
+            results_dir=RESULTS_DIR,
+            previous_stage=PREVIOUS_STAGE,
+        ),
+        r2=lambda wc: sortmerna_r2(
+            wc,
+            results_dir=RESULTS_DIR,
+            previous_stage=PREVIOUS_STAGE,
+        ),
+        db=lambda wc: sortmerna_db(
+            wc,
+            config=config,
+        ),
+        db_idx=lambda wc: sortmerna_db_idx(
+            wc,
+            config=config,
+        ),
     output:
         aligned_fwd=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_fwd.fq.gz",
         aligned_rev=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned_rev.fq.gz",
@@ -26,9 +40,9 @@ rule sortmerna_staged:
         workdir=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/{{stage}}",
         aligned_prefix=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.aligned",
         nonaligned_prefix=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/{{stage}}/{{sample}}_{{stage}}.nonaligned",
-        options=config["RNA"]["sortmerna_staged"]["options"]
+        options=config["RNA_classification"]["sortmerna_staged"]["options"]
     threads:
-        config["RNA"]["sortmerna_staged"]["threads"]
+        config["RNA_classification"]["sortmerna_staged"]["threads"]
     shell:
         r"""
         set -euo pipefail

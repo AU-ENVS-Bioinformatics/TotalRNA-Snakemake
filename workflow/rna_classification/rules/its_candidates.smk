@@ -6,7 +6,7 @@ rule bbduk_its_candidates:
     input:
         cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
         cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
-        ref=config["RNA"]["ITS"]["Fungi_UNITE_db"]
+        ref=config["RNA_classification"]["ITS"]["Fungi_UNITE_db"]
     output:
         its_r1=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/ITS_candidates/{{sample}}_ITS_candidates_1.fastq.gz",
         its_r2=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/ITS_candidates/{{sample}}_ITS_candidates_2.fastq.gz",
@@ -15,9 +15,9 @@ rule bbduk_its_candidates:
     benchmark:
         f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/bbduk_its.txt"
     params:
-        options=config["RNA"]["ITS"]["bbduk"]["options"]
+        options=config["RNA_classification"]["ITS"]["bbduk"]["options"]
     threads:
-        config["RNA"]["ITS"]["bbduk"]["threads"]
+        config["RNA_classification"]["ITS"]["bbduk"]["threads"]
     shell:
         r"""
         set -euo pipefail

@@ -5,7 +5,7 @@ reconstruction:
     - SSU
     - ITS_candidates
   rnaspades:
-    options: "--memory 400"
+    options: "--memory 600"
     threads: 10
   itsx:
     options: "--detailed_results T --summary T --graphical T --fasta T"

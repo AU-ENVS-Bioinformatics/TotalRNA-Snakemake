@@ -75,7 +75,7 @@ rule bbmap_ssu:
     benchmark:
         f"{RNA_CLASSIFIED_DIR}/{{sample}}/benchmarks/bbmap_ssu_extraction.txt"
     threads:
-        config["RNA"]["threads"]
+        config["RNA_classification"]["threads"]
     shell:
         r"""
         set -euo pipefail
@@ -114,7 +114,7 @@ rule bbmap_non_rrna:
     benchmark:
         f"{RNA_CLASSIFIED_DIR}/{{sample}}/benchmarks/bbmap_non_rRNA_extraction.txt"
     threads:
-        config["RNA"]["threads"]
+        config["RNA_classification"]["threads"]
     shell:
         r"""
         set -euo pipefail

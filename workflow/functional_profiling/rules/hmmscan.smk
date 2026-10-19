@@ -14,7 +14,7 @@ rule hmmscan_chunk:
     benchmark:
         f"{FUNCTION_DIR}/hmmscan/benchmarks/{{chunk}}.hmmscan.txt"
     params:
-        db=config["databases"]["Pfam_db"],
+        database=config["functional_profiling"]["hmmscan"]["database"],
         options=config["functional_profiling"]["hmmscan"]["options"]
     threads:
         config["functional_profiling"]["hmmscan"].get("threads", 2)
@@ -30,7 +30,7 @@ rule hmmscan_chunk:
                 --domtblout {output.domtblout} \
                 {params.options} \
                 -o {output.report} \
-                {params.db} \
+                {params.database} \
                 {input.pep} \
                 > {log.stdout} 2>&1
         """

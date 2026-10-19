@@ -2,8 +2,8 @@ rule salmon_matrix:
     conda:
         "../envs/r_env.yaml"
     wildcard_constraints:
-        reference="transcripts|cds",
-        metric="TPM|NumReads"
+        reference=SALMON_REFERENCE_PATTERN,
+        metric=SALMON_METRIC_PATTERN
     message:
         "[Salmon] Build {wildcards.metric} matrix for {wildcards.reference}"
     input:

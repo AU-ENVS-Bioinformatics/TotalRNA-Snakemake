@@ -1,12 +1,4 @@
 ################################################################################
-# VIRAL POST-PROCESSING
-################################################################################
-# Include after the geNomad and viral_checkv rules.
-# SAMPLES, FUNCTION_DIR and VIRAL_ANALYSIS_DIR must already be defined.
-
-VIRAL_SCRIPT_DIR = f"{workflow.basedir}/viral_sequence_analysis/scripts"
-
-################################################################################
 # 01: COMBINE GENOMAD AND CHECKV
 ################################################################################
 

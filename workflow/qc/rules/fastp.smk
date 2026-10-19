@@ -4,8 +4,8 @@ rule fastp:
     message:
         "[FastP] nucleotide quality trimming {wildcards.sample}"
     input:
-        r1=raw_r1,
-        r2=raw_r2,
+        r1=lambda wc: raw_r1(wc, samplesheet=samplesheet),
+        r2=lambda wc: raw_r2(wc, samplesheet=samplesheet),
     output:
         r1=f"{QC_DIR}/{{sample}}/trimmed/{{sample}}_R1.fastq.gz",
         r2=f"{QC_DIR}/{{sample}}/trimmed/{{sample}}_R2.fastq.gz",

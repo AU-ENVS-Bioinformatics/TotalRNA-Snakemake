@@ -11,7 +11,7 @@ rule viral_checkv:
         contamination=f"{VIRAL_ANALYSIS_DIR}/quality/checkv/contamination.tsv"
     params:
         output_dir=f"{VIRAL_ANALYSIS_DIR}/quality/checkv",
-        db=config["viral_sequence_analysis"]["checkv"]["db"]
+        db=config["viral_sequence_analysis"]["checkv"]["database"]
     threads:
         config["viral_sequence_analysis"]["checkv"].get("threads", 8)
     log:

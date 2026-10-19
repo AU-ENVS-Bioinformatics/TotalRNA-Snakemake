@@ -2,25 +2,8 @@ from pathlib import Path
 
 SCRIPTS_DIR = Path(workflow.basedir) / "taxonomy/scripts"
 
-ITS_SUMMARY_RANK = (
-    config["taxonomy"]["ITS"]["summary"].get("taxonomic_rank", "genus")
-)
+ITS_SUMMARY_RANK = its_summary_rank(config)
 
-VALID_ITS_SUMMARY_RANKS = {
-    "kingdom",
-    "phylum",
-    "class",
-    "order",
-    "family",
-    "genus",
-    "species",
-}
-
-if ITS_SUMMARY_RANK not in VALID_ITS_SUMMARY_RANKS:
-    raise ValueError(
-        f"Unsupported ITS summary rank: {ITS_SUMMARY_RANK}"
-    )
-    
 ################################################################################
 # POST-PROCESS ITS BLASTN RESULTS
 ################################################################################

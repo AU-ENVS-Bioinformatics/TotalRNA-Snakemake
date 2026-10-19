@@ -1,5 +1,5 @@
 
-if config["RNA"]["method"] == "sortmerna" and config["RNA"]["refinement"] == "staged":
+if config["RNA_classification"]["method"] == "sortmerna" and config["RNA_classification"]["refinement"] == "staged":
     rule link_SSU_sortmerna:
         message:
             "[SortMeRNA] Publishing SSU reads "

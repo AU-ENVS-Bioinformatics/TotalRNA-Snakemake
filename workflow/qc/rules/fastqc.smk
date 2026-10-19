@@ -4,7 +4,11 @@ rule fastqc:
     message:
         "[FastQC] quality check for {wildcards.sample} {wildcards.read}"
     input:
-        fq=lambda wc: raw_r1(wc) if wc.read == "R1" else raw_r2(wc),
+        fq=lambda wc: (
+            raw_r1(wc, samplesheet=samplesheet)
+            if wc.read == "R1"
+            else raw_r2(wc, samplesheet=samplesheet)
+        ),
     output:
         directory(
             f"{QC_DIR}/{{sample}}/fastqc/{{read}}"

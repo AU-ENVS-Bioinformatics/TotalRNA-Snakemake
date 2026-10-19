@@ -35,8 +35,8 @@ rule humann:
         f"{FUNCTION_DIR_READS}/{{sample}}/benchmarks/humann.txt"
     params:
         result_dir=f"{FUNCTION_DIR_READS}/{{sample}}/humann/",
-        nucleotide_db=config["databases"]["humann_nucleotidedb"],
-        protein_db=config["databases"]["humann_proteindb"],
+        nucleotide_db=config["functional_profiling"]["humann"]["nucleotide_database"],
+        protein_db=config["functional_profiling"]["humann"]["protein_database"],
         basename=f"{{sample}}",
         options=config["functional_profiling"]["humann"]["options"]
     threads:

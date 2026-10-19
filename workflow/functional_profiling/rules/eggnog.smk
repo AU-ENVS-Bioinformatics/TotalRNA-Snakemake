@@ -14,7 +14,7 @@ rule eggnog_annotation:
     benchmark:
         f"{FUNCTION_DIR}/eggnog/benchmarks/eggnog.txt"
     params:
-        data_dir=config["databases"]["emapper_diamond_proteindb"],
+        data_dir=config["functional_profiling"]["eggnog"]["database"],
         outdir=f"{FUNCTION_DIR}/eggnog",
         prefix="eggnog",
         options=config["functional_profiling"]["eggnog"].get("options", "")

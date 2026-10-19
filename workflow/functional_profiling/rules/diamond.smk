@@ -12,7 +12,7 @@ rule diamond_blastp:
     benchmark:
         f"{FUNCTION_DIR}/diamond/transdecoder/benchmarks/diamond.txt"
     params:
-        db=config["databases"]["diamond_proteindb"],
+        db=config["functional_profiling"]["diamond_blastp"]["database"],
         options=config["functional_profiling"]["diamond_blastp"]["options"]
     threads:
         config["functional_profiling"]["diamond_blastp"].get("threads", 14)

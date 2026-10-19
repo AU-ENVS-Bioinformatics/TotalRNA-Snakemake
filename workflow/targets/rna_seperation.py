@@ -1,140 +1,12 @@
-from typing import Dict, List
+"""Expected completion outputs for RNA classification."""
+
 from pathlib import Path
+from typing import List
+
 from snakemake.io import expand
 
+from utils.rna_classification import validate_rna_config
 
-# --------------------------
-# SortMeRNA stage logic
-# --------------------------
-
-def sortmerna_stages(
-    config: dict,
-) -> List[str]:
-
-    pipeline = config["RNA"]["sortmerna_staged"]["pipeline"]
-
-    if not pipeline:
-        raise ValueError(
-            "RNA.sortmerna_staged.pipeline cannot be empty"
-        )
-
-    return [
-        "_".join(pipeline[:i + 1])
-        for i in range(len(pipeline))
-    ]
-
-def previous_stage_map(
-    stages: List[str],
-) -> Dict[str, str]:
-
-    if not stages:
-        raise ValueError(
-            "SortMeRNA stages cannot be empty"
-        )
-
-    return {
-        stages[0]: "decontamination",
-        **{
-            stages[i]: stages[i - 1]
-            for i in range(1, len(stages))
-        },
-    }
-
-# =========================================================
-# SortMeRNA staged inputs
-# =========================================================
-
-def sortmerna_input_r1(
-    sample: str,
-    stage: str,
-    results_dir: Path,
-    previous_stage: Dict[str, str],
-) -> str:
-
-    previous = previous_stage[stage]
-
-    if previous == "decontamination":
-        return str(
-            results_dir
-            / "Quality_Control"
-            / sample
-            / "decontamination"
-            / f"{sample}_R1.cleaned.fastq.gz"
-        )
-
-    return str(
-        results_dir
-        / "RNA_Classification"
-        / "intermediate"
-        / sample
-        / "sortmerna"
-        / previous
-        / f"{sample}_{previous}.nonaligned_fwd.fq.gz"
-    )
-
-
-def sortmerna_input_r2(
-    sample: str,
-    stage: str,
-    results_dir: Path,
-    previous_stage: Dict[str, str],
-) -> str:
-
-    previous = previous_stage[stage]
-
-    if previous == "decontamination":
-        return str(
-            results_dir
-            / "Quality_Control"
-            / sample
-            / "decontamination"
-            / f"{sample}_R2.cleaned.fastq.gz"
-        )
-
-    return str(
-        results_dir
-        / "RNA_Classification"
-        / "intermediate"
-        / sample
-        / "sortmerna"
-        / previous
-        / f"{sample}_{previous}.nonaligned_rev.fq.gz"
-    )
-
-
-# --------------------------
-# SortMeRNA database lookup
-# --------------------------
-
-def get_sortmerna_db(
-    stage: str,
-    config: dict,
-) -> str:
-
-    database_name = stage.split("_")[-1]
-    database_key = f"sortmeRNA_{database_name}"
-
-    if database_key not in config["databases"]:
-        raise ValueError(
-            f"Missing SortMeRNA database in config: {database_key}"
-        )
-
-    return config["databases"][database_key]
-
-def get_sortmerna_db_idx(
-    stage: str,
-    config: dict,
-) -> str:
-
-    database_name = stage.split("_")[-1]
-    database_key = f"sortmeRNA_{database_name}_idx"
-
-    if database_key not in config["databases"]:
-        raise ValueError(
-            f"Missing SortMeRNA index in config: {database_key}"
-        )
-
-    return config["databases"][database_key]
 
 # --------------------------
 # Shared classified outputs
@@ -144,7 +16,7 @@ def filtered_outputs(
     results_dir: Path,
     samples: List[str],
 ) -> List[str]:
-
+    """Return standardized SSU and non-rRNA paired FASTQ paths."""
     outputs: List[str] = []
 
     for read in [1, 2]:
@@ -160,15 +32,16 @@ def filtered_outputs(
 
     return outputs
 
+
 # --------------------------
-# ITS classified outputs
+# ITS candidate outputs
 # --------------------------
 
 def ITS_candidates(
     results_dir: Path,
     samples: List[str],
 ) -> List[str]:
-
+    """Return paired ITS-candidate FASTQ paths."""
     outputs: List[str] = []
 
     for read in [1, 2]:
@@ -179,77 +52,37 @@ def ITS_candidates(
 
     return outputs
 
-# =========================================================
-# Validate RNA-separation configuration
-# =========================================================
 
-def validate_rna_config(
-    config: dict,
-) -> None:
-
-    method = config["RNA"]["method"]
-    refinement = config["RNA"]["refinement"]
-
-    if method == "sortmerna":
-        supported_refinements = [
-            "staged",
-            "combined",
-        ]
-
-        if refinement not in supported_refinements:
-            raise ValueError(
-                "Unsupported SortMeRNA refinement: "
-                f"{refinement}. Supported refinements are: "
-                + ", ".join(supported_refinements)
-            )
-
-    elif method == "ribodetector":
-        if refinement != "bbduk":
-            raise ValueError(
-                "RiboDetector must use refinement: bbduk "
-                "to produce the standardized SSU output."
-            )
-
-    elif method == "bbmap":
-        # BBMap must have downstream rules that publish
-        # both standardized SSU and non-rRNA FASTQs.
-        pass
-
-    elif method == "ITS":
-        # ITS candidates must have downstream rules that publish
-        # merged ITS candidate FASTAs.
-        pass
-
-    else:
-        raise ValueError(
-            f"Unsupported RNA-separation method: {method}"
-        )
-
-# =========================================================
-# RNA-separation outputs used by the Snakefile
-# =========================================================
+# --------------------------
+# Module completion outputs
+# --------------------------
 
 def rna_outputs(
     results_dir: Path,
     samples: List[str],
     config: dict,
 ) -> List[str]:
+    """
+    Return all outputs required to complete RNA classification.
 
-    method = config["RNA"]["method"]
-    refinement = config["RNA"]["refinement"]
-    secondary_method = config["RNA"]["secondary_method"]
-    print(f"[RNA separation] method={method}, refinement={refinement}")
-
+    results_dir is the RNA_Classification directory, not the
+    overall results directory.
+    """
     validate_rna_config(config)
 
-    if method not in ["sortmerna", "ribodetector", "bbmap"]:
-        raise ValueError(
-            f"Unsupported RNA-separation method: {method}"
+    rna_config = config["RNA_classification"]
+
+    print(f"[RNA classification] method={rna_config['method']}, refinement={rna_config['refinement']}")
+
+    outputs: List[str] = filtered_outputs(
+        results_dir,
+        samples,
+    )
+
+    if rna_config["secondary_method"] == "ITS":
+        outputs += ITS_candidates(
+            results_dir,
+            samples,
         )
 
-    final_output = filtered_outputs(results_dir,samples)
-
-    if secondary_method in ["ITS"]:
-        final_output += ITS_candidates(results_dir, samples)
-
-    return final_output
+    return outputs

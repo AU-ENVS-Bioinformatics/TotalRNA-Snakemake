@@ -1,51 +1,49 @@
 import pandas as pd
 import re
 from pathlib import Path
+from typing import Any, List
 
-from targets.quality_control import qc_outputs
+##################################################################################
+############################## INITIAL REQUIREMENTS ##############################
+##################################################################################
 
-from targets.rna_seperation import (
-    rna_outputs,
-    sortmerna_stages,
-    previous_stage_map,
-    sortmerna_input_r1,
-    sortmerna_input_r2,
-    get_sortmerna_db,
-    get_sortmerna_db_idx,
-)
-
-from targets.reconstruction import reconstruction_outputs
-
-from targets.taxonomy import (
-    taxonomy_outputs,
-    taxonomy_reports,
-    get_kraken_database,
-    kraken_database_names,
-    taxonomy_markers,
-    its_blast_regions,
-    validate_taxonomy_config,
-)
-
-from targets.phylogeny import phylogeny_outputs
-
-from targets.functional_profiling import functional_profiling_outputs
-
-from targets.viral_sequence_analysis import viral_output
-
-from targets.habitats import (
-    habitat_refinement_outputs,
-    habitat_taxonomy_reports,
-    selected_habitat,
-    habitat_database_names,
-    get_habitat_kraken_database,
-    validate_habitat_config,
-)
+###########################
+### Configuration files ###
+###########################
 
 configfile: "config/config.yaml"
 
-# --------------------------
-# Load samplesheet
-# --------------------------
+RESULTS_DIR: Path = Path(config["shared_results_dir"])
+
+# Validate optional module switches before loading their sections.
+MODULE_NAMES = {
+    "taxonomy",
+    "phylogeny",
+    "habitat_refinement",
+    "functional_profiling",
+    "viral_sequence_analysis",
+}
+
+MODULES = config.get("modules", {})
+
+if not isinstance(MODULES, dict):
+    raise ValueError(
+        "modules must contain module names and true/false values."
+    )
+
+for module, enabled in MODULES.items():
+    if module not in MODULE_NAMES:
+        raise ValueError(f"Unknown module: {module}")
+
+    if not isinstance(enabled, bool):
+        raise ValueError(
+            f"modules.{module} must be true or false, without quotation marks."
+        )
+
+##########################
+#### Load samplesheet ####
+##########################
+
 samplesheet = pd.read_csv(
     config["samples_file"],
     sep=r"\s+",
@@ -55,22 +53,13 @@ samplesheet = pd.read_csv(
 
 samplesheet.columns = samplesheet.columns.str.strip()
 
-required_cols = [
-    "sample_id",
-    "R1",
-    "R2",
-]
+required_cols = ["sample_id", "R1","R2",]
 
-missing = [
-    column
-    for column in required_cols
-    if column not in samplesheet.columns
-]
+missing = [column for column in required_cols if column not in samplesheet.columns]
 
 if missing:
     raise ValueError(
-        "Samplesheet is missing required columns: "
-        + ", ".join(missing)
+        f"Samplesheet is missing required columns: {missing}"
     )
 
 samplesheet = samplesheet.set_index("sample_id")
@@ -85,8 +74,7 @@ if samplesheet.index.has_duplicates:
     )
 
     raise ValueError(
-        "Samplesheet contains duplicated sample IDs: "
-        + ", ".join(duplicated_samples)
+        f"Samplesheet contains duplicated sample IDs: {duplicated_samples}"
     )
 
 for sample in samplesheet.index:
@@ -100,585 +88,34 @@ for sample in samplesheet.index:
 SAMPLES = samplesheet.index.tolist()
 print(f"{len(SAMPLES)} samples loaded")
 
-# --------------------------
-# PATH HELPERS
-# --------------------------
+#####################################################################
+############################## MODULES ##############################
+#####################################################################
 
-RESULTS_DIR = Path(config["shared_results_dir"])
+#############################################
+#### Quality control and decontamination ####
+#############################################
 
-QC_DIR = RESULTS_DIR / "Quality_Control"
-RNA_DIR = RESULTS_DIR / "RNA_Classification"
-RNA_CLASSIFIED_DIR = RNA_DIR / "classified"
-RNA_INTERMEDIATE_DIR = RNA_DIR / "intermediate"
+# Configuration
+configfile: "config/qc_config.yaml"
 
+# Directories
+QC_DIR: Path = RESULTS_DIR / "Quality_Control"
 
-ASSEMBLY_DIR = str(RESULTS_DIR / "Assembly")
-TAXONOMY_DIR = str(RESULTS_DIR / "Taxonomy_Profiling")
-QUANT_DIR = str(RESULTS_DIR / "Quantification")
-PHYLOGENY_DIR = str(RESULTS_DIR / "Phylogeny")
-FUNCTION_DIR = str(RESULTS_DIR / "Functional_Profiling")
-FUNCTION_DIR_ASM = str(RESULTS_DIR / "Functional_Profiling/assembly_based")
-FUNCTION_DIR_READS = str(RESULTS_DIR / "Functional_Profiling/read_based")
-VIRAL_ANALYSIS_DIR = str(RESULTS_DIR / "Viral_Sequence_Analysis")
-HABITAT_ANALYSIS_DIR = str(RESULTS_DIR / "Habitat_refinement")
+# Helpers and completion outputs
+from utils.quality_control import (
+    raw_r1, 
+    raw_r2
+)
 
-TAXONOMY_ENVS_DIR = Path(workflow.basedir) / "taxonomy" / "envs"
+from targets.quality_control import qc_outputs
 
-#####
-
-validate_taxonomy_config(config)
-
-TAXONOMY_MARKERS = taxonomy_markers(config)
-
-KRAKEN_DATABASES = {
-    marker: kraken_database_names(marker, config)
-    for marker in TAXONOMY_MARKERS
-}
-
-print(f"Taxonomy markers: {TAXONOMY_MARKERS}")
-print(f"Taxonomy databases: {KRAKEN_DATABASES}")
-
-# =========================================================
-# Habitat refinement configuration
-# =========================================================
-
-validate_habitat_config(config)
-
-SELECTED_HABITAT = selected_habitat(config)
-
-if SELECTED_HABITAT is None:
-    HABITAT_DATABASES = []
-    print("Habitat refinement: disabled")
-else:
-    HABITAT_DATABASES = habitat_database_names(
-        habitat=SELECTED_HABITAT,
-        config=config,
-    )
-
-    print(
-        f"Habitat refinement: {SELECTED_HABITAT}"
-    )
-    print(
-        f"Habitat databases: {HABITAT_DATABASES}"
-    )
-
-# --------------------------
-# Helpers (raw reads)
-# --------------------------
-
-def raw_r1(wc):
-    r1 = samplesheet.loc[wc.sample, "R1"]
-    print(f"[INFO] sample: {wc.sample}: read 1 = {r1}")
-    return r1
-
-def raw_r2(wc):
-    r2 = samplesheet.loc[wc.sample, "R2"]
-    print(f"[INFO] sample: {wc.sample}: read 2 = {r2}")
-    return r2
-
-def sample_qc_dir(wc):
-    return QC_DIR / wc.sample
-
-def rrna_dir(*paths):
-    return str(Path(RESULTS_DIR, "rRNA", *paths))
-
-# --------------------------
-# SortMeRNA stage logic
-# --------------------------
-
-SORTMERNA_STAGES = sortmerna_stages(config)
-PREVIOUS_STAGE = previous_stage_map(SORTMERNA_STAGES)
-
-FIRST_STAGE_NAME = SORTMERNA_STAGES[0]
-FINAL_STAGE_NAME = SORTMERNA_STAGES[-1]
-
-print(f"sortmerna stages {SORTMERNA_STAGES}")
-print(f"previous stage mapping {PREVIOUS_STAGE}")
-
-# --------------------------
-# SortMeRNA wrappers (wc-aware)
-# --------------------------
-
-def sortmerna_r1(wc):
-    return sortmerna_input_r1(
-        sample=wc.sample,
-        stage=wc.stage,
-        results_dir=RESULTS_DIR,
-        previous_stage=PREVIOUS_STAGE,
-    )
-
-
-def sortmerna_r2(wc):
-    return sortmerna_input_r2(
-        sample=wc.sample,
-        stage=wc.stage,
-        results_dir=RESULTS_DIR,
-        previous_stage=PREVIOUS_STAGE,
-    )
-
-
-def sortmerna_db(wc):
-    return get_sortmerna_db(wc.stage, config)
-
-
-def sortmerna_db_idx(wc):
-    return get_sortmerna_db_idx(wc.stage, config)
-
-# =========================================================
-# Kraken2 wrappers
-# =========================================================
-
-def kraken_db(wc):
-    return get_kraken_database(
-        marker=wc.marker,
-        database=wc.database,
-        config=config,
-    )
-
-
-def kraken_options(wc):
-    return (config["taxonomy"][wc.marker]["kraken2"].get("options", ""))
-
-
-def kraken_threads(wc):
-    return (
-        config["taxonomy"][wc.marker]["kraken2"]
-        .get("threads", 2)
-    )
-
-
-def bracken_options(wc):
-    return (
-        config["taxonomy"][wc.marker]["bracken"]
-        .get("options", "")
-    )
-
-
-def bracken_level(wc):
-    try:
-        return config["taxonomy"][wc.marker][
-            "bracken"
-        ][wc.database]["level"]
-
-    except KeyError as error:
-        available = (
-            config["taxonomy"][wc.marker]["bracken"]
-            .keys()
-        )
-
-        raise ValueError(
-            f"No Bracken level configured for "
-            f"{wc.marker}/{wc.database}. "
-            f"Available entries: {', '.join(available)}"
-        ) from error
-
-
-def biom_options(wc):
-    return (
-        config["taxonomy"][wc.marker]["kraken_biom"]
-        .get("options", "")
-    )
-
-
-def biom_level(wc):
-    try:
-        return config["taxonomy"][wc.marker][
-            "kraken_biom"
-        ][wc.database]["level"]
-
-    except KeyError as error:
-        raise ValueError(
-            f"No kraken-biom level configured for "
-            f"{wc.marker}/{wc.database}"
-        ) from error
-
-
-def taxonomy_reports_for_database(wc):
-    return taxonomy_reports(
-        results_dir=RESULTS_DIR,
-        samples=SAMPLES,
-        marker=wc.marker,
-        database=wc.database,
-    )
-
-def original_ssu_read(wc, mate):
-    return str(
-        RNA_CLASSIFIED_DIR
-        / wc.sample
-        / "SSU"
-        / f"{wc.sample}_SSU_{mate}.fastq.gz"
-    )
-
-def grouped_ssu_read(sample, group, mate):
-    return (
-        f"{TAXONOMY_DIR}/{sample}/SSU/silva/grouped_reads/{sample}.{group}_R{mate}.fastq.gz"
-    )
-
-def taxonomy_read(wc, mate):
-    if wc.marker == "SSU":
-        if wc.database == "pr2":
-            return grouped_ssu_read(
-                wc.sample, "eukaryotes", mate
-            )
-
-        # SILVA and other SSU databases use the original SSU reads.
-        return original_ssu_read(wc, mate)
-
-    if wc.marker == "ITS":
-        return str(
-            RNA_INTERMEDIATE_DIR
-            / wc.sample
-            / "ITS_candidates"
-            / f"{wc.sample}_ITS_candidates_{mate}.fastq.gz"
-        )
-
-    raise ValueError(
-        f"Unsupported taxonomy marker '{wc.marker}'"
-    )
-
-
-def taxonomy_read_1(wc):
-    return taxonomy_read(wc, 1)
-
-
-def taxonomy_read_2(wc):
-    return taxonomy_read(wc, 2)
-
-# =========================================================
-# Habitat refinement wrappers
-# =========================================================
-
-def habitat_kraken_db(wc):
-    return get_habitat_kraken_database(
-        habitat=wc.habitat,
-        database=wc.database,
-        config=config,
-    )
-
-
-def habitat_kraken_options(wc):
-    return (
-        config["Habitat_refinement"][wc.habitat]["kraken2"].get("options", "")
-    )
-
-
-def habitat_kraken_threads(wc):
-    return (
-        config["Habitat_refinement"][wc.habitat]["kraken2"].get("threads", 2)
-    )
-
-
-def habitat_bracken_options(wc):
-    return (
-        config["Habitat_refinement"][wc.habitat]["bracken"].get("options", "")
-    )
-
-
-def habitat_bracken_level(wc):
-    try:
-        return (
-            config["Habitat_refinement"][wc.habitat]["bracken"][wc.database]["level"]
-        )
-
-    except KeyError as error:
-        raise ValueError(
-            f"No Bracken level configured for {wc.habitat}/{wc.database}"
-        ) from error
-
-
-def habitat_biom_options(wc):
-    return (
-        config["Habitat_refinement"]
-        [wc.habitat]["kraken_biom"]
-        .get("options", "")
-    )
-
-
-def habitat_biom_level(wc):
-    try:
-        return (
-            config["Habitat_refinement"]
-            [wc.habitat]["kraken_biom"]
-            [wc.database]["level"]
-        )
-
-    except KeyError as error:
-        raise ValueError(
-            f"No kraken-biom level configured for "
-            f"{wc.habitat}/{wc.database}"
-        ) from error
-
-
-def habitat_reports_for_database(wc):
-    return habitat_taxonomy_reports(
-        results_dir=RESULTS_DIR,
-        samples=SAMPLES,
-        habitat=wc.habitat,
-        database=wc.database,
-    )
-
-def habitat_read_1(wc):
-    """
-    Select habitat-refinement R1 input.
-
-    Soil    -> non-rRNA reads
-    Glacier -> SSU reads
-    """
-
-    if wc.habitat == "Soil":
-        return str(
-            RNA_CLASSIFIED_DIR
-            / wc.sample
-            / "non_rRNA"
-            / f"{wc.sample}_non_rRNA_1.fastq.gz"
-        )
-
-    if wc.habitat == "Glacier":
-        return str(
-            f"{HABITAT_ANALYSIS_DIR}/{wc.sample}/Glacier/grouped_reads/{wc.sample}.glacial_orders_R1.fastq.gz"
-        )
-
-    raise ValueError(
-        f"No R1 input mapping has been defined for habitat '{wc.habitat}'"
-    )
-
-
-def habitat_read_2(wc):
-    """
-    Select habitat-refinement R2 input.
-
-    Soil    -> non-rRNA reads
-    Glacier -> SSU reads
-    """
-
-    if wc.habitat == "Soil":
-        return str(
-            RNA_CLASSIFIED_DIR
-            / wc.sample
-            / "non_rRNA"
-            / f"{wc.sample}_non_rRNA_2.fastq.gz"
-        )
-
-    if wc.habitat == "Glacier":
-        return str(f"{HABITAT_ANALYSIS_DIR}/{wc.sample}/Glacier/grouped_reads/{wc.sample}.glacial_orders_R2.fastq.gz"
-        )
-
-    raise ValueError(
-        f"No R2 input mapping has been defined for habitat '{wc.habitat}'"
-    )
-
-# =========================================================
-# Quality-control module
-# =========================================================
-
-### Quality control and decontamination
+# Rules
 include: "qc/rules/fastqc.smk"
 include: "qc/rules/fastp.smk"
 include: "qc/rules/bwa_decontamination.smk"
 
-# =========================================================
-# RNA-separation module
-# =========================================================
-
-### RNA SEPERATION - check if the if statements are redundant with the ones in the included rules (smk files) or if they are needed to avoid including rules that would not be used
-if config["RNA"]["method"] == "sortmerna":
-
-    if config["RNA"]["refinement"] == "staged":
-        include: "RNA/rules/sortmerna_stages.smk"
-        include: "RNA/rules/sortmerna_stages_postprocessing.smk"
-        if config["RNA"]["sortmerna_staged"]["pipeline"] != ["ssu", "lsu"]:
-            raise ValueError(
-                "The current staged SortMeRNA postprocessing "
-                "requires pipeline: [ssu, lsu]"
-            )
-
-    elif config["RNA"]["refinement"] == "combined":
-        include: "RNA/rules/sortmerna_combined.smk"
-        include: "RNA/rules/sortmerna_combined_postprocessing.smk"
-    
-    else:
-        raise ValueError(
-            "Unsupported SortMeRNA refinement: "
-            f"{config['RNA']['refinement']}"
-        )
-
-elif config["RNA"]["method"] == "ribodetector":
-    
-    include: "RNA/rules/ribodetector.smk"
-
-    if config["RNA"]["refinement"] == "bbduk":
-        include: "RNA/rules/bbduk.smk"
-
-elif config["RNA"]["method"] == "bbmap":
-    
-    include: "RNA/rules/bbmap.smk"
-    include: "RNA/rules/bbmap_postprocessing.smk"
-
-else:
-    raise ValueError(
-        "Unsupported RNA-separation method: "
-        f"{config['RNA']['method']}"
-    )
-
-
-if config["RNA"]["secondary_method"] == "ITS":
-    include: "RNA/rules/its_candidates.smk"
-
-# =========================================================
-# Reconstruction module
-# =========================================================
-
-### Quality control and decontamination
-include: "reconstruction/rules/preprocessing.smk"
-include: "reconstruction/rules/rnaspades.smk"
-include: "reconstruction/rules/concatenation.smk"
-include: "reconstruction/rules/itsx.smk"
-
-################################################################################
-# BARRNAP RECONSTRUCTION SETTINGS
-################################################################################
-
-BARRNAP_KINGDOMS = config["reconstruction"]["barrnap"]["kingdom"]
-
-if not isinstance(BARRNAP_KINGDOMS, list) or not BARRNAP_KINGDOMS:
-    raise ValueError("reconstruction.barrnap.kingdom must be a non-empty list.")
-
-BARRNAP_KINGDOM_PATTERN = "|".join(re.escape(kingdom) for kingdom in BARRNAP_KINGDOMS)
-
-include: "reconstruction/rules/barrnap_ssu.smk"
-include: "reconstruction/rules/ssu_postprocessing.smk"
-
-def active_barrnap_kingdoms(wildcards):
-    import csv
-
-    checkpoint_result = checkpoints.check_barrnap_ssu.get()
-
-    with open(checkpoint_result.output.status) as handle:
-        active = [row["kingdom"] for row in csv.DictReader(handle, delimiter="\t") if row["status"] == "present"]
-
-    print(f"[Barrnap] Active kingdoms: {active}")
-
-    return active
-
-
-def kingdoms_with_blast_hits(wildcards):
-    kingdoms_with_hits = []
-
-    for kingdom in active_barrnap_kingdoms(wildcards):
-        checkpoint_result = checkpoints.check_blast_top_ssu.get(
-            kingdom=kingdom
-        )
-
-        with open(checkpoint_result.output.status) as status_file:
-            if status_file.read().strip() == "present":
-                kingdoms_with_hits.append(kingdom)
-
-    print(f"[BLASTN] Kingdoms with filtered hits: {kingdoms_with_hits}")
-    return kingdoms_with_hits
-
-# =========================================================
-# Taxonomic classification
-# =========================================================
-
-TAXONOMY_SCRIPTS_DIR = (
-    Path(workflow.basedir) / "taxonomy/scripts"
-)
-
-# Kraken2/Bracken are shared by SSU and ITS.
-include: "taxonomy/rules/kraken.smk"
-include: "taxonomy/rules/bracken.smk"
-include: "taxonomy/rules/kraken_bracken_downstream.smk"
-
-# Reconstructed ITS/ITSx BLAST taxonomy.
-if "ITS" in TAXONOMY_MARKERS:
-
-    ITS_REGIONS = its_blast_regions(config)
-    ITS_REGION_PATTERN = "|".join(ITS_REGIONS)
-
-    include: "taxonomy/rules/blastn.smk"
-    include: "taxonomy/rules/blastn_postprocessing.smk"
-
-# =========================================================
-# SSU rRNA reconstruction and phylogeny
-# =========================================================
-
-include: "phylogeny/rules/blastn.smk"
-include: "phylogeny/rules/blastn_postprocessing.smk"
-include: "phylogeny/rules/mafft.smk"
-include: "phylogeny/rules/trimal.smk"
-include: "phylogeny/rules/iqtree.smk"
-
-# =========================================================
-# Non-rRNA module
-# =========================================================
-FUNCTIONAL_SCRIPTS_DIR = (Path(workflow.basedir) / "functional_profiling" / "scripts")
-
-functional_module = config["functional_profiling"]["module"]
-
-if functional_module in ["read", "both", "all"]:
-    if config["functional_profiling"]["read_method"] in ["metaphlan", "humann"]:
-        # Metaphlan is ALWAYS required (taxonomy baseline)
-        include: "functional_profiling/rules/metaphlan.smk"
-        # HUMANN is ALWAYS downstream of metaphlan in your design
-        include: "functional_profiling/rules/humann.smk"
-        include: "functional_profiling/rules/humann_postprocessing.smk"
-
-if functional_module in ["assembly", "both", "all"]:
-    include: "functional_profiling/rules/ORF_prediction.smk" #for now we need ORF_prediction no matter what - NB! consider moving this out to sample specific assembly if this is introduced
-    if config["functional_profiling"]["ORF_predictor"] in ["transdecoder"]:
-        include: "functional_profiling/rules/diamond.smk"
-        include: "functional_profiling/rules/hmmscan.smk"
-        include: "functional_profiling/rules/hmmscan_processing.smk"
-    include: "functional_profiling/rules/eggnog.smk"
-    include: "functional_profiling/rules/salmon.smk"
-    include: "functional_profiling/rules/Abundance_Matrix.smk"
-
-if functional_module not in ["read", "assembly", "both", "all"]:
-    raise ValueError(f"Unsupported functional module: {functional_module}")
-
-# =========================================================
-# Viral sequence analysis module
-# =========================================================
-
-VIRAL_CONFIG = config.get("viral_sequence_analysis",{},)
-
-VIRAL_ENABLED = VIRAL_CONFIG.get("enabled",True)
-
-VIRAL_POSTPROCESSING = VIRAL_CONFIG.get("postprocessing",True)
-
-if VIRAL_ENABLED:
-    include: "viral_sequence_analysis/rules/prefilter.smk"
-    include: "viral_sequence_analysis/rules/geNomad.smk"
-    include: "viral_sequence_analysis/rules/checkv.smk"
-
-    if VIRAL_POSTPROCESSING:
-        include: "viral_sequence_analysis/rules/postprocessing.smk"
-
-        if functional_module not in ["assembly", "both", "all"]:
-            raise ValueError(
-                "Viral post-processing requires assembly-based functional profiling because it reuses TransDecoder, eggNOG and Salmon."
-            )
-
-        if config["functional_profiling"]["ORF_predictor"] != "transdecoder":
-            raise ValueError(
-                "Viral post-processing currently requires functional_profiling.ORF_predictor: transdecoder."
-            )
-
-# =========================================================
-# Habitat Refinement Taxonomy module
-# =========================================================
-
-if SELECTED_HABITAT is not None:
-    if SELECTED_HABITAT == "Glacier":
-        include: "habitat_refinement/rules/Preprocess_habitat_taxonomy.smk"
-    include: "habitat_refinement/rules/habitat_kraken.smk"
-    include: "habitat_refinement/rules/habitat_bracken.smk"
-    include: "habitat_refinement/rules/habitat_bracken_downstream.smk"
-
-# =========================================================
-# Module completion targets
-# =========================================================
-
+# Module completion target
 rule Quality_Control_done:
     input:
         qc_outputs(QC_DIR, SAMPLES)
@@ -692,6 +129,82 @@ rule Quality_Control_done:
         touch "{output.flag}"
         """
 
+###############################
+##### RNA classification ######
+###############################
+
+# Configuration
+configfile: "config/rna_classification_config.yaml"
+
+# Directories
+RNA_DIR: Path = RESULTS_DIR / "RNA_Classification"
+RNA_CLASSIFIED_DIR: Path = RNA_DIR / "classified"
+RNA_INTERMEDIATE_DIR: Path = RNA_DIR / "intermediate"
+
+# Helpers and completion outputs
+from utils.rna_classification import (
+    validate_rna_config,
+    sortmerna_stages,
+    previous_stage_map,
+    sortmerna_r1,
+    sortmerna_r2,
+    sortmerna_db,
+    sortmerna_db_idx,
+)
+
+from targets.rna_seperation import rna_outputs
+
+validate_rna_config(config)
+
+if (
+    config["RNA_classification"]["method"] == "sortmerna"
+    and config["RNA_classification"]["refinement"] == "staged"
+):
+    SORTMERNA_STAGES = sortmerna_stages(config)
+    PREVIOUS_STAGE = previous_stage_map(SORTMERNA_STAGES)
+
+    FIRST_STAGE_NAME = SORTMERNA_STAGES[0]
+    FINAL_STAGE_NAME = SORTMERNA_STAGES[-1]
+
+    print(f"SortMeRNA stages: {SORTMERNA_STAGES}")
+    print(f"Previous stage mapping: {PREVIOUS_STAGE}")
+
+# Rules
+if config["RNA_classification"]["method"] == "sortmerna":
+
+    if config["RNA_classification"]["refinement"] == "staged":
+        include: "rna_classification/rules/sortmerna_stages.smk"
+        include: "rna_classification/rules/sortmerna_stages_postprocessing.smk"
+
+    elif config["RNA_classification"]["refinement"] == "combined":
+        include: "rna_classification/rules/sortmerna_combined.smk"
+        include: "rna_classification/rules/sortmerna_combined_postprocessing.smk"
+    
+    else:
+        raise ValueError(
+            f"Unsupported SortMeRNA refinement: {config['RNA_classification']['refinement']}"
+        )
+
+elif config["RNA_classification"]["method"] == "ribodetector":
+    
+    include: "rna_classification/rules/ribodetector.smk"
+
+    if config["RNA_classification"]["refinement"] == "bbduk":
+        include: "rna_classification/rules/bbduk.smk"
+
+elif config["RNA_classification"]["method"] == "bbmap":
+    include: "rna_classification/rules/bbmap.smk"
+    include: "rna_classification/rules/bbmap_postprocessing.smk"
+
+else:
+    raise ValueError(
+        f"Unsupported RNA-separation method: {config['RNA_classification']['method']}"
+    )
+
+if config["RNA_classification"]["secondary_method"] == "ITS":
+    include: "rna_classification/rules/its_candidates.smk"
+
+# Module completion target
 rule RNA_seperation_done:
     input:
         rna_outputs(RNA_DIR,SAMPLES,config)
@@ -705,9 +218,85 @@ rule RNA_seperation_done:
         touch "{output.flag}"
         """
 
+###############################
+### Sequence reconstruction ###
+###############################
+
+# Configuration
+configfile: "config/reconstruction.yaml"
+
+# Directories
+ASSEMBLY_DIR: Path = RESULTS_DIR / "Assembly"
+
+# Helpers and completion outputs
+from utils.reconstruction import (
+    validate_reconstruction_config,
+    sample_reconstruction_targets,
+    concatenation_targets,
+    barrnap_kingdoms,
+    rnaspades_sample_input,
+    prefixed_reconstructed_fastas,
+    active_barrnap_kingdoms,
+)
+
+from targets.reconstruction import reconstruction_outputs
+
+# Validate configuration
+validate_reconstruction_config(config)
+
+# Initialize assembly branches
+RECONSTRUCTION_METHOD = config["reconstruction"]["method"]
+
+SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(config)
+
+SAMPLE_TARGET_PATTERN = "|".join(
+    re.escape(target)
+    for target in SAMPLE_RECONSTRUCTION_TARGETS
+)
+
+CROSS_SAMPLE_TARGET_PATTERN = "non_rRNA"
+
+# Initialize concatenation branches
+CONCATENATION_TARGETS = concatenation_targets(config)
+
+CONCATENATION_TARGET_PATTERN = "|".join(
+    re.escape(target)
+    for target in CONCATENATION_TARGETS
+)
+
+# Initialize Barrnap kingdoms
+BARRNAP_KINGDOMS = barrnap_kingdoms(config)
+
+BARRNAP_KINGDOM_PATTERN = "|".join(
+    re.escape(kingdom)
+    for kingdom in BARRNAP_KINGDOMS
+)
+
+# Rules
+include: "reconstruction/rules/preprocessing.smk"
+
+if RECONSTRUCTION_METHOD == "rnaspades":
+    include: "reconstruction/rules/rnaspades.smk"
+
+include: "reconstruction/rules/concatenation.smk"
+
+if "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS:
+    include: "reconstruction/rules/itsx.smk"
+
+include: "reconstruction/rules/barrnap_ssu.smk"
+include: "reconstruction/rules/ssu_postprocessing.smk"
+
+# Module completion target
 rule reconstruction_done:
     input:
-        lambda wc: reconstruction_outputs(RESULTS_DIR, SAMPLES, config, active_barrnap_kingdoms(wc))
+        lambda wc: reconstruction_outputs(
+            results_dir=RESULTS_DIR,
+            samples=SAMPLES,
+            config=config,
+            active_kingdoms=active_barrnap_kingdoms(
+                checkpoints=checkpoints,
+            ),
+        )
     output:
         flag=f"{ASSEMBLY_DIR}/reconstruction.done"
     shell:
@@ -718,97 +307,452 @@ rule reconstruction_done:
         touch {output.flag}
         """
 
-rule taxonomy_done:
-    input:
-        taxonomy_outputs(
+#############################
+#### Taxonomic profiling ####
+#############################
+
+if MODULES.get("taxonomy", False):
+    # Configuration
+    configfile: "config/taxonomy.yaml"
+
+    # Directories
+    TAXONOMY_DIR: Path = RESULTS_DIR / "Taxonomy_Profiling"
+    TAXONOMY_ENVS_DIR: Path = (Path(workflow.basedir) / "taxonomy" / "envs")
+    # Helpers and completion outputs
+    from targets.taxonomy import taxonomy_outputs
+
+    from utils.taxonomy import (
+        validate_taxonomy_config,
+        taxonomy_markers,
+        kraken_database_names,
+        kraken_db,
+        taxonomy_read,
+        taxonomy_read_1,
+        taxonomy_read_2,
+        original_ssu_read,
+        grouped_ssu_read,
+        kraken_options,
+        kraken_threads,
+        bracken_options,
+        bracken_level,
+        biom_options,
+        biom_level,
+        taxonomy_reports_for_database,
+        its_blast_regions,
+        its_summary_rank
+    )
+
+    validate_taxonomy_config(config)
+
+    TAXONOMY_MARKERS = taxonomy_markers(config)
+
+    KRAKEN_DATABASES = {
+        marker: kraken_database_names(marker, config)
+        for marker in TAXONOMY_MARKERS
+    }
+
+    print(f"Taxonomy markers: {TAXONOMY_MARKERS}")
+    print(f"Taxonomy databases: {KRAKEN_DATABASES}")
+
+    # Rules
+
+    # Kraken2/Bracken are shared by SSU and ITS.
+    include: "taxonomy/rules/kraken.smk"
+    include: "taxonomy/rules/bracken.smk"
+    include: "taxonomy/rules/kraken_bracken_downstream.smk"
+
+    # Reconstructed ITS/ITSx BLAST taxonomy.
+    if "ITS" in TAXONOMY_MARKERS:
+
+        ITS_REGIONS = its_blast_regions(config)
+        ITS_REGION_PATTERN = "|".join(ITS_REGIONS)
+
+        include: "taxonomy/rules/blastn.smk"
+        include: "taxonomy/rules/blastn_postprocessing.smk"
+
+    # Module completion target
+
+    rule taxonomy_done:
+        input:
+            taxonomy_outputs(
+                results_dir=RESULTS_DIR,
+                samples=SAMPLES,
+                config=config,
+            )
+        output:
+            flag=f"{TAXONOMY_DIR}/taxonomy.done"
+        shell:
+            r"""
+            set -euo pipefail
+
+            mkdir -p "$(dirname "{output.flag}")"
+            touch "{output.flag}"
+            """
+
+###############################
+#### Phylogenetic analysis ####
+###############################
+
+if MODULES.get("phylogeny", False):
+    # Configuration
+    configfile: "config/phylogeny.yaml"
+
+    # Directories
+    PHYLOGENY_DIR: Path = RESULTS_DIR / "Phylogeny"
+
+    # Helpers and completion outputs
+    from utils.phylogeny import kingdoms_with_blast_hits
+    from targets.phylogeny import phylogeny_outputs
+
+    # Rules
+    include: "phylogeny/rules/blastn.smk"
+    include: "phylogeny/rules/blastn_postprocessing.smk"
+    include: "phylogeny/rules/mafft.smk"
+    include: "phylogeny/rules/trimal.smk"
+    include: "phylogeny/rules/iqtree.smk"
+
+    # Module completion target
+    rule Phylogeny_done:
+        input:
+            lambda wc: phylogeny_outputs(
+                results_dir=RESULTS_DIR,
+                barrnap_kingdoms=active_barrnap_kingdoms(
+                    checkpoints=checkpoints,
+                ),
+                kingdoms_with_blast_hits=kingdoms_with_blast_hits(
+                    checkpoints=checkpoints,
+                ),
+            )
+        output:
+            flag=f"{PHYLOGENY_DIR}/phylogeny.done"
+        shell:
+            r"""
+            set -euo pipefail
+
+            mkdir -p $(dirname {output.flag})
+            touch {output.flag}
+            """
+
+###################################
+#### Habitat specific analysis ####
+###################################
+
+if MODULES.get("habitat_refinement", False):
+
+    # Required upstream module
+    if not MODULES.get("taxonomy", False):
+        raise ValueError(
+            "Habitat refinement requires modules.taxonomy: true in config/config.yaml."
+        )
+
+    # Configuration
+    configfile: "config/habitat_refinement.yaml"
+
+    # Directories
+    HABITAT_ANALYSIS_DIR: Path = RESULTS_DIR / "Habitat_refinement"
+
+    HABITAT_ENVS_DIR: Path = (
+        Path(workflow.basedir) / "taxonomy" / "envs"
+    )
+
+    # Helpers and completion outputs
+    from utils.habitats import (
+        selected_habitat,
+        habitat_database_names,
+        validate_habitat_config,
+        habitat_kraken_db,
+        habitat_kraken_options,
+        habitat_kraken_threads,
+        habitat_bracken_options,
+        habitat_bracken_level,
+        habitat_biom_options,
+        habitat_biom_level,
+        habitat_reports_for_database,
+        habitat_read_1,
+        habitat_read_2,
+    )
+
+    from targets.habitats import habitat_refinement_outputs
+
+    # Validate and initialize
+    validate_habitat_config(config)
+
+    SELECTED_HABITAT = selected_habitat(config)
+
+    if SELECTED_HABITAT is None:
+        raise ValueError(
+            "modules.habitat_refinement is true, but Habitat_refinement.habitat is 'none'. Select Soil or Glacier in config/habitat_refinement.yaml."
+        )
+
+    if ("SSU" not in TAXONOMY_MARKERS or "silva" not in KRAKEN_DATABASES.get("SSU", [])):
+        raise ValueError(
+            "Habitat refinement requires the SSU taxonomy branch "
+            "with database 'silva' in config/taxonomy.yaml."
+        )
+
+    HABITAT_DATABASES = habitat_database_names(
+        habitat=SELECTED_HABITAT,
+        config=config,
+    )
+
+    print(f"Habitat refinement: {SELECTED_HABITAT}")
+    print(f"Habitat databases: {HABITAT_DATABASES}")
+
+    # Rules
+    if SELECTED_HABITAT == "Glacier":
+        include: "habitat_refinement/rules/Preprocess_habitat_taxonomy.smk"
+
+    include: "habitat_refinement/rules/habitat_kraken.smk"
+    include: "habitat_refinement/rules/habitat_bracken.smk"
+    include: "habitat_refinement/rules/habitat_bracken_downstream.smk"
+
+    # Module completion target
+    rule habitat_refinement_done:
+        input:
+            habitat_refinement_outputs(
+                results_dir=RESULTS_DIR,
+                samples=SAMPLES,
+                config=config,
+            )
+        output:
+            flag=f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done"
+        shell:
+            r"""
+            set -euo pipefail
+
+            mkdir -p $(dirname {output.flag})
+            touch {output.flag}
+            """
+
+###################################
+##### Functional profiling ########
+###################################
+
+if MODULES.get("functional_profiling", False):
+    # Configuration
+    configfile: "config/functional_profiling.yaml"
+
+    # Directories
+    FUNCTION_DIR: Path = RESULTS_DIR / "Functional_Profiling"
+    FUNCTION_DIR_ASM: Path = FUNCTION_DIR / "assembly_based"
+    FUNCTION_DIR_READS: Path = FUNCTION_DIR / "read_based"
+
+    FUNCTIONAL_SCRIPTS_DIR: Path = (
+        Path(workflow.basedir) / "functional_profiling" / "scripts"
+    )
+
+    ORF_DIR: Path = FUNCTION_DIR / "ORF_prediction"
+
+    TRANSDECODER_WORK_DIR: Path = ORF_DIR / "transdecoder/work"
+    TRANSDECODER_LONGORFS_DIR: Path = ORF_DIR / "transdecoder/longorfs"
+    TRANSDECODER_PREDICT_DIR: Path = ORF_DIR / "transdecoder/predict"
+
+    HUMANN_MERGED_DIR: Path = FUNCTION_DIR_READS / "humann_merged"
+    HUMANN_JOIN_DIR: Path = HUMANN_MERGED_DIR / "humann_link_input"
+
+    # Helpers and completion outputs
+    from utils.functional_profiling import (
+        SALMON_REFERENCES,
+        SALMON_METRICS,
+        validate_functional_config,
+        read_based_enabled,
+        assembly_based_enabled,
+        final_orf_sources,
+        salmon_reference,
+        get_hmmscan_outputs,
+    )
+
+    from targets.functional_profiling import functional_profiling_outputs
+
+    # Validate and initialize
+    validate_functional_config(config)
+
+    FUNCTIONAL_MODULE = config["functional_profiling"]["module"]
+
+    # Retained for your existing viral dependency checks.
+    functional_module = FUNCTIONAL_MODULE
+
+    READ_BASED_ENABLED = read_based_enabled(config)
+    ASSEMBLY_BASED_ENABLED = assembly_based_enabled(config)
+
+    SALMON_REFERENCE_PATTERN = "|".join(SALMON_REFERENCES)
+    SALMON_METRIC_PATTERN = "|".join(SALMON_METRICS)
+
+    # Rules: read-based profiling
+    if READ_BASED_ENABLED:
+        include: "functional_profiling/rules/metaphlan.smk"
+
+        if config["functional_profiling"]["read_method"] == "humann":
+            include: "functional_profiling/rules/humann.smk"
+            include: "functional_profiling/rules/humann_postprocessing.smk"
+
+    # Rules: assembly-based profiling
+    if ASSEMBLY_BASED_ENABLED:
+        ORF_PREDICTOR = config["functional_profiling"]["ORF_predictor"]
+
+        ASSEMBLED_NONRRNA = (f"{ASSEMBLY_DIR}/coassembly/non_rRNA/rnaspades/transcripts.fasta")
+
+        FINAL_ORF_SOURCES = final_orf_sources(
             results_dir=RESULTS_DIR,
-            samples=SAMPLES,
             config=config,
         )
-    output:
-        flag=f"{TAXONOMY_DIR}/taxonomy.done"
-    shell:
-        r"""
-        set -euo pipefail
 
-        mkdir -p "$(dirname "{output.flag}")"
-        touch "{output.flag}"
-        """
+        FINAL_ORF_PROTEINS = FINAL_ORF_SOURCES["proteins"]
+        FINAL_ORF_GENES = FINAL_ORF_SOURCES["genes"]
+        FINAL_ORF_GFF = FINAL_ORF_SOURCES["gff"]
 
-rule Phylogeny_done:
-    input:
-        lambda wc: phylogeny_outputs(
-            RESULTS_DIR,
-            config,
-            active_barrnap_kingdoms(wc),
-            kingdoms_with_blast_hits(wc),
+        if ORF_PREDICTOR == "prodigal":
+            include: "functional_profiling/rules/prodigal.smk"
+
+        elif ORF_PREDICTOR == "transdecoder":
+            include: "functional_profiling/rules/transdecoder.smk"
+            include: "functional_profiling/rules/diamond.smk"
+            include: "functional_profiling/rules/hmmscan.smk"
+            include: "functional_profiling/rules/hmmscan_processing.smk"
+
+        include: "functional_profiling/rules/publish_orf.smk"
+        include: "functional_profiling/rules/eggnog.smk"
+        include: "functional_profiling/rules/salmon.smk"
+        include: "functional_profiling/rules/Abundance_Matrix.smk"
+
+    # Module completion target
+    rule functional_profiling_done:
+        input:
+            functional_profiling_outputs(
+                results_dir=RESULTS_DIR,
+                samples=SAMPLES,
+                config=config,
+            )
+        output:
+            flag=f"{FUNCTION_DIR}/functional_profiling.done"
+        shell:
+            r"""
+            set -euo pipefail
+
+            mkdir -p $(dirname {output.flag})
+            touch {output.flag}
+            """
+
+#######################################
+###### Viral sequence analysis ########
+#######################################
+if MODULES.get("viral_sequence_analysis", False):
+
+    # Configuration
+    configfile: "config/viral_sequence_analysis.yaml"
+
+    # Directories
+    VIRAL_ANALYSIS_DIR: Path = RESULTS_DIR / "Viral_Sequence_Analysis"
+
+    VIRAL_SCRIPT_DIR: Path = (
+        Path(workflow.basedir)
+        / "viral_sequence_analysis"
+        / "scripts"
+    )
+
+    # Helpers and completion outputs
+    from utils.viral_sequence_analysis import validate_viral_config
+    from targets.viral_sequence_analysis import viral_output
+
+    # Validate and initialize
+    VIRAL_POSTPROCESSING = config["viral_sequence_analysis"].get(
+        "postprocessing", True
+    )
+
+    if (
+        VIRAL_POSTPROCESSING
+        and not MODULES.get("functional_profiling", False)
+    ):
+        raise ValueError(
+            "Viral postprocessing requires "
+            "modules.functional_profiling: true in config/config.yaml."
         )
-    output:
-        flag=f"{PHYLOGENY_DIR}/phylogeny.done"
-    shell:
-        r"""
-        set -euo pipefail
 
-        mkdir -p $(dirname {output.flag})
-        touch {output.flag}
-        """
+    # Checks assembly-based profiling and TransDecoder requirements.
+    validate_viral_config(config)
 
-rule functional_profiling_done:
-    input:
-        functional_profiling_outputs(RESULTS_DIR,SAMPLES,config)
-    output:
-        flag=f"{FUNCTION_DIR}/functional_profiling.done"
-    shell:
-        r"""
-        set -euo pipefail
+    # Rules
+    include: "viral_sequence_analysis/rules/prefilter.smk"
+    include: "viral_sequence_analysis/rules/geNomad.smk"
+    include: "viral_sequence_analysis/rules/checkv.smk"
 
-        mkdir -p $(dirname {output.flag})
-        touch {output.flag}
-        """
+    if VIRAL_POSTPROCESSING:
+        include: "viral_sequence_analysis/rules/postprocessing.smk"
 
-rule viral_sequence_analysis_done:
-    input:
-        viral_output(RESULTS_DIR,SAMPLES,config)
-    output:
-        flag=f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done"
-    shell:
-        r"""
-        set -euo pipefail
+    # Module completion target
+    rule viral_sequence_analysis_done:
+        input:
+            viral_output(
+                results_dir=RESULTS_DIR,
+                samples=SAMPLES,
+                config=config,
+            )
+        output:
+            flag=f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done"
+        shell:
+            r"""
+            set -euo pipefail
 
-        mkdir -p $(dirname {output.flag})
-        touch {output.flag}
-        """
+            mkdir -p $(dirname {output.flag})
+            touch {output.flag}
+            """
+        
+######################################
+###### FINAL WORKFLOW TARGETS ########
+######################################
 
-rule habitat_refinement_done:
-    input:
-        habitat_refinement_outputs(RESULTS_DIR, SAMPLES,config)
-    output:
-        flag=f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done"
-    shell:
-        r"""
-        set -euo pipefail
-
-        mkdir -p $(dirname {output.flag})
-        touch {output.flag}
-        """
-
-# =========================================================
-# Final workflow target
-# =========================================================
+# Mandatory modules
 FINAL_TARGETS = [
     f"{QC_DIR}/quality_control.done",
     f"{RNA_DIR}/rna_classification.done",
     f"{ASSEMBLY_DIR}/reconstruction.done",
-    f"{TAXONOMY_DIR}/taxonomy.done",
-    f"{PHYLOGENY_DIR}/phylogeny.done",
-    f"{FUNCTION_DIR}/functional_profiling.done",
-    f"{HABITAT_ANALYSIS_DIR}/habitat_refinement.done",
 ]
 
-if VIRAL_ENABLED:
-    FINAL_TARGETS.append(f"{VIRAL_ANALYSIS_DIR}/viral_sequence_analysis.done")
+
+# Optional modules
+OPTIONAL_TARGETS = {
+    "taxonomy": (
+        f"{RESULTS_DIR}/Taxonomy_Profiling/taxonomy.done"
+    ),
+    "phylogeny": (
+        f"{RESULTS_DIR}/Phylogeny/phylogeny.done"
+    ),
+    "habitat_refinement": (
+        f"{RESULTS_DIR}/Habitat_refinement/habitat_refinement.done"
+    ),
+    "functional_profiling": (
+        f"{RESULTS_DIR}/Functional_Profiling/functional_profiling.done"
+    ),
+    "viral_sequence_analysis": (
+        f"{RESULTS_DIR}/Viral_Sequence_Analysis/viral_sequence_analysis.done"
+    ),
+}
+
+MODULES = config.get("modules", {})
+
+if not isinstance(MODULES, dict):
+    raise ValueError("modules must contain module names and true/false values.")
+
+for module, enabled in MODULES.items():
+    if module not in OPTIONAL_TARGETS:
+        raise ValueError(f"Unknown module: {module}")
+
+    if not isinstance(enabled, bool):
+        raise ValueError(
+            f"modules.{module} must be true or false, without quotation marks."
+        )
+
+if MODULES.get("habitat_refinement", False) and SELECTED_HABITAT is None:
+    raise ValueError(
+        "Habitat refinement is requested, but Habitat_refinement.habitat is 'none'."
+    )
+
+for module, target in OPTIONAL_TARGETS.items():
+    if MODULES.get(module, False):
+        FINAL_TARGETS.append(target)
 
 rule all:
+    default_target: True
     input:
         FINAL_TARGETS
         

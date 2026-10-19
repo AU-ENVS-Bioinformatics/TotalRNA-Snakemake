@@ -1,7 +1,6 @@
 from pathlib import Path
 
 ENVS_DIR = Path(workflow.basedir) / "taxonomy/envs"
-SCRIPTS_DIR = Path(workflow.basedir) / "taxonomy/scripts"
 
 rule kraken_biom:
     conda:
@@ -11,7 +10,11 @@ rule kraken_biom:
     wildcard_constraints:
         marker="SSU|ITS"
     input:
-        reports=taxonomy_reports_for_database
+        reports=lambda wc: taxonomy_reports_for_database(
+            wc,
+            results_dir=RESULTS_DIR,
+            samples=SAMPLES,
+        ),
     output:
         biom=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
     log:
@@ -19,8 +22,8 @@ rule kraken_biom:
     benchmark:
         f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/benchmarks/kraken_biom.txt"
     params:
-        options=biom_options,
-        level=biom_level,
+        options=lambda wc: biom_options(wc, config=config),
+        level=lambda wc: biom_level(wc, config=config),
     shell:
         r"""
         mkdir -p $(dirname {output.biom})

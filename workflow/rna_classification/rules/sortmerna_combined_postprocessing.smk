@@ -1,12 +1,11 @@
 from pathlib import Path
 
 
-RNA_ENVS_DIR = str(Path(workflow.basedir) / "RNA" / "envs")
+RNA_ENVS_DIR = str(Path(workflow.basedir) / "rna_classification" / "envs")
 
 
 if (
-    config["RNA"]["method"] == "sortmerna"
-    and config["RNA"]["refinement"] == "combined"
+    config["RNA_classification"]["method"] == "sortmerna" and config["RNA_classification"]["refinement"] == "combined"
 ):
 
     # =====================================================
@@ -73,7 +72,7 @@ if (
         benchmark:
             f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/extract_sortmerna_combined_non_rRNA.txt"
         threads:
-            config["RNA"]["threads"]
+            config["RNA_classification"]["threads"]
         shell:
             r"""
             set -euo pipefail
@@ -119,7 +118,7 @@ if (
         benchmark:
             f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/extract_sortmerna_combined_SSU.txt"
         threads:
-            config["RNA"]["threads"]
+            config["RNA_classification"]["threads"]
         shell:
             r"""
             set -euo pipefail

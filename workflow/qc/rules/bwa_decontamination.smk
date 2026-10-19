@@ -13,7 +13,7 @@ rule bwa_contaminants:
     benchmark:
         f"{QC_DIR}/{{sample}}/benchmarks/{{sample}}_bwa_aligned_contaminants.txt"
     params:
-        genome=config["databases"]["genome_for_decontamination"],
+        genome=config["qc"]["bwa_contaminants"]["database"],
     threads:
         config["qc"]["bwa_contaminants"]["threads"]
     shell:

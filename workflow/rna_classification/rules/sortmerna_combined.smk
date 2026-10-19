@@ -8,8 +8,8 @@ rule sortmerna_combined:
     input:
         cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
         cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
-        db=config["databases"][f"sortmeRNA_ssu_lsu"],
-        db_idx=config["databases"][f"sortmeRNA_ssu_lsu_idx"]
+        db=config["RNA_classification"]["databases"][f"sortmeRNA_ssu_lsu"],
+        db_idx=config["RNA_classification"]["databases"][f"sortmeRNA_ssu_lsu_idx"]
     output:
         sam=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_ssu_lsu.aligned.sam"
     log:
@@ -19,9 +19,9 @@ rule sortmerna_combined:
     params:
         workdir=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined",
         aligned_prefix=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/sortmerna/combined/{{sample}}_ssu_lsu.aligned",
-        options=config["RNA"]["sortmerna_combined"]["options"]
+        options=config["RNA_classification"]["sortmerna_combined"]["options"]
     threads:
-        config["RNA"]["sortmerna_combined"]["threads"]
+        config["RNA_classification"]["sortmerna_combined"]["threads"]
     shell:
         r"""
         set -euo pipefail

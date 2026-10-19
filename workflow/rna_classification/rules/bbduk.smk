@@ -6,7 +6,7 @@ rule bbduk_ssu:
     input:
         rRNA_r1=rules.ribodetector.output.rna_r1,
         rRNA_r2=rules.ribodetector.output.rna_r2,
-        ref=config["databases"]["sortmeRNA_ssu"]
+        ref=config["RNA_classification"]["databases"]["sortmeRNA_ssu"]
     output:
         rRNA_ssu_r1=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_1.fastq.gz",
         rRNA_ssu_r2=f"{RNA_CLASSIFIED_DIR}/{{sample}}/SSU/{{sample}}_SSU_2.fastq.gz",
@@ -17,9 +17,9 @@ rule bbduk_ssu:
     benchmark:
         f"{RNA_CLASSIFIED_DIR}/{{sample}}/benchmarks/bbduk_ssu.txt"
     params:
-        options=config["RNA"]["bbduk"]["options"]
+        options=config["RNA_classification"]["bbduk"]["options"]
     threads:
-        config["RNA"]["bbduk"]["threads"]
+        config["RNA_classification"]["bbduk"]["threads"]
     shell:
         r"""
         set -euo pipefail

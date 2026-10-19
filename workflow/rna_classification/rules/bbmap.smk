@@ -6,7 +6,7 @@ rule bbmap:
     input:
         cleaned_r1=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R1.cleaned.fastq.gz",
         cleaned_r2=f"{QC_DIR}/{{sample}}/decontamination/{{sample}}_R2.cleaned.fastq.gz",
-        ref=config["databases"]["sortmeRNA_ssu_lsu"]
+        ref=config["RNA_classification"]["databases"]["sortmeRNA_ssu_lsu"]
     output:
         all_RNA_reads_bam=f"{RNA_INTERMEDIATE_DIR}/{{sample}}/bbmap/RNA/{{sample}}_all_reads.bam",
     log:
@@ -14,9 +14,9 @@ rule bbmap:
     benchmark:
         f"{RNA_INTERMEDIATE_DIR}/{{sample}}/benchmarks/bbmap_RNA.txt"
     params:
-        options=config["RNA"]["bbmap"]["options"]
+        options=config["RNA_classification"]["bbmap"]["options"]
     threads:
-        config["RNA"]["bbmap"]["threads"]
+        config["RNA_classification"]["bbmap"]["threads"]
     shell:
         r"""
         set -euo pipefail

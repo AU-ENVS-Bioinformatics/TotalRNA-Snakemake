@@ -4,8 +4,18 @@ rule preprocess_habitat_taxonomy:
     message:
         "[KrakenTools] Extracting shared glacier-order reads from {wildcards.sample}"
     input:
-        read_1=lambda wc: grouped_ssu_read(wc.sample, "prokaryotes", 1),
-        read_2=lambda wc: grouped_ssu_read(wc.sample, "prokaryotes", 2),
+        read_1=lambda wc: grouped_ssu_read(
+            wc.sample,
+            "prokaryotes",
+            1,
+            results_dir=RESULTS_DIR,
+        ),
+        read_2=lambda wc: grouped_ssu_read(
+            wc.sample,
+            "prokaryotes",
+            2,
+            results_dir=RESULTS_DIR,
+        ),
         report=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.k2report",
         kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.kraken",
         taxids=config["Habitat_refinement"]["Glacier"]["order_taxids"],
@@ -18,7 +28,7 @@ rule preprocess_habitat_taxonomy:
         r"""
         set -euo pipefail
 
-        mkdir -p "$(dirname {output.read_1})"
+        mkdir -p $(dirname {output.read_1})
 
         (
             # Reject empty files and nonnumeric taxids.
@@ -38,10 +48,10 @@ rule preprocess_habitat_taxonomy:
                     }}
                     exit invalid
                 }}
-            ' {input.taxids:q}
+            ' {input.taxids}
 
             mapfile -t taxids < <(
-                sed 's/\r$//' {input.taxids:q} | LC_ALL=C sort -u
+                sed 's/\r$//' {input.taxids} | LC_ALL=C sort -u
             )
 
             extract_kraken_reads.py \

@@ -15,9 +15,9 @@ rule bracken:
     benchmark:
         f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt",
     params:
-        db=kraken_db,
-        level=bracken_level,
-        options=bracken_options,
+        database=lambda wc: kraken_db(wc, config=config),
+        level=lambda wc: bracken_level(wc, config=config),
+        options=lambda wc: bracken_options(wc, config=config),
     shell:
         r"""
         set -euo pipefail
@@ -25,7 +25,7 @@ rule bracken:
         mkdir -p $(dirname {output.bracken_output})
 
         bracken \
-          -d {params.db} \
+          -d {params.database} \
           -i {input.kraken_report} \
           -o {output.bracken_output} \
           -w {output.bracken_kreport_output} \

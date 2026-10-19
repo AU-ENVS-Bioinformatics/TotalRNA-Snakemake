@@ -16,10 +16,10 @@ rule ribodetector:
     benchmark:
         f"{RNA_CLASSIFIED_DIR}/{{sample}}/benchmarks/ribodetector_nonrRNA.txt"
     params:
-        options=config["RNA"]["ribodetector"]["options"],
+        options=config["RNA_classification"]["ribodetector"]["options"],
         read_len=150
     threads:
-        config["RNA"]["ribodetector"]["threads"]
+        config["RNA_classification"]["ribodetector"]["threads"]
     shell:
         r"""
         set -euo pipefail

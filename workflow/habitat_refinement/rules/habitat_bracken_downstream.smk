@@ -1,14 +1,14 @@
-from pathlib import Path
-
-HABITAT_ENVS_DIR = Path(workflow.basedir) / "taxonomy/envs"
-
 rule habitat_kraken_biom:
     conda:
         f"{HABITAT_ENVS_DIR}/kraken_biom.yaml"
     message:
         "[Kraken-Biom] Combining Bracken reports for {wildcards.habitat}/{wildcards.database}"
     input:
-        reports=habitat_reports_for_database
+        reports=lambda wc: habitat_reports_for_database(
+            wc,
+            results_dir=RESULTS_DIR,
+            samples=SAMPLES,
+        )
     output:
         biom=f"{HABITAT_ANALYSIS_DIR}/summary/{{habitat}}/{{database}}/taxonomy/taxonomy.biom"
     log:
@@ -16,8 +16,8 @@ rule habitat_kraken_biom:
     benchmark:
         f"{HABITAT_ANALYSIS_DIR}/summary/{{habitat}}/{{database}}/taxonomy/benchmarks/kraken_biom.txt"
     params:
-        options=habitat_biom_options,
-        level=habitat_biom_level,
+        options=lambda wc: habitat_biom_options(wc, config=config),
+        level=lambda wc: habitat_biom_level(wc, config=config),
     shell:
         r"""
         set -euo pipefail

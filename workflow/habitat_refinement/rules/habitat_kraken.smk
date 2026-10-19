@@ -4,8 +4,14 @@ rule habitat_kraken2:
     message:
         "[Kraken2] Classifying {wildcards.habitat} reads from {wildcards.sample} against {wildcards.database}"
     input:
-        read_1=habitat_read_1,
-        read_2=habitat_read_2,
+        read_1=lambda wc: habitat_read_1(
+            wc,
+            results_dir=RESULTS_DIR,
+        ),
+        read_2=lambda wc: habitat_read_2(
+            wc,
+            results_dir=RESULTS_DIR,
+        ),
     output:
         report=f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/kraken/{{sample}}.{{database}}.k2report",
         kraken=f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/kraken/{{sample}}.{{database}}.kraken",
@@ -14,10 +20,19 @@ rule habitat_kraken2:
     benchmark:
         f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/benchmarks/{{sample}}.{{database}}.kraken2.txt"
     params:
-        db=habitat_kraken_db,
-        options=habitat_kraken_options,
+        db=lambda wc: habitat_kraken_db(
+            wc,
+            config=config,
+        ),
+        options=lambda wc: habitat_kraken_options(
+            wc,
+            config=config,
+        ),
     threads:
-        habitat_kraken_threads
+        lambda wc: habitat_kraken_threads(
+            wc,
+            config=config,
+        )
     shell:
         r"""
         set -euo pipefail

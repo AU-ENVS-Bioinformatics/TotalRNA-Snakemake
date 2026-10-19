@@ -1,6 +1,5 @@
 #Of the abundance assigned to pathway X, how much is associated with putative viral transcripts?
 viral_sequence_analysis:
-  enabled: false
   postprocessing: true
   seqkit:
     options: --min-len 1500

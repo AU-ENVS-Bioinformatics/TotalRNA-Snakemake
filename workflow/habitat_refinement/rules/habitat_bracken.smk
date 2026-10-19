@@ -9,13 +9,13 @@ rule habitat_bracken:
         bracken_output=f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
         bracken_kreport_output=f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report",
     log:
-        stdout=f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/logs/{{sample}}.{{database}}.bracken.log",
+        stdout=f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/logs/{{sample}}.{{database}}.bracken.log"
     benchmark:
-            f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt"
+        f"{HABITAT_ANALYSIS_DIR}/{{sample}}/{{habitat}}/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt"
     params:
-        db=habitat_kraken_db,
-        level=habitat_bracken_level,
-        options=habitat_bracken_options,
+        db=lambda wc: habitat_kraken_db(wc, config=config),
+        level=lambda wc: habitat_bracken_level(wc, config=config),
+        options=lambda wc: habitat_bracken_options(wc, config=config),
     shell:
         r"""
         set -euo pipefail

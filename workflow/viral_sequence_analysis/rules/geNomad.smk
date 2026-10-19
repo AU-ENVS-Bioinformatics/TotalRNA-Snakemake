@@ -12,7 +12,7 @@ rule geNomad:
         viral_genes=f"{VIRAL_ANALYSIS_DIR}/identification/genomad/transcripts.filtered_summary/transcripts.filtered_virus_genes.tsv",
     params:
         output_dir=f"{VIRAL_ANALYSIS_DIR}/identification/genomad",
-        db=config["viral_sequence_analysis"]["geNomad"]["db"],
+        db=config["viral_sequence_analysis"]["geNomad"]["database"],
         options=config["viral_sequence_analysis"]["geNomad"].get("options", "")
     threads:
         config["viral_sequence_analysis"]["geNomad"].get("threads", 1)

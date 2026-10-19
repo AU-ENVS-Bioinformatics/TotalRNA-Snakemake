@@ -1,11 +1,9 @@
-from logging import config
 from typing import List
 from pathlib import Path
 from snakemake.io import expand
 
 def phylogeny_outputs(
     results_dir: Path,
-    config: dict,
     barrnap_kingdoms: List[str],
     kingdoms_with_blast_hits: List[str],
 ) -> List[str]:

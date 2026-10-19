@@ -14,7 +14,7 @@ rule metaphlan:
     benchmark:
         f"{FUNCTION_DIR_READS}/{{sample}}/benchmarks/metaphlan.txt"
     params:
-        db=config["databases"]["humann_bowtie2db"],
+        database=config["functional_profiling"]["metaphlan"]["database"],
         options=config["functional_profiling"]["metaphlan"]["options"],
         metaphlan_bowtie2=f"{FUNCTION_DIR_READS}/{{sample}}/metaphlan/{{sample}}_metaphlan_profile.tsv.bowtie2.bz2",
     threads:
@@ -30,7 +30,7 @@ rule metaphlan:
         /usr/bin/time -v -o {log.time} \
             metaphlan "{input.nonrna_r1},{input.nonrna_r2}" \
                 --nproc {threads} \
-                --bowtie2db {params.db} \
+                --bowtie2db {params.database} \
                 --bowtie2out {params.metaphlan_bowtie2} \
                 --output_file {output.metaphlan_profile} \
                 {params.options} \

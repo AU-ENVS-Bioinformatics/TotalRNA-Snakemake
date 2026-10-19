@@ -1,6 +1,16 @@
-samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v2.tsv
+# config/config.yaml
 
+# Input samplesheet
+samples_file: /data/rasmus/TotalRNA-Snakemake/dataset/samplesheet_v3.tsv
+
+# Root directory for results
 shared_results_dir: /data/rasmus/Dev/SnakeResDev
 
-ncbi_email: "au811884.uni.au.dk"
-send_mail: "yes"
+# QC, RNA classification, and reconstruction are always requested.
+# Optional module completion targets.
+modules:
+  taxonomy: true
+  phylogeny: true
+  habitat_refinement: true
+  functional_profiling: true
+  viral_sequence_analysis: true

@@ -1,7 +1,3 @@
-HUMANN_MERGED_DIR = f"{FUNCTION_DIR_READS}/humann_merged"
-HUMANN_JOIN_DIR = f"{HUMANN_MERGED_DIR}/humann_link_input"
-
-
 ################################################################################
 # 1. LINK SAMPLE TABLES
 ################################################################################
