@@ -9,8 +9,8 @@ shared_results_dir: /data/rasmus/Dev/SnakeResDev
 # QC, RNA classification, and reconstruction are always requested.
 # Optional module completion targets.
 modules:
-  taxonomy: true
-  phylogeny: true
-  habitat_refinement: true
-  functional_profiling: true
-  viral_sequence_analysis: true
+  taxonomy: false
+  phylogeny: false
+  habitat_refinement: false
+  functional_profiling: false
+  viral_sequence_analysis: false

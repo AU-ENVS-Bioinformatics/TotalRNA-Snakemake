@@ -1,11 +1,22 @@
 
 reconstruction:
   method: rnaspades
+  refinement: coassembly # samples, both, all
+  # Separate assemblies across all samples
+  coassembly_targets:
+    - non_rRNA
+    - SSU
+  # Sample-specific assemblies
   targets:
     - SSU
     - ITS_candidates
   rnaspades:
-    options: "--memory 600"
+    memory: "--memory 15" #600
+    restart_memory : "--memory 25" #750
+    threads: 12
+  rnaspades_sample:
+    memory: "--memory 250"
+    restart_memory : "--memory 350"
     threads: 10
   itsx:
     options: "--detailed_results T --summary T --graphical T --fasta T"
@@ -19,7 +30,14 @@ reconstruction:
       - fun
     options: "--rrna"
     threads: 12
+  cmsearch:
+    models:
+      bac: /path/to/RF00177.cm
+      arc: /path/to/RF01959.cm
+    threads: 16
+    options: "--cut_ga"
   ssu_postprocessing:
+    prediction_method: false
     min_length: 1000
     features:
       bac: "16S_rRNA"
