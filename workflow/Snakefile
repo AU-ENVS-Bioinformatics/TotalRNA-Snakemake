@@ -244,8 +244,45 @@ from targets.reconstruction import reconstruction_outputs
 # Validate configuration
 validate_reconstruction_config(config)
 
-# Initialize assembly branches
+# Assembly methods and disable/enable switches
+
 RECONSTRUCTION_METHOD = config["reconstruction"]["method"]
+
+ASSEMBLY_REFINEMENT = config["reconstruction"].get(
+    "refinement", "coassembly"
+)
+
+if ASSEMBLY_REFINEMENT not in {"coassembly", "samples", "both", "all"}:
+    raise ValueError(
+        "reconstruction.refinement must be "
+        "coassembly, samples, both, or all."
+    )
+
+COASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {
+    "coassembly", "both", "all"
+}
+
+SAMPLE_ASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {
+    "samples", "both", "all"
+}
+
+SSU_PREDICTION = config["reconstruction"]["ssu_postprocessing"].get(
+    "prediction_method", True
+)
+
+if not isinstance(SSU_PREDICTION, bool):
+    raise ValueError(
+        "reconstruction.ssu_postprocessing.prediction_method "
+        "must be true or false, without quotation marks."
+    )
+
+# Only rnaSPAdes is implemented in this section.
+if RECONSTRUCTION_METHOD != "rnaspades":
+    raise ValueError(
+        f"Unsupported reconstruction method: {RECONSTRUCTION_METHOD}"
+    )
+
+# target pattern
 
 SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(config)
 
@@ -256,7 +293,6 @@ SAMPLE_TARGET_PATTERN = "|".join(
 
 CROSS_SAMPLE_TARGET_PATTERN = "non_rRNA"
 
-# Initialize concatenation branches
 CONCATENATION_TARGETS = concatenation_targets(config)
 
 CONCATENATION_TARGET_PATTERN = "|".join(
@@ -264,27 +300,55 @@ CONCATENATION_TARGET_PATTERN = "|".join(
     for target in CONCATENATION_TARGETS
 )
 
-# Initialize Barrnap kingdoms
-BARRNAP_KINGDOMS = barrnap_kingdoms(config)
+# dependencies
 
-BARRNAP_KINGDOM_PATTERN = "|".join(
-    re.escape(kingdom)
-    for kingdom in BARRNAP_KINGDOMS
-)
+if SSU_PREDICTION:
+    if not SAMPLE_ASSEMBLY_ENABLED:
+        raise ValueError(
+            "SSU prediction requires reconstruction.refinement "
+            "to be samples, both, or all."
+        )
+
+    if "SSU" not in SAMPLE_RECONSTRUCTION_TARGETS:
+        raise ValueError(
+            "SSU prediction requires SSU "
+            "in reconstruction.targets."
+        )
+
+    BARRNAP_KINGDOMS = barrnap_kingdoms(config)
+
+    BARRNAP_KINGDOM_PATTERN = "|".join(
+        re.escape(kingdom)
+        for kingdom in BARRNAP_KINGDOMS
+    )
 
 # Rules
+
+# Shared assembly input preparation.
 include: "reconstruction/rules/preprocessing.smk"
 
-if RECONSTRUCTION_METHOD == "rnaspades":
+# Cross-sample non-rRNA assembly.
+if COASSEMBLY_ENABLED:
     include: "reconstruction/rules/rnaspades.smk"
 
+# Sample-specific SSU / ITS-candidate assemblies.
+if SAMPLE_ASSEMBLY_ENABLED:
+    include: "reconstruction/rules/rnaspades_samples.smk"
+
+# Shared concatenation rules.
 include: "reconstruction/rules/concatenation.smk"
 
-if "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS:
+# ITS extraction from sample-specific ITS-candidate assemblies.
+if (
+    SAMPLE_ASSEMBLY_ENABLED
+    and "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS
+):
     include: "reconstruction/rules/itsx.smk"
 
-include: "reconstruction/rules/barrnap_ssu.smk"
-include: "reconstruction/rules/ssu_postprocessing.smk"
+# Optional SSU prediction and postprocessing.
+if SSU_PREDICTION:
+    include: "reconstruction/rules/barrnap_ssu.smk"
+    include: "reconstruction/rules/ssu_postprocessing.smk"
 
 # Module completion target
 rule reconstruction_done:
@@ -293,8 +357,12 @@ rule reconstruction_done:
             results_dir=RESULTS_DIR,
             samples=SAMPLES,
             config=config,
-            active_kingdoms=active_barrnap_kingdoms(
-                checkpoints=checkpoints,
+            active_kingdoms=(
+                active_barrnap_kingdoms(
+                    checkpoints=checkpoints,
+                )
+                if SSU_PREDICTION
+                else []
             ),
         )
     output:
@@ -362,14 +430,19 @@ if MODULES.get("taxonomy", False):
     include: "taxonomy/rules/kraken_bracken_downstream.smk"
 
     # Reconstructed ITS/ITSx BLAST taxonomy.
-    if "ITS" in TAXONOMY_MARKERS:
+    if "ITS" in TAXONOMY_MARKERS and SAMPLE_ASSEMBLY_ENABLED:
+        if "ITS_candidates" not in SAMPLE_RECONSTRUCTION_TARGETS:
+            raise ValueError(
+                "Assembly-based ITS taxonomy requires ITS_candidates "
+                "in reconstruction.targets."
+            )
 
         ITS_REGIONS = its_blast_regions(config)
         ITS_REGION_PATTERN = "|".join(ITS_REGIONS)
 
         include: "taxonomy/rules/blastn.smk"
         include: "taxonomy/rules/blastn_postprocessing.smk"
-
+        
     # Module completion target
 
     rule taxonomy_done:
@@ -394,6 +467,12 @@ if MODULES.get("taxonomy", False):
 ###############################
 
 if MODULES.get("phylogeny", False):
+    
+    if not SSU_PREDICTION:
+        raise ValueError(
+            "Phylogeny requires reconstruction.ssu_postprocessing.prediction_method: true. Enable SSU prediction or set modules.phylogeny: false."
+        )
+
     # Configuration
     configfile: "config/phylogeny.yaml"
 
@@ -575,6 +654,11 @@ if MODULES.get("functional_profiling", False):
     READ_BASED_ENABLED = read_based_enabled(config)
     ASSEMBLY_BASED_ENABLED = assembly_based_enabled(config)
 
+    if ASSEMBLY_BASED_ENABLED and not COASSEMBLY_ENABLED:
+        raise ValueError(
+            "Assembly-based functional profiling requires reconstruction.refinement to be coassembly, both, or all."
+        )
+
     SALMON_REFERENCE_PATTERN = "|".join(SALMON_REFERENCES)
     SALMON_METRIC_PATTERN = "|".join(SALMON_METRICS)
 
@@ -660,8 +744,7 @@ if MODULES.get("viral_sequence_analysis", False):
     )
 
     if (
-        VIRAL_POSTPROCESSING
-        and not MODULES.get("functional_profiling", False)
+        VIRAL_POSTPROCESSING and not MODULES.get("functional_profiling", False)
     ):
         raise ValueError(
             "Viral postprocessing requires "
