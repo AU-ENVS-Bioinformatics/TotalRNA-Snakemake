@@ -33,12 +33,15 @@ def reconstruction_outputs(
 
     outputs: List[str] = []
 
-    # Co-assembly for non-rRNA reconstruction
+    # Separate cross-sample co-assemblies for each configured read category.
+    if assembly_refinement in ["coassembly", "both", "all"]:
+        coassembly_targets = config["reconstruction"].get("coassembly_targets", ["non_rRNA"])
 
-    if assembly_refinement in ["coassembly","both","all"]:
-        outputs.append(
-            f"{results_dir}/Assembly/coassembly/non_rRNA/rnaspades/transcripts.fasta"
+        outputs += expand(
+            f"{results_dir}/Assembly/coassembly/{{target}}/rnaspades/transcripts.fasta",
+            target=coassembly_targets,
         )
+
     if assembly_refinement in ["samples","both","all"]:
         # Sample-specific SSU reconstruction
         outputs += expand(

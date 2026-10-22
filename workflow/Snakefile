@@ -254,8 +254,7 @@ ASSEMBLY_REFINEMENT = config["reconstruction"].get(
 
 if ASSEMBLY_REFINEMENT not in {"coassembly", "samples", "both", "all"}:
     raise ValueError(
-        "reconstruction.refinement must be "
-        "coassembly, samples, both, or all."
+        "reconstruction.refinement must be coassembly, samples, both, or all."
     )
 
 COASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {
@@ -291,14 +290,23 @@ SAMPLE_TARGET_PATTERN = "|".join(
     for target in SAMPLE_RECONSTRUCTION_TARGETS
 )
 
-CROSS_SAMPLE_TARGET_PATTERN = "non_rRNA"
+COASSEMBLY_TARGETS = config["reconstruction"].get("coassembly_targets", ["non_rRNA"])
+
+if any(target not in {"non_rRNA", "SSU"} for target in COASSEMBLY_TARGETS):
+    raise ValueError(
+        "reconstruction.coassembly_targets supports non_rRNA and SSU."
+    )
+
+if COASSEMBLY_ENABLED and not COASSEMBLY_TARGETS:
+    raise ValueError(
+        "Select at least one reconstruction.coassembly_targets entry."
+    )
+
+CROSS_SAMPLE_TARGET_PATTERN = "|".join(re.escape(target) for target in COASSEMBLY_TARGETS)
 
 CONCATENATION_TARGETS = concatenation_targets(config)
 
-CONCATENATION_TARGET_PATTERN = "|".join(
-    re.escape(target)
-    for target in CONCATENATION_TARGETS
-)
+CONCATENATION_TARGET_PATTERN = "|".join(re.escape(target) for target in CONCATENATION_TARGETS)
 
 # dependencies
 

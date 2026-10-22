@@ -1,7 +1,7 @@
 
 reconstruction:
-  method: rnaspades
-  refinement: coassembly # samples, both, all
+  method: rnaspades # trinity? metarib? matam? megahit?
+  refinement: all # samples, both, all
   # Separate assemblies across all samples
   coassembly_targets:
     - non_rRNA
@@ -11,12 +11,11 @@ reconstruction:
     - SSU
     - ITS_candidates
   rnaspades:
-    memory: "--memory 15" #600
-    restart_memory : "--memory 25" #750
+    memory: 500
+    max_memory_gb: 900
     threads: 12
   rnaspades_sample:
-    memory: "--memory 250"
-    restart_memory : "--memory 350"
+    memory: 250
     threads: 10
   itsx:
     options: "--detailed_results T --summary T --graphical T --fasta T"
