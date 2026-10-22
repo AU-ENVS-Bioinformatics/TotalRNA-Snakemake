@@ -1,0 +1,10 @@
+name: metarib
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python=2.7
+  - bbmap=38.18
+  - emirge=0.61.1=py27h30f897e_7
+  - pandas=0.24.2

@@ -1,38 +1,37 @@
 ################################################################################
 # 2. CROSS-SAMPLE NON-rRNA CO-ASSEMBLY
 ################################################################################
-
-rule rnaspades_cross_sample:
+rule rnaspades_coassembly:
     conda:
         "../envs/rnaspades.yaml"
     wildcard_constraints:
-        target=CROSS_SAMPLE_TARGET_PATTERN
+        target=COASSEMBLY_TARGET_PATTERNS["rnaspades"]
     message:
-        "[rnaSPAdes] Co-assembling non-rRNA reads across all samples"
+        "[rnaSPAdes] Co-assembling {wildcards.target} reads across all samples"
     input:
-        r1=f"{ASSEMBLY_DIR}/coassembly/{{target}}/concatenated/nonrRNA_1.fastq.gz",
-        r2=f"{ASSEMBLY_DIR}/coassembly/{{target}}/concatenated/nonrRNA_2.fastq.gz"
+        r1=f"{ASSEMBLY_DIR}/coassembly/{{target}}/concatenated/{{target}}_1.fastq.gz",
+        r2=f"{ASSEMBLY_DIR}/coassembly/{{target}}/concatenated/{{target}}_2.fastq.gz"
     output:
         transcripts=f"{ASSEMBLY_DIR}/coassembly/{{target}}/rnaspades/transcripts.fasta"
     log:
-        stdout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/logs/nonrRNA_rnaspades.log",
-        time=f"{ASSEMBLY_DIR}/coassembly/{{target}}/benchmarks/nonrRNA_rnaspades_time.txt"
+        stdout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/logs/{{target}}_rnaspades.log",
+        time=f"{ASSEMBLY_DIR}/coassembly/{{target}}/benchmarks/{{target}}_rnaspades_time.txt"
     benchmark:
-        f"{ASSEMBLY_DIR}/coassembly/{{target}}/benchmarks/nonrRNA_rnaspades_benchmark.txt"
+        f"{ASSEMBLY_DIR}/coassembly/{{target}}/benchmarks/{{target}}_rnaspades_benchmark.txt"
     params:
         outdir=f"{ASSEMBLY_DIR}/coassembly/{{target}}/rnaspades",
         memory=config["reconstruction"]["rnaspades"]["memory"],
-        max_memory_gb=250
+        max_memory_gb=config["reconstruction"]["rnaspades"]["max_memory_gb"]
     threads:
         config["reconstruction"]["rnaspades"].get("threads", 12)
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p {params.outdir:q}
+        mkdir -p {params.outdir}
 
-        read -r memory_flag memory_gb extra <<< {params.memory:q}
-        max_memory_gb={params.max_memory_gb:q}
+        memory_gb={params.memory}
+        max_memory_gb={params.max_memory_gb}
 
         attempt_log=$(mktemp)
         trap 'rm -f "$attempt_log"' EXIT
@@ -41,7 +40,7 @@ rule rnaspades_cross_sample:
         restart=false
 
         # Resume an existing SPAdes run when its saved parameters exist.
-        if [[ -f {params.outdir:q}/params.txt ]]; then
+        if [[ -f {params.outdir}/params.txt ]]; then
             restart=true
         fi
 
@@ -53,17 +52,15 @@ rule rnaspades_cross_sample:
                 memory_gb=$max_memory_gb
             fi
 
-            echo "[rnaSPAdes] Attempt $attempt: memory=$memory_gb GB; restart=$restart." \
-                | tee -a {log.stdout:q}
+            echo "[rnaSPAdes] Attempt $attempt: memory=$memory_gb GB; restart=$restart." | tee -a {log.stdout}
 
             if [[ "$restart" == true ]]; then
-                echo "[rnaSPAdes] Running rnaspades.py --restart-from last --memory $memory_gb." \
-                    | tee -a {log.stdout:q}
+                echo "[rnaSPAdes] Running rnaspades.py --restart-from last --memory $memory_gb." | tee -a {log.stdout}
 
-                if /usr/bin/time -v -a -o {log.time:q} \
+                if /usr/bin/time -v -a -o {log.time} \
                     rnaspades.py \
                         -t {threads} \
-                        -o {params.outdir:q} \
+                        -o {params.outdir} \
                         --restart-from last \
                         --memory "$memory_gb" \
                         > "$attempt_log" 2>&1
@@ -73,12 +70,12 @@ rule rnaspades_cross_sample:
                     rc=$?
                 fi
             else
-                if /usr/bin/time -v -a -o {log.time:q} \
+                if /usr/bin/time -v -a -o {log.time} \
                     rnaspades.py \
-                        -1 {input.r1:q} \
-                        -2 {input.r2:q} \
+                        -1 {input.r1} \
+                        -2 {input.r2} \
                         -t {threads} \
-                        -o {params.outdir:q} \
+                        -o {params.outdir} \
                         --memory "$memory_gb" \
                         > "$attempt_log" 2>&1
                 then
@@ -89,11 +86,10 @@ rule rnaspades_cross_sample:
             fi
 
             # Append this attempt to the combined log.
-            cat "$attempt_log" >> {log.stdout:q}
+            cat "$attempt_log" >> {log.stdout}
 
             if (( rc == 0 )); then
-                echo "[rnaSPAdes] Assembly completed successfully with $memory_gb GB." \
-                    | tee -a {log.stdout:q}
+                echo "[rnaSPAdes] Assembly completed successfully with $memory_gb GB." | tee -a {log.stdout}
                 break
             fi
 
@@ -106,8 +102,7 @@ rule rnaspades_cross_sample:
             fi
 
             if (( memory_gb >= max_memory_gb )); then
-                echo "[rnaSPAdes] Failed at the configured maximum of $max_memory_gb GB; stopping." \
-                    | tee -a {log.stdout:q}
+                echo "[rnaSPAdes] Failed at the configured maximum of $max_memory_gb GB; stopping." | tee -a {log.stdout}
                 exit "$rc"
             fi
 
@@ -118,8 +113,7 @@ rule rnaspades_cross_sample:
                 next_memory_gb=$max_memory_gb
             fi
             
-            echo "[rnaSPAdes] Retryable failure on attempt $attempt; retrying with --restart-from last --memory $next_memory_gb (previously $memory_gb GB)." \
-                | tee -a {log.stdout:q}
+            echo "[rnaSPAdes] Retryable failure on attempt $attempt; retrying with --restart-from last --memory $next_memory_gb (previously $memory_gb GB)." | tee -a {log.stdout}
 
             memory_gb=$next_memory_gb
             restart=true

@@ -86,6 +86,12 @@ for sample in samplesheet.index:
 
 
 SAMPLES = samplesheet.index.tolist()
+
+if "all" in SAMPLES:
+    raise ValueError(
+        "Sample ID 'all' is reserved for MetaRib pooled reads."
+    )
+
 print(f"{len(SAMPLES)} samples loaded")
 
 #####################################################################
@@ -231,6 +237,9 @@ ASSEMBLY_DIR: Path = RESULTS_DIR / "Assembly"
 # Helpers and completion outputs
 from utils.reconstruction import (
     validate_reconstruction_config,
+    coassembly_targets,
+    coassembly_method,
+    coassembly_fasta,
     sample_reconstruction_targets,
     concatenation_targets,
     barrnap_kingdoms,
@@ -241,20 +250,28 @@ from utils.reconstruction import (
 
 from targets.reconstruction import reconstruction_outputs
 
+
+# --------------------------
 # Validate configuration
+# --------------------------
+
 validate_reconstruction_config(config)
 
-# Assembly methods and disable/enable switches
 
-RECONSTRUCTION_METHOD = config["reconstruction"]["method"]
+# --------------------------
+# Assembly switches
+# --------------------------
 
 ASSEMBLY_REFINEMENT = config["reconstruction"].get(
     "refinement", "coassembly"
 )
 
-if ASSEMBLY_REFINEMENT not in {"coassembly", "samples", "both", "all"}:
+if ASSEMBLY_REFINEMENT not in {
+    "coassembly", "samples", "both", "all"
+}:
     raise ValueError(
-        "reconstruction.refinement must be coassembly, samples, both, or all."
+        "reconstruction.refinement must be "
+        "coassembly, samples, both, or all."
     )
 
 COASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {
@@ -275,40 +292,87 @@ if not isinstance(SSU_PREDICTION, bool):
         "must be true or false, without quotation marks."
     )
 
-# Only rnaSPAdes is implemented in this section.
-if RECONSTRUCTION_METHOD != "rnaspades":
-    raise ValueError(
-        f"Unsupported reconstruction method: {RECONSTRUCTION_METHOD}"
+
+# --------------------------
+# Co-assembly targets and methods
+# --------------------------
+
+COASSEMBLY_TARGETS = coassembly_targets(config)
+
+# Example:
+# {
+#     "non_rRNA": "rnaspades",
+#     "SSU": "rnaspades",
+# }
+COASSEMBLY_METHOD_BY_TARGET = {
+    target: coassembly_method(config, target)
+    for target in COASSEMBLY_TARGETS
+}
+
+# Shared preprocessing can prepare reads for every selected target.
+CROSS_SAMPLE_TARGET_PATTERN = "|".join(
+    re.escape(target)
+    for target in COASSEMBLY_TARGETS
+)
+
+# Group targets by their selected assembler.
+#
+# Example when both use rnaSPAdes:
+# {"rnaspades": ["non_rRNA", "SSU"]}
+#
+# Example after MetaRib is implemented and selected for SSU:
+# {"rnaspades": ["non_rRNA"], "metarib": ["SSU"]}
+COASSEMBLY_TARGETS_BY_METHOD = {}
+
+for target, method in COASSEMBLY_METHOD_BY_TARGET.items():
+    COASSEMBLY_TARGETS_BY_METHOD.setdefault(method, []).append(
+        target
     )
 
-# target pattern
+# Each assembler rule may only match its assigned targets.
+COASSEMBLY_TARGET_PATTERNS = {
+    method: "|".join(
+        re.escape(target)
+        for target in targets
+    )
+    for method, targets in COASSEMBLY_TARGETS_BY_METHOD.items()
+}
 
-SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(config)
+print(f"Co-assembly enabled: {COASSEMBLY_ENABLED}")
+print(f"Co-assembly methods: {COASSEMBLY_METHOD_BY_TARGET}")
+
+
+# --------------------------
+# Sample-specific assembly targets
+# --------------------------
+
+SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(
+    config
+)
 
 SAMPLE_TARGET_PATTERN = "|".join(
     re.escape(target)
     for target in SAMPLE_RECONSTRUCTION_TARGETS
 )
 
-COASSEMBLY_TARGETS = config["reconstruction"].get("coassembly_targets", ["non_rRNA"])
 
-if any(target not in {"non_rRNA", "SSU"} for target in COASSEMBLY_TARGETS):
-    raise ValueError(
-        "reconstruction.coassembly_targets supports non_rRNA and SSU."
-    )
+# --------------------------
+# Cross-sample FASTA concatenation
+# --------------------------
 
-if COASSEMBLY_ENABLED and not COASSEMBLY_TARGETS:
-    raise ValueError(
-        "Select at least one reconstruction.coassembly_targets entry."
-    )
-
-CROSS_SAMPLE_TARGET_PATTERN = "|".join(re.escape(target) for target in COASSEMBLY_TARGETS)
-
+# These are concatenated sample-specific assemblies.
+# They are separate from assemblies made using pooled reads.
 CONCATENATION_TARGETS = concatenation_targets(config)
 
-CONCATENATION_TARGET_PATTERN = "|".join(re.escape(target) for target in CONCATENATION_TARGETS)
+CONCATENATION_TARGET_PATTERN = "|".join(
+    re.escape(target)
+    for target in CONCATENATION_TARGETS
+)
 
-# dependencies
+
+# --------------------------
+# SSU prediction dependencies
+# --------------------------
 
 if SSU_PREDICTION:
     if not SAMPLE_ASSEMBLY_ENABLED:
@@ -320,7 +384,7 @@ if SSU_PREDICTION:
     if "SSU" not in SAMPLE_RECONSTRUCTION_TARGETS:
         raise ValueError(
             "SSU prediction requires SSU "
-            "in reconstruction.targets."
+            "in the sample reconstruction targets."
         )
 
     BARRNAP_KINGDOMS = barrnap_kingdoms(config)
@@ -330,20 +394,28 @@ if SSU_PREDICTION:
         for kingdom in BARRNAP_KINGDOMS
     )
 
+
+# --------------------------
 # Rules
+# --------------------------
 
 # Shared assembly input preparation.
 include: "reconstruction/rules/preprocessing.smk"
 
-# Cross-sample non-rRNA assembly.
+# Co-assemblies.
 if COASSEMBLY_ENABLED:
-    include: "reconstruction/rules/rnaspades.smk"
+    if "rnaspades" in COASSEMBLY_TARGETS_BY_METHOD:
+        include: "reconstruction/rules/rnaspades.smk"
+
+    if "metarib" in COASSEMBLY_TARGETS_BY_METHOD:
+        include: "reconstruction/rules/metarib.smk"
+
 
 # Sample-specific SSU / ITS-candidate assemblies.
 if SAMPLE_ASSEMBLY_ENABLED:
     include: "reconstruction/rules/rnaspades_samples.smk"
 
-# Shared concatenation rules.
+# Shared concatenation of sample-specific assembly FASTAs.
 include: "reconstruction/rules/concatenation.smk"
 
 # ITS extraction from sample-specific ITS-candidate assemblies.
@@ -358,7 +430,11 @@ if SSU_PREDICTION:
     include: "reconstruction/rules/barrnap_ssu.smk"
     include: "reconstruction/rules/ssu_postprocessing.smk"
 
+
+# --------------------------
 # Module completion target
+# --------------------------
+
 rule reconstruction_done:
     input:
         lambda wc: reconstruction_outputs(
@@ -379,8 +455,8 @@ rule reconstruction_done:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.flag})
-        touch {output.flag}
+        mkdir -p "$(dirname "{output.flag}")"
+        touch "{output.flag}"
         """
 
 #############################
@@ -682,7 +758,11 @@ if MODULES.get("functional_profiling", False):
     if ASSEMBLY_BASED_ENABLED:
         ORF_PREDICTOR = config["functional_profiling"]["ORF_predictor"]
 
-        ASSEMBLED_NONRRNA = (f"{ASSEMBLY_DIR}/coassembly/non_rRNA/rnaspades/transcripts.fasta")
+        ASSEMBLED_NONRRNA = coassembly_fasta(
+            results_dir=RESULTS_DIR,
+            config=config,
+            target="non_rRNA",
+        )
 
         FINAL_ORF_SOURCES = final_orf_sources(
             results_dir=RESULTS_DIR,

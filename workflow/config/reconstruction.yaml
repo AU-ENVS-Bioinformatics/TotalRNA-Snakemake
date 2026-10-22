@@ -1,7 +1,7 @@
-
 reconstruction:
-  method: rnaspades # trinity? metarib? matam? megahit?
-  refinement: all # samples, both, all
+  non_rRNA_method: rnaspades # trinity? megahit? 
+  rRNA_method: metarib #rnaspades metarib matam? 
+  refinement: coassembly # coassembly | samples | both | all
   # Separate assemblies across all samples
   coassembly_targets:
     - non_rRNA
@@ -14,6 +14,16 @@ reconstruction:
     memory: 500
     max_memory_gb: 900
     threads: 12
+  metarib:
+    threads: 16
+    EM_REF: /data_2/Databases/emirge_db/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed.fasta
+    EM_BT: /data_2/Databases/emirge_db/SILVA_138.1_SSURef_NR99_tax_silva_trunc.ge1200bp.le2000bp.0.97.fixed
+    SAMPLING_NUM: 1000000
+    EM_PARA: "--phred33 -l 151 -i 300 -s 75 -n 25"
+    MAP_PARA: "minid=0.96 maxindel=1 minhits=2 idfilter=0.98"
+    CLS_PARA: "fo=t ow=t c=t mcs=1 e=5 mid=99"
+    MIN_COV: 2
+    MIN_PER: 80
   rnaspades_sample:
     memory: 250
     threads: 10

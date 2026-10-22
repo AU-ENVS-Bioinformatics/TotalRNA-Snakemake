@@ -1,7 +1,11 @@
 from typing import List
 from pathlib import Path
 from snakemake.io import expand
-from utils.reconstruction import validate_reconstruction_config
+from utils.reconstruction import (
+    validate_reconstruction_config,
+    coassembly_targets,
+    coassembly_fasta,
+)
 
 def reconstruction_outputs(
     results_dir: Path,
@@ -33,14 +37,16 @@ def reconstruction_outputs(
 
     outputs: List[str] = []
 
-    # Separate cross-sample co-assemblies for each configured read category.
-    if assembly_refinement in ["coassembly", "both", "all"]:
-        coassembly_targets = config["reconstruction"].get("coassembly_targets", ["non_rRNA"])
-
-        outputs += expand(
-            f"{results_dir}/Assembly/coassembly/{{target}}/rnaspades/transcripts.fasta",
-            target=coassembly_targets,
-        )
+    # Request each target from its configured assembler.
+    if assembly_refinement in {"coassembly", "both", "all"}:
+        outputs += [
+            coassembly_fasta(
+                results_dir=results_dir,
+                config=config,
+                target=target,
+            )
+            for target in coassembly_targets(config)
+        ]
 
     if assembly_refinement in ["samples","both","all"]:
         # Sample-specific SSU reconstruction
