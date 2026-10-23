@@ -159,7 +159,7 @@ rule metarib_coassembly:
         script=f"{workflow.basedir}/reconstruction/scripts/run_MetaRib.py"
     output:
         native_fasta=f"{ASSEMBLY_DIR}/coassembly/{{target}}/metarib/MetaRib/Abundance/all.dedup.filtered.fasta",
-        transcripts=f"{ASSEMBLY_DIR}/coassembly/{{target}}/metarib/transcripts.fasta"
+        link_transcript=f"{ASSEMBLY_DIR}/coassembly/{{target}}/{{target}}_transcripts.fasta"
     threads:
         config["reconstruction"]["metarib"].get("threads", 12)
     log:
@@ -171,14 +171,12 @@ rule metarib_coassembly:
         r"""
         set -euo pipefail
 
-        mkdir -p "$(dirname "{output.transcripts}")" \
-            "$(dirname "{log.stdout}")" \
-            "$(dirname "{log.time}")"
+        mkdir -p $(dirname {output.link_transcript})
 
-        /usr/bin/time -v -o "{log.time}" \
-            python2 "{input.script}" \
-                -cfg "{input.cfg}" \
-                > "{log.stdout}" 2>&1
+        /usr/bin/time -v -o {log.time} \
+            python2 {input.script} \
+                -cfg {input.cfg} \
+                > {log.stdout} 2>&1
 
-        ln -sfn "$(realpath "{output.native_fasta}")" "{output.transcripts}"
+        ln -sfn $(realpath {output.native_fasta}) {output.link_transcript}
         """

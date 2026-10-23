@@ -13,6 +13,9 @@ from typing import Any, List
 
 configfile: "config/config.yaml"
 
+print("Samplesheet:", config["samples_file"])
+print("Results directory:", config["shared_results_dir"])
+
 RESULTS_DIR: Path = Path(config["shared_results_dir"])
 
 # Validate optional module switches before loading their sections.
@@ -242,14 +245,11 @@ from utils.reconstruction import (
     coassembly_fasta,
     sample_reconstruction_targets,
     concatenation_targets,
-    barrnap_kingdoms,
     rnaspades_sample_input,
     prefixed_reconstructed_fastas,
-    active_barrnap_kingdoms,
 )
 
 from targets.reconstruction import reconstruction_outputs
-
 
 # --------------------------
 # Validate configuration
@@ -257,41 +257,14 @@ from targets.reconstruction import reconstruction_outputs
 
 validate_reconstruction_config(config)
 
-
 # --------------------------
 # Assembly switches
 # --------------------------
 
-ASSEMBLY_REFINEMENT = config["reconstruction"].get(
-    "refinement", "coassembly"
-)
+ASSEMBLY_REFINEMENT = config["reconstruction"].get("refinement", "coassembly")
 
-if ASSEMBLY_REFINEMENT not in {
-    "coassembly", "samples", "both", "all"
-}:
-    raise ValueError(
-        "reconstruction.refinement must be "
-        "coassembly, samples, both, or all."
-    )
-
-COASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {
-    "coassembly", "both", "all"
-}
-
-SAMPLE_ASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {
-    "samples", "both", "all"
-}
-
-SSU_PREDICTION = config["reconstruction"]["ssu_postprocessing"].get(
-    "prediction_method", True
-)
-
-if not isinstance(SSU_PREDICTION, bool):
-    raise ValueError(
-        "reconstruction.ssu_postprocessing.prediction_method "
-        "must be true or false, without quotation marks."
-    )
-
+COASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {"coassembly", "both", "all"}
+SAMPLE_ASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {"samples", "both", "all"}
 
 # --------------------------
 # Co-assembly targets and methods
@@ -299,101 +272,41 @@ if not isinstance(SSU_PREDICTION, bool):
 
 COASSEMBLY_TARGETS = coassembly_targets(config)
 
-# Example:
-# {
-#     "non_rRNA": "rnaspades",
-#     "SSU": "rnaspades",
-# }
 COASSEMBLY_METHOD_BY_TARGET = {
     target: coassembly_method(config, target)
     for target in COASSEMBLY_TARGETS
 }
 
-# Shared preprocessing can prepare reads for every selected target.
-CROSS_SAMPLE_TARGET_PATTERN = "|".join(
-    re.escape(target)
-    for target in COASSEMBLY_TARGETS
-)
+CROSS_SAMPLE_TARGET_PATTERN = "|".join(re.escape(target) for target in COASSEMBLY_TARGETS)
 
-# Group targets by their selected assembler.
-#
-# Example when both use rnaSPAdes:
-# {"rnaspades": ["non_rRNA", "SSU"]}
-#
-# Example after MetaRib is implemented and selected for SSU:
-# {"rnaspades": ["non_rRNA"], "metarib": ["SSU"]}
 COASSEMBLY_TARGETS_BY_METHOD = {}
 
 for target, method in COASSEMBLY_METHOD_BY_TARGET.items():
-    COASSEMBLY_TARGETS_BY_METHOD.setdefault(method, []).append(
-        target
-    )
+    COASSEMBLY_TARGETS_BY_METHOD.setdefault(method, []).append(target)
 
-# Each assembler rule may only match its assigned targets.
 COASSEMBLY_TARGET_PATTERNS = {
-    method: "|".join(
-        re.escape(target)
-        for target in targets
-    )
+    method: "|".join(re.escape(target) for target in targets)
     for method, targets in COASSEMBLY_TARGETS_BY_METHOD.items()
 }
 
 print(f"Co-assembly enabled: {COASSEMBLY_ENABLED}")
 print(f"Co-assembly methods: {COASSEMBLY_METHOD_BY_TARGET}")
 
-
 # --------------------------
 # Sample-specific assembly targets
 # --------------------------
 
-SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(
-    config
-)
+SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(config)
 
-SAMPLE_TARGET_PATTERN = "|".join(
-    re.escape(target)
-    for target in SAMPLE_RECONSTRUCTION_TARGETS
-)
-
+SAMPLE_TARGET_PATTERN = "|".join(re.escape(target) for target in SAMPLE_RECONSTRUCTION_TARGETS)
 
 # --------------------------
 # Cross-sample FASTA concatenation
 # --------------------------
 
-# These are concatenated sample-specific assemblies.
-# They are separate from assemblies made using pooled reads.
 CONCATENATION_TARGETS = concatenation_targets(config)
 
-CONCATENATION_TARGET_PATTERN = "|".join(
-    re.escape(target)
-    for target in CONCATENATION_TARGETS
-)
-
-
-# --------------------------
-# SSU prediction dependencies
-# --------------------------
-
-if SSU_PREDICTION:
-    if not SAMPLE_ASSEMBLY_ENABLED:
-        raise ValueError(
-            "SSU prediction requires reconstruction.refinement "
-            "to be samples, both, or all."
-        )
-
-    if "SSU" not in SAMPLE_RECONSTRUCTION_TARGETS:
-        raise ValueError(
-            "SSU prediction requires SSU "
-            "in the sample reconstruction targets."
-        )
-
-    BARRNAP_KINGDOMS = barrnap_kingdoms(config)
-
-    BARRNAP_KINGDOM_PATTERN = "|".join(
-        re.escape(kingdom)
-        for kingdom in BARRNAP_KINGDOMS
-    )
-
+CONCATENATION_TARGET_PATTERN = "|".join(re.escape(target) for target in CONCATENATION_TARGETS)
 
 # --------------------------
 # Rules
@@ -402,7 +315,7 @@ if SSU_PREDICTION:
 # Shared assembly input preparation.
 include: "reconstruction/rules/preprocessing.smk"
 
-# Co-assemblies.
+# Co-assemblies and shared postprocessing.
 if COASSEMBLY_ENABLED:
     if "rnaspades" in COASSEMBLY_TARGETS_BY_METHOD:
         include: "reconstruction/rules/rnaspades.smk"
@@ -410,26 +323,21 @@ if COASSEMBLY_ENABLED:
     if "metarib" in COASSEMBLY_TARGETS_BY_METHOD:
         include: "reconstruction/rules/metarib.smk"
 
+    include: "reconstruction/rules/coassembly_postprocessing.smk"
 
-# Sample-specific SSU / ITS-candidate assemblies.
+    if "non_rRNA" in COASSEMBLY_TARGETS:
+        include: "reconstruction/rules/non_rrna_postprocessing.smk"
+
+    if "SSU" in COASSEMBLY_TARGETS:
+        include: "reconstruction/rules/ssu_postprocessing.smk"
+
+# Sample-specific assemblies and concatenation.
 if SAMPLE_ASSEMBLY_ENABLED:
     include: "reconstruction/rules/rnaspades_samples.smk"
+    include: "reconstruction/rules/concatenation.smk"
 
-# Shared concatenation of sample-specific assembly FASTAs.
-include: "reconstruction/rules/concatenation.smk"
-
-# ITS extraction from sample-specific ITS-candidate assemblies.
-if (
-    SAMPLE_ASSEMBLY_ENABLED
-    and "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS
-):
-    include: "reconstruction/rules/itsx.smk"
-
-# Optional SSU prediction and postprocessing.
-if SSU_PREDICTION:
-    include: "reconstruction/rules/barrnap_ssu.smk"
-    include: "reconstruction/rules/ssu_postprocessing.smk"
-
+    if "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS:
+        include: "reconstruction/rules/itsx.smk"
 
 # --------------------------
 # Module completion target
@@ -437,27 +345,17 @@ if SSU_PREDICTION:
 
 rule reconstruction_done:
     input:
-        lambda wc: reconstruction_outputs(
-            results_dir=RESULTS_DIR,
-            samples=SAMPLES,
-            config=config,
-            active_kingdoms=(
-                active_barrnap_kingdoms(
-                    checkpoints=checkpoints,
-                )
-                if SSU_PREDICTION
-                else []
-            ),
-        )
+        reconstruction_outputs(results_dir=RESULTS_DIR, samples=SAMPLES, config=config)
     output:
         flag=f"{ASSEMBLY_DIR}/reconstruction.done"
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p "$(dirname "{output.flag}")"
-        touch "{output.flag}"
+        mkdir -p $(dirname {output.flag})
+        touch {output.flag}
         """
+
 
 #############################
 #### Taxonomic profiling ####
@@ -867,7 +765,7 @@ if MODULES.get("viral_sequence_analysis", False):
             mkdir -p $(dirname {output.flag})
             touch {output.flag}
             """
-        
+
 ######################################
 ###### FINAL WORKFLOW TARGETS ########
 ######################################

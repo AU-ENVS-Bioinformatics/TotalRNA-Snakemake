@@ -1,11 +1,28 @@
 reconstruction:
   non_rRNA_method: rnaspades # trinity? megahit? 
-  rRNA_method: metarib #rnaspades metarib matam? 
+  rRNA_method: rnaspades #rnaspades metarib matam? 
   refinement: coassembly # coassembly | samples | both | all
   # Separate assemblies across all samples
   coassembly_targets:
     - non_rRNA
     - SSU
+  coassembly_postprocessing:
+    non_rRNA:
+      minlength: 300
+      maxlength: null
+      rfam_database: /data_2/Databases/RFAM_october26/ncRNA/ncRNA_gene_models.cm
+      ncrna_min_contig_coverage: 0.90
+    SSU:
+      minlength: 1200
+      maxlength: 2000
+      rfam_database: /data_2/Databases/RFAM_october26/rRNA/ssu.cm
+      min_ssu_contig_coverage: 0.80
+      chimera:
+        options: "--notrunclabels --fasta_width 0"
+    dereplicate_options: "--strand both --notrunclabels --fasta_width 0"
+    cmsearch:
+      threads: 16
+      options: "--cut_ga"
   # Sample-specific assemblies
   targets:
     - SSU

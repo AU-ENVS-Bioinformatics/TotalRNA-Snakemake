@@ -1,158 +1,105 @@
 ################################################################################
-# 1. EXTRACT AND LENGTH-FILTER PREDICTED SSU REGIONS
+# SSU: RETAIN WHOLE CONTIGS WITH >=90% SSU COVERAGE
 ################################################################################
 
-rule filter_ssu_length:
-    conda:
-        "../envs/seqkit.yaml"
-    wildcard_constraints:
-        kingdom=BARRNAP_KINGDOM_PATTERN
+rule coassembly_filter_ssu:
     message:
-        "[SSU postprocessing] Length-filtering SSU sequences: {wildcards.kingdom}"
+        "[SSU filtering] Retaining whole contigs with sufficient SSU coverage"
     input:
-        fasta=f"{ASSEMBLY_DIR}/SSU_candidates/barrnap/{{kingdom}}/cross_sample_SSU_{{kingdom}}.barrnap.fasta"
+        fasta=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_dereplicated.fasta",
+        tblout=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_rfam_hits.tbl",
     output:
-        fasta=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_filtered.fasta"
-    log:
-        stdout=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/logs/length_filter.log"
+        fasta=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_rfam_filtered.fasta",
+        removed=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_rfam_removed.fasta",
+        report=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_rfam_filter_report.tsv"
     params:
-        min_length=config["reconstruction"]["ssu_postprocessing"].get("min_length", 1000)
+        script=f"{workflow.basedir}/reconstruction/scripts/filter_ssu.py",
+        coverage=config["reconstruction"]["coassembly_postprocessing"]["SSU"].get("min_ssu_contig_coverage", 0.90)
+    log:
+        stdout=f"{ASSEMBLY_DIR}/coassembly/SSU/logs/SSU_filter_rfam.log"
+    threads:
+        1
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.fasta})
+        mkdir -p $(dirname {output.fasta}) $(dirname {log.stdout})
 
-        seqkit seq \
-            --min-len {params.min_length} \
-            {input.fasta} \
-            > {output.fasta} \
-            2> {log.stdout}
+        python3 {params.script} \
+            --fasta {input.fasta} \
+            --tblout {input.tblout} \
+            --output {output.fasta} \
+            --removed_out {output.removed} \
+            --report {output.report} \
+            --min-ssu-coverage {params.coverage} \
+            > {log.stdout} 2>&1
         """
 
 ################################################################################
-# 2. EXACT DEREPLICATION WITHIN EACH KINGDOM
+# SSU: ORIENTATION AND REFERENCE-BASED CHIMERA SCREENING
 ################################################################################
 
-rule dereplicate_ssu:
+rule coassembly_ssu_chimera:
     conda:
         "../envs/vsearch.yaml"
-    wildcard_constraints:
-        kingdom=BARRNAP_KINGDOM_PATTERN
     message:
-        "[SSU postprocessing] Exact dereplication: {wildcards.kingdom}"
+        "[VSEARCH] Orienting SSU contigs and screening for apparent chimeras"
     input:
-        fasta=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_filtered.fasta"
+        fasta=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_rfam_filtered.fasta"
     output:
-        fasta=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_dereplicated.fasta",
-        uc=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_dereplicated.uc"
-    log:
-        stdout=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/logs/dereplication.log"
+        oriented=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_oriented.fasta",
+        unoriented=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_unoriented.fasta",
+        chimeras=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_chimeras.fasta",
+        borderline=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_chimera_borderline.fasta",
+        report=f"{ASSEMBLY_DIR}/coassembly/SSU/postprocessing/SSU_chimera_report.tsv",
+        nonchimeras=f"{ASSEMBLY_DIR}/coassembly/SSU/final/transcript.fasta"
     params:
-        options=config["reconstruction"]["ssu_postprocessing"]["dereplication"].get("options", "")
+        database=config["RNA_classification"]["databases"]["sortmeRNA_ssu"],
+        options=config["reconstruction"]["coassembly_postprocessing"]["SSU"]["chimera"].get("options", ""),
+        minlength=config["reconstruction"]["coassembly_postprocessing"]["SSU"].get("minlength") or 1,
+        maxlength=config["reconstruction"]["coassembly_postprocessing"]["SSU"].get("maxlength") or 2147481646
+    log:
+        stdout=f"{ASSEMBLY_DIR}/coassembly/SSU/logs/SSU_chimera.log"
     threads:
-        config["reconstruction"]["ssu_postprocessing"]["dereplication"].get("threads", 1)
+        config["reconstruction"]["coassembly_postprocessing"]["SSU"]["chimera"].get("threads", 12)
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.fasta})
+        mkdir -p $(dirname {output.nonchimeras}) $(dirname {log.stdout})
 
-        if [ ! -s {input.fasta} ]; then
-            : > {output.fasta}
-            : > {output.uc}
-            printf 'No SSU regions passed extraction and length filtering.\n' > {log.stdout}
-        else
+        # Initialize outputs, including when the input is empty.
+        for file in {output}; do
+            : > "$file"
+        done
+
+        : > {log.stdout}
+
+        if [ -s {input.fasta} ]; then
             vsearch \
-                --derep_fulllength {input.fasta} \
-                --output {output.fasta} \
-                --uc {output.uc} \
+                --orient {input.fasta} \
+                --db {params.database} \
+                --fastaout {output.oriented} \
+                --notmatched {output.unoriented} \
                 --threads {threads} \
+                --minseqlength {params.minlength} \
+                --maxseqlength {params.maxlength} \
                 {params.options} \
-                > {log.stdout} 2>&1
+                >> {log.stdout} 2>&1
         fi
-        """
 
-
-################################################################################
-# 3. REFERENCE-BASED CHIMERA SCREENING WITHIN EACH KINGDOM
-################################################################################
-
-rule screen_ssu_chimeras:
-    conda:
-        "../envs/vsearch.yaml"
-    wildcard_constraints:
-        kingdom=BARRNAP_KINGDOM_PATTERN
-    message:
-        "[SSU postprocessing] Reference-based chimera screening: {wildcards.kingdom}"
-    input:
-        fasta=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_dereplicated.fasta",
-        reference=lambda wc: config["reconstruction"]["ssu_postprocessing"]["chimera"]["references"][wc.kingdom]
-    output:
-        nonchimeras=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_nonchimeras.fasta",
-        chimeras=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_chimeras.fasta",
-        borderline=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_borderline.fasta",
-        report=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_uchime.tsv"
-    log:
-        stdout=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/logs/chimera_screening.log"
-    params:
-        options=config["reconstruction"]["ssu_postprocessing"]["chimera"].get("options", "")
-    threads:
-        config["reconstruction"]["ssu_postprocessing"]["chimera"].get("threads", 12)
-    shell:
-        r"""
-        set -euo pipefail
-
-        mkdir -p $(dirname {output.nonchimeras})
-
-        if [ ! -s {input.fasta} ]; then
-            : > {output.nonchimeras}
-            : > {output.chimeras}
-            : > {output.borderline}
-            : > {output.report}
-            printf 'No dereplicated SSU sequences to screen.\n' > {log.stdout}
-        else
+        if [ -s {output.oriented} ]; then
             vsearch \
-                --uchime_ref {input.fasta} \
-                --db {input.reference} \
+                --uchime_ref {output.oriented} \
+                --db {params.database} \
                 --nonchimeras {output.nonchimeras} \
                 --chimeras {output.chimeras} \
                 --borderline {output.borderline} \
                 --uchimeout {output.report} \
                 --threads {threads} \
+                --minseqlength {params.minlength} \
+                --maxseqlength {params.maxlength} \
                 {params.options} \
-                > {log.stdout} 2>&1
+                >> {log.stdout} 2>&1
         fi
-        """
-
-################################################################################
-# 4. CONCATENATE NON-CHIMERA AND BORDERLINE TO CREATE A CONTIG CATALOGUE FOR 
-#    DOWNSTREAM PROCESSING (PHYLOGENY, NOVEL IDENTIFICATION ETC.)
-################################################################################
-
-rule concatenate_ssu:
-    conda:
-        "../envs/seqkit.yaml"
-    wildcard_constraints:
-        kingdom=BARRNAP_KINGDOM_PATTERN
-    message:
-        "[SSU postprocessing] Concatenating non-chimeras and borderline sequences: {wildcards.kingdom}"
-    input:
-        nonchimeras=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_nonchimeras.fasta",
-        borderline=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_borderline.fasta"
-    output:
-        fasta=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/SSU_{{kingdom}}_catalogue.fasta"
-    log:
-        stdout=f"{ASSEMBLY_DIR}/SSU_candidates/postprocessing/{{kingdom}}/logs/concatenation.log"
-    shell:
-        r"""
-        set -euo pipefail
-
-        mkdir -p $(dirname {output.fasta})
-
-        cat \
-            {input.nonchimeras} \
-            {input.borderline} \
-            > {output.fasta} \
-            2> {log.stdout}
         """

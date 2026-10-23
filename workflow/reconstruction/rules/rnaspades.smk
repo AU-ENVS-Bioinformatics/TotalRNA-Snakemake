@@ -12,7 +12,8 @@ rule rnaspades_coassembly:
         r1=f"{ASSEMBLY_DIR}/coassembly/{{target}}/concatenated/{{target}}_1.fastq.gz",
         r2=f"{ASSEMBLY_DIR}/coassembly/{{target}}/concatenated/{{target}}_2.fastq.gz"
     output:
-        transcripts=f"{ASSEMBLY_DIR}/coassembly/{{target}}/rnaspades/transcripts.fasta"
+        transcripts=f"{ASSEMBLY_DIR}/coassembly/{{target}}/rnaspades/transcripts.fasta",
+        link_transcript=f"{ASSEMBLY_DIR}/coassembly/{{target}}/{{target}}_transcripts.fasta"
     log:
         stdout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/logs/{{target}}_rnaspades.log",
         time=f"{ASSEMBLY_DIR}/coassembly/{{target}}/benchmarks/{{target}}_rnaspades_time.txt"
@@ -118,4 +119,11 @@ rule rnaspades_coassembly:
             memory_gb=$next_memory_gb
             restart=true
         done
+
+        if [ ! -f {output.transcripts} ]; then
+            echo "ERROR: rnaSPAdes returned success but transcripts.fasta is missing." >> {log.stdout}
+            exit 1
+        fi
+
+        ln -sfn $(realpath {output.transcripts}) {output.link_transcript}
         """
