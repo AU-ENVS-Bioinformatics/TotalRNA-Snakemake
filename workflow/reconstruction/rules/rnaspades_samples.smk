@@ -1,6 +1,7 @@
 ################################################################################
-# 1. SAMPLE SPECIFIC rRNA assembly - primarily useful for phylogenetic analysis
+# SAMPLE-SPECIFIC ASSEMBLY
 ################################################################################
+
 rule rnaspades_sample_specific:
     conda:
         "../envs/rnaspades.yaml"
@@ -9,34 +10,25 @@ rule rnaspades_sample_specific:
     message:
         "[rnaSPAdes] Reconstructing {wildcards.target} for sample {wildcards.sample}"
     input:
-        r1=lambda wc: rnaspades_sample_input(
-            wc,
-            read=1,
-            results_dir=RESULTS_DIR,
-        ),
-        r2=lambda wc: rnaspades_sample_input(
-            wc,
-            read=2,
-            results_dir=RESULTS_DIR,
-        ),
+        r1=lambda wc: rnaspades_sample_input(wc, read=1, results_dir=RESULTS_DIR),
+        r2=lambda wc: rnaspades_sample_input(wc, read=2, results_dir=RESULTS_DIR)
     output:
-        transcripts=f"{ASSEMBLY_DIR}/{{sample}}/{{target}}/rnaspades/transcripts.fasta"
+        transcripts=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/{{target}}/rnaspades/transcripts.fasta"
     log:
-        stdout=f"{ASSEMBLY_DIR}/{{sample}}/{{target}}/logs/{{sample}}_{{target}}_rnaspades.log",
-        time=f"{ASSEMBLY_DIR}/{{sample}}/{{target}}/benchmarks/{{sample}}_{{target}}_rnaspades_time.txt"
+        stdout=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/{{target}}/logs/{{sample}}_{{target}}_rnaspades.log",
+        time=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/{{target}}/benchmarks/{{sample}}_{{target}}_rnaspades_time.txt"
     benchmark:
-        f"{ASSEMBLY_DIR}/{{sample}}/{{target}}/benchmarks/{{sample}}_{{target}}_rnaspades_benchmark.txt"
+        f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/{{target}}/benchmarks/{{sample}}_{{target}}_rnaspades_benchmark.txt"
     params:
-        outdir=f"{ASSEMBLY_DIR}/{{sample}}/{{target}}/rnaspades",
-        logdir=f"{ASSEMBLY_DIR}/{{sample}}/{{target}}/logs",
-        memory=config["reconstruction"]["rnaspades"].get("memory","")
+        outdir=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/{{target}}/rnaspades",
+        memory=config["reconstruction"]["rnaspades_sample"]["memory"]
     threads:
-        config["reconstruction"]["rnaspades"].get("threads",12)
+        config["reconstruction"]["rnaspades_sample"].get("threads", 10)
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p {params.outdir}
+        mkdir -p {params.outdir} $(dirname {log.stdout}) $(dirname {log.time})
 
         /usr/bin/time \
             -v \

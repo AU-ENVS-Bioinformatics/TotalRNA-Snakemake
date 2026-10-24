@@ -1,7 +1,7 @@
 reconstruction:
   non_rRNA_method: rnaspades # trinity? megahit? 
   rRNA_method: rnaspades #rnaspades metarib matam? 
-  refinement: coassembly # coassembly | samples | both | all
+  refinement: samples # coassembly | samples | both | all
   # Separate assemblies across all samples
   coassembly_targets:
     - non_rRNA
@@ -49,33 +49,11 @@ reconstruction:
     species: "Fungi"
     regions: "ITS1,5.8S,ITS2"
     threads: 12
-  barrnap:
-    kingdom: # bac | arc 
-      - bac
-      - arc
-      - fun
-    options: "--rrna"
-    threads: 12
-  cmsearch:
-    models:
-      bac: /path/to/RF00177.cm
-      arc: /path/to/RF01959.cm
-    threads: 16
-    options: "--cut_ga"
   ssu_postprocessing:
-    prediction_method: false
-    min_length: 1000
-    features:
-      bac: "16S_rRNA"
-      arc: "16S_rRNA"
-      fun: "18S_rRNA"
-    dereplication:
-      threads: 1
-      options: "--strand plus --minseqlength 1000 --sizeout --maxseqlength 1000000  --fasta_width 0"
     chimera:
       threads: 12
-      options: "--minseqlength 1000 --maxseqlength 1000000 --fasta_width 0"
+      options: "--notrunclabels --fasta_width 0"
       references:
-        bac: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/SILVA_138.2_bacteria_SSU.dna.fasta
-        arc: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/SILVA_138.2_archaea_SSU.dna.fasta
-        fun: /data_2/Databases/PR2_5.1.1/pr2_version_5.1.1_SSU_mothur.fasta
+        bacteria: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/SILVA_138.2_bacteria_SSU.dna.fasta
+        archaea: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/SILVA_138.2_archaea_SSU.dna.fasta
+        eukaryotes: /data_2/Databases/PR2_5.1.1/pr2_version_5.1.1_SSU_mothur.fasta

@@ -247,6 +247,8 @@ from utils.reconstruction import (
     concatenation_targets,
     rnaspades_sample_input,
     prefixed_reconstructed_fastas,
+    assembly_postprocessing_targets,
+    assembly_postprocessing_input,
 )
 
 from targets.reconstruction import reconstruction_outputs
@@ -289,9 +291,6 @@ COASSEMBLY_TARGET_PATTERNS = {
     for method, targets in COASSEMBLY_TARGETS_BY_METHOD.items()
 }
 
-print(f"Co-assembly enabled: {COASSEMBLY_ENABLED}")
-print(f"Co-assembly methods: {COASSEMBLY_METHOD_BY_TARGET}")
-
 # --------------------------
 # Sample-specific assembly targets
 # --------------------------
@@ -301,12 +300,25 @@ SAMPLE_RECONSTRUCTION_TARGETS = sample_reconstruction_targets(config)
 SAMPLE_TARGET_PATTERN = "|".join(re.escape(target) for target in SAMPLE_RECONSTRUCTION_TARGETS)
 
 # --------------------------
-# Cross-sample FASTA concatenation
+# Concatenation of sample assemblies
 # --------------------------
 
 CONCATENATION_TARGETS = concatenation_targets(config)
 
 CONCATENATION_TARGET_PATTERN = "|".join(re.escape(target) for target in CONCATENATION_TARGETS)
+
+# --------------------------
+# Shared assembly postprocessing
+# --------------------------
+
+ASSEMBLY_POSTPROCESSING_TARGETS = assembly_postprocessing_targets(config)
+
+ASSEMBLY_POSTPROCESSING_TARGET_PATTERN = "(?:" + "|".join(re.escape(target) for target in ASSEMBLY_POSTPROCESSING_TARGETS) + ")"
+
+print(f"Co-assembly enabled: {COASSEMBLY_ENABLED}")
+print(f"Co-assembly methods: {COASSEMBLY_METHOD_BY_TARGET}")
+print(f"Sample-specific assembly enabled: {SAMPLE_ASSEMBLY_ENABLED}")
+print(f"Postprocessing targets: {ASSEMBLY_POSTPROCESSING_TARGETS}")
 
 # --------------------------
 # Rules
@@ -315,7 +327,7 @@ CONCATENATION_TARGET_PATTERN = "|".join(re.escape(target) for target in CONCATEN
 # Shared assembly input preparation.
 include: "reconstruction/rules/preprocessing.smk"
 
-# Co-assemblies and shared postprocessing.
+# Co-assemblies.
 if COASSEMBLY_ENABLED:
     if "rnaspades" in COASSEMBLY_TARGETS_BY_METHOD:
         include: "reconstruction/rules/rnaspades.smk"
@@ -323,15 +335,10 @@ if COASSEMBLY_ENABLED:
     if "metarib" in COASSEMBLY_TARGETS_BY_METHOD:
         include: "reconstruction/rules/metarib.smk"
 
-    include: "reconstruction/rules/coassembly_postprocessing.smk"
-
     if "non_rRNA" in COASSEMBLY_TARGETS:
         include: "reconstruction/rules/non_rrna_postprocessing.smk"
 
-    if "SSU" in COASSEMBLY_TARGETS:
-        include: "reconstruction/rules/ssu_postprocessing.smk"
-
-# Sample-specific assemblies and concatenation.
+# Sample-specific assemblies.
 if SAMPLE_ASSEMBLY_ENABLED:
     include: "reconstruction/rules/rnaspades_samples.smk"
     include: "reconstruction/rules/concatenation.smk"
@@ -339,6 +346,13 @@ if SAMPLE_ASSEMBLY_ENABLED:
     if "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS:
         include: "reconstruction/rules/itsx.smk"
 
+# Shared postprocessing.
+if COASSEMBLY_ENABLED or SAMPLE_ASSEMBLY_ENABLED:
+    include: "reconstruction/rules/coassembly_postprocessing.smk"
+
+    if SAMPLE_ASSEMBLY_ENABLED or "SSU" in COASSEMBLY_TARGETS:
+        include: "reconstruction/rules/ssu_postprocessing.smk"
+    
 # --------------------------
 # Module completion target
 # --------------------------
@@ -355,8 +369,6 @@ rule reconstruction_done:
         mkdir -p $(dirname {output.flag})
         touch {output.flag}
         """
-
-
 #############################
 #### Taxonomic profiling ####
 #############################

@@ -82,7 +82,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--removed_out", required=True)
     parser.add_argument("--report", required=True)
-    parser.add_argument("--min-ssu-coverage", type=float, default=0.90)
+    parser.add_argument("--min-ssu-coverage", type=float, default=0.80)
     args = parser.parse_args()
 
     if not 0 < args.min_ssu_coverage <= 1:
@@ -108,6 +108,7 @@ def main():
     for path in outputs:
         if path in {source, table}:
             parser.error("Output paths must differ from input paths.")
+
         if path.exists() and not path.is_symlink():
             if any(os.path.samefile(path, item) for item in (source, table)):
                 parser.error(f"Output refers to an input file: {path}")
@@ -134,21 +135,36 @@ def main():
             )
             continue
 
-        # Select the hit covering the most contig bases; break ties by score.
-        best = max(
-            candidates,
-            key=lambda hit: (
-                hit["end"] - hit["start"] + 1,
-                hit["score"],
-            ),
-        )
+        # First require sufficient coverage by a single included hit.
+        qualifying = [
+            hit for hit in candidates
+            if (hit["end"] - hit["start"] + 1) / length
+            >= args.min_ssu_coverage
+        ]
+
+        if qualifying:
+            # Select the highest bit score; break ties by covered length.
+            best = max(
+                qualifying,
+                key=lambda hit: (
+                    hit["score"],
+                    hit["end"] - hit["start"] + 1,
+                ),
+            )
+            keep = True
+            retained.add(identifier)
+        else:
+            # For rejected contigs, report the most covering hit.
+            best = max(
+                candidates,
+                key=lambda hit: (
+                    hit["end"] - hit["start"] + 1,
+                    hit["score"],
+                ),
+            )
+            keep = False
 
         coverage = (best["end"] - best["start"] + 1) / length
-        keep = coverage >= args.min_ssu_coverage
-
-        if keep:
-            retained.add(identifier)
-
         action = "retained" if keep else "removed"
         reason = "passes" if keep else "low_contig_coverage"
 
@@ -160,6 +176,7 @@ def main():
         )
 
     unknown = set(hits) - seen
+
     if unknown:
         raise ValueError(
             "Hit table contains IDs absent from FASTA: "

@@ -162,17 +162,34 @@ def its_blast_outputs(
 # --------------------------
 # Module completion outputs
 # --------------------------
+
 def taxonomy_outputs(
     results_dir: Path,
     samples: List[str],
     config: dict,
 ) -> List[str]:
-    """Return all outputs required to complete selected taxonomy branches."""
+    """
+    Return completion outputs for the selected taxonomy markers.
+
+    Read-based taxonomy is requested for every selected marker.
+    Assembly-based ITS taxonomy is requested only when
+    sample-specific assembly is enabled.
+    """
     validate_taxonomy_config(config)
 
     markers = taxonomy_markers(config)
+
+    assembly_refinement = config["reconstruction"].get(
+        "refinement", "coassembly"
+    )
+
+    sample_assembly_enabled = assembly_refinement in {
+        "samples", "both", "all"
+    }
+
     outputs: List[str] = []
 
+    # Read-based taxonomy: independent of assembly refinement.
     for marker in markers:
         outputs += kraken_outputs(
             results_dir=results_dir,
@@ -194,7 +211,8 @@ def taxonomy_outputs(
             config=config,
         )
 
-    if "ITS" in markers:
+    # Assembly-based ITS taxonomy requires sample assemblies.
+    if "ITS" in markers and sample_assembly_enabled:
         outputs += its_blast_outputs(
             results_dir=results_dir,
             samples=samples,

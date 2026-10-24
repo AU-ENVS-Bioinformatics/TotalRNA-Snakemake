@@ -6,16 +6,11 @@ rule prefix_reconstructed_sequence_ids:
     message:
         "[Assembly postprocessing] Prefixing sequence IDs in {input.fasta}"
     input:
-        fasta=f"{ASSEMBLY_DIR}/{{sequence_path}}.fasta"
+        fasta=f"{ASSEMBLY_DIR}/cross_assembly/{{sequence_path}}.fasta"
     output:
-        fasta=f"{ASSEMBLY_DIR}/{{sequence_path}}_prefixed.fasta"
+        fasta=f"{ASSEMBLY_DIR}/cross_assembly/{{sequence_path}}_prefixed.fasta"
     wildcard_constraints:
-        sequence_path=(
-            r"[^/]+/(?:"
-            r"SSU/rnaspades/transcripts|"
-            r"ITS_candidates/ITSx/[^/]+_ITSx\.full"
-            r")"
-        )
+        sequence_path=r"[^/]+/(?:SSU/rnaspades/transcripts|ITS_candidates/ITSx/[^/]+_ITSx\.full)"
     params:
         sample=lambda wc: wc.sequence_path.split("/")[0]
     shell:
@@ -43,13 +38,9 @@ rule combine_reconstructed_sequences:
     message:
         "[Assembly postprocessing] Combining reconstructed {wildcards.target} sequences across all samples"
     input:
-        fasta=lambda wc: prefixed_reconstructed_fastas(
-            wc,
-            results_dir=RESULTS_DIR,
-            samples=SAMPLES,
-        )
+        fasta=lambda wc: prefixed_reconstructed_fastas(wc, results_dir=RESULTS_DIR, samples=SAMPLES)
     output:
-        fasta=f"{ASSEMBLY_DIR}/concatenated/{{target}}/cross_sample_{{target}}.fasta"
+        fasta=f"{ASSEMBLY_DIR}/cross_assembly/concatenated/{{target}}/cross_sample_{{target}}.fasta"
     shell:
         r"""
         set -euo pipefail

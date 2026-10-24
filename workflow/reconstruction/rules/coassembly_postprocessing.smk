@@ -1,23 +1,24 @@
 ################################################################################
-# CO-ASSEMBLY LENGTH FILTERING
+# ASSEMBLY LENGTH FILTERING
 ################################################################################
 
-rule coassembly_length_filter:
+rule assembly_length_filter:
     conda:
         "../envs/seqkit.yaml"
     wildcard_constraints:
-        target="(?:" + "|".join(re.escape(target) for target in config["reconstruction"]["coassembly_targets"]) + ")"
+        assembly="coassembly|cross_assembly",
+        target=ASSEMBLY_POSTPROCESSING_TARGET_PATTERN
     message:
-        "[SeqKit] Filtering {wildcards.target} co-assembly by sequence length"
+        "[SeqKit] Length filtering {wildcards.assembly}/{wildcards.target}"
     input:
-        transcripts=f"{ASSEMBLY_DIR}/coassembly/{{target}}/{{target}}_transcripts.fasta"
+        transcripts=lambda wc: assembly_postprocessing_input(wc, results_dir=RESULTS_DIR, config=config)
     output:
-        filtered=f"{ASSEMBLY_DIR}/coassembly/{{target}}/postprocessing/{{target}}_length_filtered.fasta"
+        filtered=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/postprocessing/{{target}}_length_filtered.fasta"
     params:
         minlength=lambda wc: config["reconstruction"]["coassembly_postprocessing"][wc.target]["minlength"],
         maxlength=lambda wc: str(config["reconstruction"]["coassembly_postprocessing"][wc.target]["maxlength"])
     log:
-        stdout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/logs/{{target}}_length_filter.log"
+        stdout=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/logs/{{target}}_length_filter.log"
     threads:
         1
     shell:
@@ -40,28 +41,30 @@ rule coassembly_length_filter:
             2> {log.stdout}
         """
 
+
 ################################################################################
-# CO-ASSEMBLY EXACT DEREPLICATION
+# ASSEMBLY EXACT DEREPLICATION
 ################################################################################
 
-rule coassembly_dereplication:
+rule assembly_dereplication:
     conda:
         "../envs/vsearch.yaml"
     wildcard_constraints:
-        target="(?:" + "|".join(re.escape(target) for target in config["reconstruction"]["coassembly_targets"]) + ")"
+        assembly="coassembly|cross_assembly",
+        target=ASSEMBLY_POSTPROCESSING_TARGET_PATTERN
     message:
-        "[VSEARCH] Exact dereplication of {wildcards.target} co-assembly"
+        "[VSEARCH] Exact dereplication of {wildcards.assembly}/{wildcards.target}"
     input:
-        fasta=f"{ASSEMBLY_DIR}/coassembly/{{target}}/postprocessing/{{target}}_length_filtered.fasta"
+        fasta=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/postprocessing/{{target}}_length_filtered.fasta"
     output:
-        fasta=f"{ASSEMBLY_DIR}/coassembly/{{target}}/postprocessing/{{target}}_dereplicated.fasta",
-        uc=f"{ASSEMBLY_DIR}/coassembly/{{target}}/postprocessing/{{target}}_dereplicated.uc"
+        fasta=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/postprocessing/{{target}}_dereplicated.fasta",
+        uc=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/postprocessing/{{target}}_dereplicated.uc"
     params:
         minlength=lambda wc: config["reconstruction"]["coassembly_postprocessing"][wc.target]["minlength"],
         maxlength=lambda wc: config["reconstruction"]["coassembly_postprocessing"][wc.target].get("maxlength") or 2147481646,
-        options=lambda wc: config["reconstruction"]["coassembly_postprocessing"].get("dereplicate_options", "")
+        options=config["reconstruction"]["coassembly_postprocessing"].get("dereplicate_options", "")
     log:
-        stdout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/logs/{{target}}_dereplication.log"
+        stdout=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/logs/{{target}}_dereplication.log"
     threads:
         1
     shell:
@@ -86,26 +89,28 @@ rule coassembly_dereplication:
         fi
         """
 
+
 ################################################################################
-# CO-ASSEMBLY RFAM SEARCH
+# ASSEMBLY RFAM SEARCH
 ################################################################################
 
-rule coassembly_cmsearch:
+rule assembly_cmsearch:
     conda:
         "../envs/infernal.yaml"
     wildcard_constraints:
-        target="(?:" + "|".join(re.escape(target) for target in config["reconstruction"]["coassembly_targets"]) + ")"
+        assembly="coassembly|cross_assembly",
+        target=ASSEMBLY_POSTPROCESSING_TARGET_PATTERN
     message:
-        "[Infernal] Searching {wildcards.target} co-assembly against Rfam models"
+        "[Infernal] Searching {wildcards.assembly}/{wildcards.target} against Rfam"
     input:
-        fasta=f"{ASSEMBLY_DIR}/coassembly/{{target}}/postprocessing/{{target}}_dereplicated.fasta",
-        database=lambda wc: config["reconstruction"]["coassembly_postprocessing"][wc.target]["rfam_database"]
+        fasta=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/postprocessing/{{target}}_dereplicated.fasta"
     output:
-        tblout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/postprocessing/{{target}}_rfam_hits.tbl"
+        tblout=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/postprocessing/{{target}}_rfam_hits.tbl"
     params:
+        database=lambda wc: config["reconstruction"]["coassembly_postprocessing"][wc.target]["rfam_database"],
         options=config["reconstruction"]["coassembly_postprocessing"]["cmsearch"].get("options", "--cut_ga")
     log:
-        stdout=f"{ASSEMBLY_DIR}/coassembly/{{target}}/logs/{{target}}_cmsearch.log"
+        stdout=f"{ASSEMBLY_DIR}/{{assembly}}/{{target}}/logs/{{target}}_cmsearch.log"
     threads:
         config["reconstruction"]["coassembly_postprocessing"]["cmsearch"].get("threads", 16)
     shell:
@@ -123,7 +128,7 @@ rule coassembly_cmsearch:
                 --noali \
                 {params.options} \
                 --tblout {output.tblout} \
-                {input.database} \
+                {params.database} \
                 {input.fasta} \
                 > {log.stdout} 2>&1
         fi
