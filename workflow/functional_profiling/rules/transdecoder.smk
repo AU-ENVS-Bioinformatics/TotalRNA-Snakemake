@@ -1,8 +1,12 @@
+################################################################################
+# IDENTIFY CANDIDATE ORFS
+################################################################################
+
 rule transdecoder_longorfs:
     conda:
         "../envs/transdecoder.yaml"
     message:
-        "[TransDecoder.LongOrfs] Identify candidate ORFs in the non-rRNA coassembly"
+        "[TransDecoder.LongOrfs] Identify candidate ORFs in filtered non-rRNA transcripts"
     input:
         transcripts=ASSEMBLED_NONRRNA
     output:
@@ -20,9 +24,7 @@ rule transdecoder_longorfs:
         r"""
         set -euo pipefail
 
-        mkdir -p \
-            {params.workdir} \
-            $(dirname {output.pep})
+        mkdir -p {params.workdir} $(dirname {output.pep}) $(dirname {log.stdout})
 
         TransDecoder.LongOrfs \
             -t {input.transcripts} \
@@ -32,16 +34,21 @@ rule transdecoder_longorfs:
 
         TD_DIR={params.workdir}/$(basename {input.transcripts}).transdecoder_dir
 
-        ln -sfn $(realpath $TD_DIR/longest_orfs.pep) {output.pep}
-        ln -sfn $(realpath $TD_DIR/longest_orfs.cds) {output.cds}
-        ln -sfn $(realpath $TD_DIR/longest_orfs.gff3) {output.gff}
+        ln -sfn $(realpath "$TD_DIR/longest_orfs.pep") {output.pep}
+        ln -sfn $(realpath "$TD_DIR/longest_orfs.cds") {output.cds}
+        ln -sfn $(realpath "$TD_DIR/longest_orfs.gff3") {output.gff}
         """
+
+
+################################################################################
+# SELECT ORFS USING CODING, DIAMOND AND PFAM EVIDENCE
+################################################################################
 
 rule transdecoder_predict:
     conda:
         "../envs/transdecoder.yaml"
     message:
-        "[TransDecoder.Predict] Select ORFs using DIAMOND and Pfam evidence"
+        "[TransDecoder.Predict] Select ORFs using coding, DIAMOND and Pfam evidence"
     input:
         transcripts=ASSEMBLED_NONRRNA,
         longorfs=f"{TRANSDECODER_LONGORFS_DIR}/longest_orfs.pep",
@@ -61,9 +68,7 @@ rule transdecoder_predict:
         r"""
         set -euo pipefail
 
-        mkdir -p \
-            {params.workdir} \
-            $(dirname {output.pep})
+        mkdir -p {params.workdir} $(dirname {output.pep}) $(dirname {log.stdout})
 
         TransDecoder.Predict \
             -t {input.transcripts} \
@@ -73,7 +78,9 @@ rule transdecoder_predict:
             --output_dir {params.workdir} \
             > {log.stdout} 2>&1
 
-        ln -sfn $(realpath {params.workdir}/transcripts.fasta.transdecoder.pep) {output.pep}
-        ln -sfn $(realpath {params.workdir}/transcripts.fasta.transdecoder.cds) {output.cds}
-        ln -sfn $(realpath {params.workdir}/transcripts.fasta.transdecoder.gff3) {output.gff}
+        TD_PREFIX={params.workdir}/$(basename {input.transcripts}).transdecoder
+
+        ln -sfn $(realpath "$TD_PREFIX.pep") {output.pep}
+        ln -sfn $(realpath "$TD_PREFIX.cds") {output.cds}
+        ln -sfn $(realpath "$TD_PREFIX.gff3") {output.gff}
         """

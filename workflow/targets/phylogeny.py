@@ -2,67 +2,77 @@ from typing import List
 from pathlib import Path
 from snakemake.io import expand
 
+
 def phylogeny_outputs(
     results_dir: Path,
-    barrnap_kingdoms: List[str],
-    kingdoms_with_blast_hits: List[str],
+    active_domains: List[str],
+    domains_with_hits: List[str],
 ) -> List[str]:
-    """
-    Return final expected SSU phylogeny outputs.
-    """
+    """Return one main output per phylogeny rule."""
 
     outputs: List[str] = []
 
-    #step 1 blastn of reconstructed sequence for the kingdoms bac, arc, fun
+    # Domain availability.
+    outputs.append(f"{results_dir}/Phylogeny/domain_status.tsv")
+
+    # BLAST search.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/blastn/SSU_blastn_{{kingdom}}.tsv",
-        kingdom=barrnap_kingdoms,
+        f"{results_dir}/Phylogeny/{{domain}}/blastn/SSU_blastn_{{domain}}.tsv",
+        domain=active_domains,
     )
 
-    #Step 2 blastn postprocessing of reconstructed sequence for the kingdoms bac, arc, fun
+    # Reference selection.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/blastn_postprocessing/SSU_blastn_{{kingdom}}_reference_candidates.tsv",
-        kingdom=barrnap_kingdoms,
+        f"{results_dir}/Phylogeny/{{domain}}/blastn_postprocessing/SSU_blastn_{{domain}}_reference_candidates.tsv",
+        domain=active_domains,
     )
 
-    #Step 3 extract reference IDs of top blast hits for the kingdoms bac, arc, fun
+    # Filtered BLAST availability.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/references/samples_SSU_{{kingdom}}_accessions.txt",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/blastn_postprocessing/SSU_blastn_{{domain}}_status.txt",
+        domain=active_domains,
     )
 
-    #Step 4-5 Extract and rename reference genoms based on the accesion id's for the kingdoms bac, arc, fun
+    # Reference accessions.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/references/samples_SSU_{{kingdom}}_references.fasta",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/references/samples_SSU_{{domain}}_accessions.txt",
+        domain=domains_with_hits,
     )
 
+    # Reference extraction.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/references/samples_SSU_{{kingdom}}_renamed.fasta",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/references/samples_SSU_{{domain}}_references.fasta",
+        domain=domains_with_hits,
     )
 
-    #Step 6 Combine extracted top reference genomes witgh reconstructed SSU sequences
+    # Header renaming.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/references/samples_SSU_{{kingdom}}_with_references.fasta",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/references/samples_SSU_{{domain}}_renamed.fasta",
+        domain=domains_with_hits,
     )
 
-    #Step 7-8 Multiple sequence alignment of the combined sequences with MAFFT followed by trimming
+    # Combined queries and references.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft.fasta",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/references/samples_SSU_{{domain}}_with_references.fasta",
+        domain=domains_with_hits,
     )
 
+    # Alignment.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft_trim.fasta",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/mafft/samples_SSU_{{domain}}_references_mafft.fasta",
+        domain=domains_with_hits,
     )
 
-    # Step 8 Creation of the maximum likelihood phylogenetic tree with IQ-TREE2
+    # Trimmed alignment.
     outputs += expand(
-        f"{results_dir}/Phylogeny/{{kingdom}}/tree/samples_SSU_{{kingdom}}.treefile",
-        kingdom=kingdoms_with_blast_hits,
+        f"{results_dir}/Phylogeny/{{domain}}/mafft/samples_SSU_{{domain}}_references_mafft_trim.fasta",
+        domain=domains_with_hits,
+    )
+
+    # Tree.
+    outputs += expand(
+        f"{results_dir}/Phylogeny/{{domain}}/tree/samples_SSU_{{domain}}.treefile",
+        domain=domains_with_hits,
     )
 
     return outputs

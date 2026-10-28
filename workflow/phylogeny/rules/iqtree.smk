@@ -1,35 +1,35 @@
 ################################################################################
-# 9. Maximum-likelihood phylogenetic tree with IQ-TREE2
+# MAXIMUM-LIKELIHOOD SSU TREE
 ################################################################################
+
 rule iqtree_ssu:
     conda:
         "../envs/iqtree.yaml"
     wildcard_constraints:
-        kingdom=BARRNAP_KINGDOM_PATTERN
+        domain=PHYLOGENY_DOMAIN_PATTERN
     message:
-        "[IQ-TREE2] Construct the cross-sample SSU phylogenetic tree"
+        "[IQ-TREE2] Constructing the SSU tree for {wildcards.domain}"
     input:
-        trimmed=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft_trim.fasta"
+        trimmed=f"{PHYLOGENY_DIR}/{{domain}}/mafft/samples_SSU_{{domain}}_references_mafft_trim.fasta"
     output:
-        tree=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}.treefile",
-        iqtree=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}.iqtree",
-        model=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}.model.gz"
+        tree=f"{PHYLOGENY_DIR}/{{domain}}/tree/samples_SSU_{{domain}}.treefile",
+        iqtree=f"{PHYLOGENY_DIR}/{{domain}}/tree/samples_SSU_{{domain}}.iqtree"
     log:
-        stdout=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/logs/iqtree.log",
-        time=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/benchmarks/iqtree_time.txt"
+        stdout=f"{PHYLOGENY_DIR}/{{domain}}/tree/logs/iqtree.log",
+        time=f"{PHYLOGENY_DIR}/{{domain}}/tree/benchmarks/iqtree_time.txt"
     benchmark:
-        f"{PHYLOGENY_DIR}/{{kingdom}}/tree/benchmarks/iqtree.txt"
+        f"{PHYLOGENY_DIR}/{{domain}}/tree/benchmarks/iqtree.txt"
     params:
-        prefix=f"{PHYLOGENY_DIR}/{{kingdom}}/tree/samples_SSU_{{kingdom}}",
-        options=lambda wc: config["phylogeny"]["iqtree"][wc.kingdom].get("options"),
+        prefix=f"{PHYLOGENY_DIR}/{{domain}}/tree/samples_SSU_{{domain}}",
+        options=lambda wc: config["phylogeny"]["iqtree"][wc.domain].get("options", ""),
         seed=config["phylogeny"]["iqtree"].get("seed", 42)
     threads:
-        config["phylogeny"]["iqtree"].get("threads", 8)
+        config["phylogeny"]["iqtree"].get("threads", 12)
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.tree})
+        mkdir -p $(dirname {output.tree}) $(dirname {log.stdout}) $(dirname {log.time})
 
         /usr/bin/time -v -o {log.time} \
             iqtree2 \

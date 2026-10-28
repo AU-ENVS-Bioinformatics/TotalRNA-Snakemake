@@ -1,36 +1,40 @@
 phylogeny:
+  domains:
+    - archaea
+    - bacteria
+    - eukaryotes
   blastn:
     threads: 12
     options: '-outfmt "6 qseqid sseqid pident length qlen slen qcovs evalue bitscore" -evalue 1e-20 -max_target_seqs 100 -max_hsps 1'
     databases:
-      bac: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/blast_db/SILVA_138.2_SSU_bacteria #database: /data_2/Databases/SILVA_138.2_blast/SILVA_138.2_SSURef_NR99
-      arc: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/blast_db/SILVA_138.2_SSU_archaea
-      fun: /data_2/Databases/PR2_5.1.1/blast_db/pr2_5.1.1_SSU
+      bacteria: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/blast_db/SILVA_138.2_SSU_bacteria
+      archaea: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/blast_db/SILVA_138.2_SSU_archaea
+      eukaryotes: /data_2/Databases/PR2_5.1.1/blast_db/pr2_5.1.1_SSU
     lineage:
-      bac: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/SILVA_138.2_bacteria_SSU.lineage.tsv
-      arc: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/SILVA_138.2_archaea_SSU.lineage.tsv
-      fun: /data_2/Databases/PR2_5.1.1/pr2_version_5.1.1_SSU_mothur.tax
+      bacteria: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_bacteria/SILVA_138.2_bacteria_SSU.lineage.tsv
+      archaea: /data_2/Databases/SILVA_138.2/SILVA_138.2_SSU_archaea/SILVA_138.2_archaea_SSU.lineage.tsv
+      eukaryotes: /data_2/Databases/PR2_5.1.1/pr2_version_5.1.1_SSU_mothur.tax
   blastn_postprocessing:
-    bac:
+    bacteria:
       top_n_hits: 20
-      nt_identity: 96 #https://pmc.ncbi.nlm.nih.gov/articles/PMC12281934/ for a genus level distinction
+      nt_identity: 96
       query_coverage: 90
-    arc:
+    archaea:
       top_n_hits: 20
-      nt_identity: 95 #https://pmc.ncbi.nlm.nih.gov/articles/PMC12281934/ for a genus level distinction
+      nt_identity: 95
       query_coverage: 90
-    fun:
+    eukaryotes:
       top_n_hits: 20
-      nt_identity: 97 # general accepted standard for ITS, as several articles states that 18S is worse than ITS for taxonomic and phylogenetic analysis.
+      nt_identity: 97
       query_coverage: 90
   mafft:
     threads: 12
   iqtree:
     threads: 12
     seed: 42
-    bac:
+    bacteria:
       options: "-m MFP -B 1000 -alrt 1000"
-    arc:
+    archaea:
       options: "-m MFP -B 1000 -alrt 1000"
-    fun:
+    eukaryotes:
       options: "-m MFP -B 1000 -alrt 1000"

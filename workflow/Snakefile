@@ -274,6 +274,11 @@ SAMPLE_ASSEMBLY_ENABLED = ASSEMBLY_REFINEMENT in {"samples", "both", "all"}
 
 COASSEMBLY_TARGETS = coassembly_targets(config)
 
+if "non_rRNA" not in COASSEMBLY_TARGETS:
+    raise ValueError(
+        "Assembly-based functional profiling requires non_rRNA in reconstruction.coassembly_targets."
+    )
+
 COASSEMBLY_METHOD_BY_TARGET = {
     target: coassembly_method(config, target)
     for target in COASSEMBLY_TARGETS
@@ -455,46 +460,56 @@ if MODULES.get("taxonomy", False):
             mkdir -p "$(dirname "{output.flag}")"
             touch "{output.flag}"
             """
-
 ###############################
 #### Phylogenetic analysis ####
 ###############################
 
 if MODULES.get("phylogeny", False):
-    
-    if not SSU_PREDICTION:
+
+    if not SAMPLE_ASSEMBLY_ENABLED:
         raise ValueError(
-            "Phylogeny requires reconstruction.ssu_postprocessing.prediction_method: true. Enable SSU prediction or set modules.phylogeny: false."
+            "Phylogeny requires reconstruction.refinement to be samples, both, or all."
         )
 
-    # Configuration
     configfile: "config/phylogeny.yaml"
 
-    # Directories
     PHYLOGENY_DIR: Path = RESULTS_DIR / "Phylogeny"
+    PHYLOGENY_SCRIPTS_DIR = Path(workflow.basedir) / "phylogeny" / "scripts"
 
-    # Helpers and completion outputs
-    from utils.phylogeny import kingdoms_with_blast_hits
+    PHYLOGENY_DOMAINS = config["phylogeny"].get("domains", ["archaea", "bacteria", "eukaryotes"])
+
+    if (
+        not isinstance(PHYLOGENY_DOMAINS, list)
+        or not PHYLOGENY_DOMAINS
+        or any(domain not in {"archaea", "bacteria", "eukaryotes"} for domain in PHYLOGENY_DOMAINS)
+        or len(PHYLOGENY_DOMAINS) != len(set(PHYLOGENY_DOMAINS))
+    ):
+        raise ValueError(
+            "phylogeny.domains must contain unique values from archaea, bacteria, eukaryotes."
+        )
+
+    PHYLOGENY_DOMAIN_PATTERN = "(?:" + "|".join(re.escape(domain) for domain in PHYLOGENY_DOMAINS) + ")"
+
+    from utils.phylogeny import (
+        active_phylogeny_domains,
+        domains_with_blast_hits,
+    )
+
     from targets.phylogeny import phylogeny_outputs
 
-    # Rules
+    include: "phylogeny/rules/check_domains.smk"
     include: "phylogeny/rules/blastn.smk"
     include: "phylogeny/rules/blastn_postprocessing.smk"
     include: "phylogeny/rules/mafft.smk"
     include: "phylogeny/rules/trimal.smk"
     include: "phylogeny/rules/iqtree.smk"
 
-    # Module completion target
     rule Phylogeny_done:
         input:
             lambda wc: phylogeny_outputs(
                 results_dir=RESULTS_DIR,
-                barrnap_kingdoms=active_barrnap_kingdoms(
-                    checkpoints=checkpoints,
-                ),
-                kingdoms_with_blast_hits=kingdoms_with_blast_hits(
-                    checkpoints=checkpoints,
-                ),
+                active_domains=active_phylogeny_domains(checkpoints=checkpoints),
+                domains_with_hits=domains_with_blast_hits(checkpoints=checkpoints),
             )
         output:
             flag=f"{PHYLOGENY_DIR}/phylogeny.done"
@@ -668,11 +683,7 @@ if MODULES.get("functional_profiling", False):
     if ASSEMBLY_BASED_ENABLED:
         ORF_PREDICTOR = config["functional_profiling"]["ORF_predictor"]
 
-        ASSEMBLED_NONRRNA = coassembly_fasta(
-            results_dir=RESULTS_DIR,
-            config=config,
-            target="non_rRNA",
-        )
+        ASSEMBLED_NONRRNA = f"{ASSEMBLY_DIR}/coassembly/non_rRNA/final/transcript.fasta"
 
         FINAL_ORF_SOURCES = final_orf_sources(
             results_dir=RESULTS_DIR,

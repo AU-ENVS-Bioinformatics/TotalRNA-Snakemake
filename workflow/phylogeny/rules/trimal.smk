@@ -1,31 +1,31 @@
 ################################################################################
-# 7. Trim the multiple sequence alignment with trimAl
+# TRIM THE SSU ALIGNMENT
 ################################################################################
 
 rule trimal_ssu:
     conda:
         "../envs/trimal.yaml"
     wildcard_constraints:
-        kingdom=BARRNAP_KINGDOM_PATTERN
+        domain=PHYLOGENY_DOMAIN_PATTERN
     message:
-        "[trimAl] Trim the cross-sample SSU alignment"
+        "[trimAl] Trimming the SSU alignment for {wildcards.domain}"
     input:
-        alignment=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft.fasta"
+        alignment=f"{PHYLOGENY_DIR}/{{domain}}/mafft/samples_SSU_{{domain}}_references_mafft.fasta"
     output:
-        trimmed=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/samples_SSU_{{kingdom}}_references_mafft_trim.fasta"
+        trimmed=f"{PHYLOGENY_DIR}/{{domain}}/mafft/samples_SSU_{{domain}}_references_mafft_trim.fasta"
     log:
-        stdout=f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/logs/trimal.log"
+        stdout=f"{PHYLOGENY_DIR}/{{domain}}/mafft/logs/trimal.log"
     benchmark:
-        f"{PHYLOGENY_DIR}/{{kingdom}}/mafft/benchmarks/trimal.txt"
+        f"{PHYLOGENY_DIR}/{{domain}}/mafft/benchmarks/trimal.txt"
     shell:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.trimmed})
+        mkdir -p $(dirname {output.trimmed}) $(dirname {log.stdout})
 
         trimal \
             -in {input.alignment} \
             -out {output.trimmed} \
             -automated1 \
-            > "{log.stdout}" 2>&1
+            > {log.stdout} 2>&1
         """

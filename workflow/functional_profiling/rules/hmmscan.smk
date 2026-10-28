@@ -23,7 +23,7 @@ rule hmmscan_chunk:
         set -euo pipefail
 
         mkdir -p $(dirname {output.domtblout})
-
+        
         /usr/bin/time -v -o {log.time} \
             hmmscan \
                 --cpu {threads} \

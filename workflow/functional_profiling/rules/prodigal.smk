@@ -20,7 +20,7 @@ rule prodigal_orf_prediction:
         r"""
         set -euo pipefail
 
-        mkdir -p $(dirname {output.proteins})
+        mkdir -p $(dirname {output.proteins}) $(dirname {log.stdout})
 
         prodigal \
             -i {input.transcripts} \
