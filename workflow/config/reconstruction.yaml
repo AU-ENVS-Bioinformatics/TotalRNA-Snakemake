@@ -45,10 +45,15 @@ reconstruction:
     memory: 250
     threads: 10
   itsx:
-    options: "--detailed_results T --summary T --graphical T --fasta T --only_full F --partial 150"
+    options: "--detailed_results T --summary T --graphical T --fasta T --partial 1 --only_full F"
     species: "Fungi"
     regions: "ITS1,5.8S,ITS2"
     threads: 12
+    minlength:
+      5_8S: 100
+      ITS1: 200
+      ITS2: 200
+      full: 200
   ssu_postprocessing:
     chimera:
       threads: 12

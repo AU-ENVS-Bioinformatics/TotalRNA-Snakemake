@@ -10,7 +10,7 @@ rule blastn_its_unite:
     message:
         "[BLASTN] Classifying {wildcards.region} sequences from {wildcards.sample} against UNITE"
     input:
-        query=f"{ASSEMBLY_DIR}/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.{{region}}.fasta"
+        query=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/filtered/{{sample}}_ITSx.{{region}}.full_and_partial.fasta"
     output:
         hits=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv"
     log:
@@ -38,10 +38,7 @@ rule blastn_its_unite:
                 {params.options} \
                 > {log.stdout} 2>&1
         else
-            touch {output.hits}
-
-            echo \
-                "[BLASTN] Empty input FASTA: {input.query}" \
-                > {log.stdout}
+            : > {output.hits}
+            echo "[BLASTN] Empty input FASTA: {input.query}" > {log.stdout}
         fi
         """

@@ -11,7 +11,9 @@ rule ITSx:
         its2=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.ITS2.fasta",
         full=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.full.fasta",
         its1_partial=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.ITS1.full_and_partial.fasta",
+        five_8s_partial=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.5_8S.full_and_partial.fasta",
         its2_partial=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.ITS2.full_and_partial.fasta",
+        full_partial=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.full_and_partial.fasta",
         summary=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.summary.txt"
     log:
         stdout=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.log"
@@ -38,4 +40,6 @@ rule ITSx:
             --save_regions {params.regions} \
             {params.options} \
             > {log.stdout} 2>&1
+        
+        touch {output.its1} {output.five_8s} {output.its2} {output.full} {output.its1_partial} {output.five_8s_partial} {output.its2_partial} {output.full_partial}
         """

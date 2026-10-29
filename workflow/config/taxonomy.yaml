@@ -36,8 +36,8 @@ taxonomy:
         - 5_8S
         - ITS2
     postprocessing: #https://pmc.ncbi.nlm.nih.gov/articles/PMC10387565/ potentially 97%?? but best with ITS
-      min_query_coverage: 80 
-      min_identity: 80
+      min_query_coverage: 90 
+      min_identity: 90
       top_bitscore_fraction: 0.99
     summary:
       taxonomic_rank: genus

@@ -10,8 +10,8 @@ shared_results_dir: /data/rasmus/Dev/SnakeResDev
 
 # Optional module completion targets.
 modules:
-  taxonomy: false
+  taxonomy: true
   phylogeny: true
-  habitat_refinement: false
-  functional_profiling: true
+  habitat_refinement: true
+  functional_profiling: false
   viral_sequence_analysis: false

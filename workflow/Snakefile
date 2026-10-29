@@ -350,6 +350,7 @@ if SAMPLE_ASSEMBLY_ENABLED:
 
     if "ITS_candidates" in SAMPLE_RECONSTRUCTION_TARGETS:
         include: "reconstruction/rules/itsx.smk"
+        include: "reconstruction/rules/itsx_postprocessing.smk"
 
 # Shared postprocessing.
 if COASSEMBLY_ENABLED or SAMPLE_ASSEMBLY_ENABLED:

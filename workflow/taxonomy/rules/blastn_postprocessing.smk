@@ -11,11 +11,13 @@ ITS_SUMMARY_RANK = its_summary_rank(config)
 rule postprocess_its_blast:
     conda:
         "../envs/taxonomy_postprocessing.yaml"
+    wildcard_constraints:
+        region=ITS_REGION_PATTERN
     message:
         "[ITS taxonomy] Filtering {wildcards.region} UNITE hits for {wildcards.sample}"
     input:
         blast=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv",
-        query=f"{ASSEMBLY_DIR}/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.{{region}}.fasta"
+        query=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/filtered/{{sample}}_ITSx.{{region}}.full_and_partial.fasta"
     output:
         assignments=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/{{sample}}.{{region}}.UNITE.assignments.tsv"
     log:
@@ -58,7 +60,7 @@ rule combine_its_assignments:
     message:
         "[ITS taxonomy] Combining ITS region assignments for {wildcards.sample}"
     input:
-        assembly=f"{ASSEMBLY_DIR}/{{sample}}/ITS_candidates/rnaspades/transcripts.fasta",
+        assembly=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/rnaspades/transcripts.fasta",
         assignments=lambda wc: [
             f"{TAXONOMY_DIR}/{wc.sample}/ITS/{region}/taxonomy/{wc.sample}.{region}.UNITE.assignments.tsv"
             for region in its_blast_regions(config)

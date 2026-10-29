@@ -117,6 +117,12 @@ def reconstruction_outputs(
                 sample=samples,
             )
 
+            outputs += expand(
+                f"{results_dir}/Assembly/cross_assembly/{{sample}}/ITS_candidates/ITSx/filtered/{{sample}}_ITSx.{{region}}.full_and_partial.fasta",
+                sample=samples,
+                region=["5_8S", "ITS1", "ITS2"],
+            )
+            
             # Prefix sample identifiers.
             outputs += expand(
                 f"{results_dir}/Assembly/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.full_prefixed.fasta",
