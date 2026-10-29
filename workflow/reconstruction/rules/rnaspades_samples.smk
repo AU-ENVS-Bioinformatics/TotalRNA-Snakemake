@@ -40,4 +40,14 @@ rule rnaspades_sample_specific:
                 -o {params.outdir} \
                 --memory {params.memory} \
                 > {log.stdout} 2>&1
+        
+        if [ ! -s {output.transcripts} ]; then
+            fallback=$(printf '%s\n' {params.outdir}/K[0-9]*/final_contigs.fasta | sort -V | tail -n 1)
+            if [ ! -s "$fallback" ]; then
+                echo "[ERROR] No nonempty transcripts or fallback contigs found." >> {log.stdout}
+                exit 1
+            fi
+            echo "[WARNING] No transcripts produced; potentially due to short insert size; using unresolved contigs from $fallback." >> {log.stdout}
+            ln -sf "$(realpath "$fallback")" {output.transcripts}
+        fi
         """
