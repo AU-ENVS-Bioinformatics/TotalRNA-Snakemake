@@ -42,12 +42,18 @@ rule rnaspades_sample_specific:
                 > {log.stdout} 2>&1
         
         if [ ! -s {output.transcripts} ]; then
-            fallback=$(printf '%s\n' {params.outdir}/K[0-9]*/final_contigs.fasta | sort -V | tail -n 1)
-            if [ ! -s "$fallback" ]; then
+            fallback=""
+            while IFS= read -r candidate; do
+                if [ -s "$candidate" ]; then
+                    fallback="$candidate"
+                    break
+                fi
+            done < <(printf '%s\n' {params.outdir}/K[0-9]*/final_contigs.fasta | sort -Vr)
+            if [ -z "$fallback" ]; then
                 echo "[ERROR] No nonempty transcripts or fallback contigs found." >> {log.stdout}
                 exit 1
             fi
-            echo "[WARNING] No transcripts produced; potentially due to short insert size; using unresolved contigs from $fallback." >> {log.stdout}
+            echo "[WARNING] No transcripts produced; linking unresolved contigs from $fallback." >> {log.stdout}
             ln -sf "$(realpath "$fallback")" {output.transcripts}
         fi
         """

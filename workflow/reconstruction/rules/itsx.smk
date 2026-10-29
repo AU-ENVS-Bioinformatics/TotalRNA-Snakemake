@@ -10,6 +10,8 @@ rule ITSx:
         five_8s=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.5_8S.fasta",
         its2=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.ITS2.fasta",
         full=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.full.fasta",
+        its1_partial=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.ITS1.full_and_partial.fasta",
+        its2_partial=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.ITS2.full_and_partial.fasta",
         summary=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.summary.txt"
     log:
         stdout=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/{{sample}}_ITSx.log"

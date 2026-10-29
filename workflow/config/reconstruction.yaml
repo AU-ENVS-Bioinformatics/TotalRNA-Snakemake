@@ -45,7 +45,7 @@ reconstruction:
     memory: 250
     threads: 10
   itsx:
-    options: "--detailed_results T --summary T --graphical T --fasta T"
+    options: "--detailed_results T --summary T --graphical T --fasta T --only_full F --partial 150"
     species: "Fungi"
     regions: "ITS1,5.8S,ITS2"
     threads: 12
