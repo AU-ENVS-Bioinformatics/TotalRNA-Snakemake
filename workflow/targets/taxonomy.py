@@ -6,8 +6,9 @@ from typing import List
 from snakemake.io import expand
 
 from utils.taxonomy import (
+    assembly_based_taxonomy_enabled,
     validate_taxonomy_config,
-    taxonomy_markers,
+    read_based_taxonomy_markers,
     kraken_database_names,
     its_blast_regions,
     its_summary_rank,
@@ -29,13 +30,13 @@ def kraken_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/{marker}/{{database}}/kraken/{{sample}}.{{database}}.k2report",
+        f"{results_dir}/Taxonomy_Profiling/read_based/{{sample}}/{marker}/{{database}}/kraken/{{sample}}.{{database}}.k2report",
         sample=samples,
         database=databases,
     )
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/{marker}/{{database}}/kraken/{{sample}}.{{database}}.kraken",
+        f"{results_dir}/Taxonomy_Profiling/read_based/{{sample}}/{marker}/{{database}}/kraken/{{sample}}.{{database}}.kraken",
         sample=samples,
         database=databases,
     )
@@ -57,13 +58,13 @@ def bracken_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/{marker}/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
+        f"{results_dir}/Taxonomy_Profiling/read_based/{{sample}}/{marker}/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
         sample=samples,
         database=databases,
     )
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/{marker}/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report",
+        f"{results_dir}/Taxonomy_Profiling/read_based/{{sample}}/{marker}/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report",
         sample=samples,
         database=databases,
     )
@@ -84,7 +85,7 @@ def downstream_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/summary/{marker}/{{database}}/taxonomy/{{filename}}",
+        f"{results_dir}/Taxonomy_Profiling/read_based/summary/{marker}/{{database}}/taxonomy/{{filename}}",
         database=databases,
         filename=[
             "taxonomy.biom",
@@ -93,7 +94,7 @@ def downstream_outputs(
     )
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/summary/{marker}/{{database}}/statistics/{{filename}}",
+        f"{results_dir}/Taxonomy_Profiling/read_based/summary/{marker}/{{database}}/statistics/{{filename}}",
         database=databases,
         filename=[
             "taxonomy_qualitative.txt",
@@ -102,7 +103,7 @@ def downstream_outputs(
     )
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/summary/{marker}/{{database}}/phyloseq/{{filename}}",
+        f"{results_dir}/Taxonomy_Profiling/read_based/summary/{marker}/{{database}}/phyloseq/{{filename}}",
         database=databases,
         filename=["phyloseq.rds"],
     )
@@ -124,19 +125,19 @@ def its_blast_outputs(
     outputs: List[str] = []
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv",
+        f"{results_dir}/Taxonomy_Profiling/assembly_based/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv",
         sample=samples,
         region=regions,
     )
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/ITS/{{region}}/taxonomy/{{sample}}.{{region}}.UNITE.assignments.tsv",
+        f"{results_dir}/Taxonomy_Profiling/assembly_based/{{sample}}/ITS/{{region}}/taxonomy/{{sample}}.{{region}}.UNITE.assignments.tsv",
         sample=samples,
         region=regions,
     )
 
     outputs += expand(
-        f"{results_dir}/Taxonomy_Profiling/{{sample}}/ITS/combined/{{sample}}.ITS.{{result_type}}.tsv",
+        f"{results_dir}/Taxonomy_Profiling/assembly_based/{{sample}}/ITS/combined/{{sample}}.ITS.{{result_type}}.tsv",
         sample=samples,
         result_type=[
             "assignments",
@@ -147,13 +148,13 @@ def its_blast_outputs(
 
     outputs += [
         (
-            f"{results_dir}/Taxonomy_Profiling/summary/ITS/matrices/ITS.assignments.{summary_rank}.counts.tsv"
+            f"{results_dir}/Taxonomy_Profiling/assembly_based/summary/ITS/matrices/ITS.assignments.{summary_rank}.counts.tsv"
         ),
         (
-            f"{results_dir}/Taxonomy_Profiling/summary/ITS/matrices/ITS.unassignments.reasons.counts.tsv"
+            f"{results_dir}/Taxonomy_Profiling/assembly_based/summary/ITS/matrices/ITS.unassignments.reasons.counts.tsv"
         ),
         (
-            f"{results_dir}/Taxonomy_Profiling/summary/ITS/matrices/ITS.allassignments.status.counts.tsv"
+            f"{results_dir}/Taxonomy_Profiling/assembly_based/summary/ITS/matrices/ITS.allassignments.status.counts.tsv"
         ),
     ]
 
@@ -169,15 +170,15 @@ def taxonomy_outputs(
     config: dict,
 ) -> List[str]:
     """
-    Return completion outputs for the selected taxonomy markers.
+    Return completion outputs for the configured taxonomy branches.
 
-    Read-based taxonomy is requested for every selected marker.
-    Assembly-based ITS taxonomy is requested only when
-    sample-specific assembly is enabled.
+    ITS BLAST is requested when the read-based refinement selects ITS
+    and sample-specific assembly is enabled.
+    SSU alignment is requested in assembly_based and both modes.
     """
     validate_taxonomy_config(config)
 
-    markers = taxonomy_markers(config)
+    markers = read_based_taxonomy_markers(config)
 
     assembly_refinement = config["reconstruction"].get(
         "refinement", "coassembly"
@@ -219,4 +220,9 @@ def taxonomy_outputs(
             config=config,
         )
 
+    if assembly_based_taxonomy_enabled(config):
+        outputs += expand(
+            f"{results_dir}/Taxonomy_Profiling/assembly_based/{{sample}}/SSU/alignment/{{sample}}.bam",
+            sample=samples,
+        )
     return outputs

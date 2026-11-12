@@ -385,13 +385,16 @@ if MODULES.get("taxonomy", False):
 
     # Directories
     TAXONOMY_DIR: Path = RESULTS_DIR / "Taxonomy_Profiling"
+    TAXONOMY_READ_DIR: Path = TAXONOMY_DIR / "read_based"
+    TAXONOMY_ASSEMBLY_DIR: Path = TAXONOMY_DIR / "assembly_based"
+
     TAXONOMY_ENVS_DIR: Path = (Path(workflow.basedir) / "taxonomy" / "envs")
     # Helpers and completion outputs
     from targets.taxonomy import taxonomy_outputs
 
     from utils.taxonomy import (
         validate_taxonomy_config,
-        taxonomy_markers,
+        read_based_taxonomy_markers,
         kraken_database_names,
         kraken_db,
         taxonomy_read,
@@ -407,27 +410,31 @@ if MODULES.get("taxonomy", False):
         biom_level,
         taxonomy_reports_for_database,
         its_blast_regions,
-        its_summary_rank
+        its_summary_rank,
+        assembly_based_taxonomy_enabled,
+        assembly_taxonomy_read,
+        bwamem_threads,
     )
 
     validate_taxonomy_config(config)
 
-    TAXONOMY_MARKERS = taxonomy_markers(config)
+    TAXONOMY_MARKERS = read_based_taxonomy_markers(config)
 
     KRAKEN_DATABASES = {
         marker: kraken_database_names(marker, config)
         for marker in TAXONOMY_MARKERS
     }
 
-    print(f"Taxonomy markers: {TAXONOMY_MARKERS}")
+    print(f"Read-based taxonomy markers: {TAXONOMY_MARKERS}")
     print(f"Taxonomy databases: {KRAKEN_DATABASES}")
 
     # Rules
 
     # Kraken2/Bracken are shared by SSU and ITS.
-    include: "taxonomy/rules/kraken.smk"
-    include: "taxonomy/rules/bracken.smk"
-    include: "taxonomy/rules/kraken_bracken_downstream.smk"
+    if TAXONOMY_MARKERS:
+        include: "taxonomy/rules/kraken.smk"
+        include: "taxonomy/rules/bracken.smk"
+        include: "taxonomy/rules/kraken_bracken_downstream.smk"
 
     # Reconstructed ITS/ITSx BLAST taxonomy.
     if "ITS" in TAXONOMY_MARKERS and SAMPLE_ASSEMBLY_ENABLED:
@@ -442,6 +449,24 @@ if MODULES.get("taxonomy", False):
 
         include: "taxonomy/rules/blastn.smk"
         include: "taxonomy/rules/blastn_postprocessing.smk"
+
+    # Align each sample's SSU reads to the shared SSU co-assembly.
+    if assembly_based_taxonomy_enabled(config):
+        if not COASSEMBLY_ENABLED or "SSU" not in COASSEMBLY_TARGETS:
+            raise ValueError(
+                "Assembly-based SSU taxonomy requires reconstruction.refinement "
+                "to be coassembly, both, or all, and SSU to be a co-assembly target."
+            )
+
+        TAXONOMY_ASSEMBLY_FASTAS = {
+            "SSU": f"{ASSEMBLY_DIR}/coassembly/SSU/final/transcript.fasta",
+        }
+        TAXONOMY_ASSEMBLY_MARKER_PATTERN = "SSU"
+        TAXONOMY_ASSEMBLY_INDEX_PREFIX = (
+            f"{TAXONOMY_ASSEMBLY_DIR}/{{marker}}/index/contigs"
+        )
+
+        include: "taxonomy/rules/bwamem2.smk"
         
     # Module completion target
 

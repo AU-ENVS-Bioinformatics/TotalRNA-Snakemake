@@ -12,11 +12,11 @@ rule blastn_its_unite:
     input:
         query=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/filtered/{{sample}}_ITSx.{{region}}.full_and_partial.fasta"
     output:
-        hits=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv"
+        hits=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv"
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/blastn/logs/{{sample}}.{{region}}.UNITE.blastn.log"
+        stdout=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/blastn/logs/{{sample}}.{{region}}.UNITE.blastn.log"
     benchmark:
-        f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/blastn/benchmarks/{{sample}}.{{region}}.UNITE.blastn.txt"
+        f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/blastn/benchmarks/{{sample}}.{{region}}.UNITE.blastn.txt"
     params:
         db=config["taxonomy"]["ITS"]["blastn"]["database"],
         options=config["taxonomy"]["ITS"]["blastn"].get("options", ""),

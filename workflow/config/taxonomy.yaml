@@ -1,6 +1,8 @@
 
 taxonomy:
-  module: all # SSU | ITS | all | both
+  module: both  # read_based | assembly_based | both
+  read_based:
+    refinement: all  # SSU | ITS | all
   SSU:
     domain_split:
       prokaryotes: [3, 2]
@@ -25,6 +27,8 @@ taxonomy:
         level: "--min G"
       pr2:
         level: "--min S"
+    bwamem2:
+      threads: 16
   ITS:
     blastn:
       database: /data_2/Databases/UNITE/UNITE_BLAST/UNITE_dynamic_19.02.2025 #/data_2/Databases/UNITE/blast/UNITE_dynamic_19.02.2025

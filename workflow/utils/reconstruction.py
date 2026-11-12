@@ -33,7 +33,6 @@ COASSEMBLY_METHOD_KEYS = {
     "SSU": "rRNA_method",
 }
 
-
 def coassembly_targets(config: dict) -> List[str]:
     """Return the configured cross-sample assembly targets."""
     targets = config["reconstruction"].get(

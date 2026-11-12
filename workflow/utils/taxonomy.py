@@ -11,54 +11,69 @@ Expected module completion outputs belong in targets/taxonomy.py.
 from pathlib import Path
 from typing import Any, List
 
-VALID_TAXONOMY_MODULES = {
-    "SSU",
-    "ITS",
-    "both",
-    "all",
+VALID_TAXONOMY_MODULES = {"read_based", "assembly_based", "both"}
+
+READ_BASED_TAXONOMY_MARKERS = {
+    "SSU": ("SSU",),
+    "ITS": ("ITS",),
+    "all": ("SSU", "ITS"),
+    "both": ("SSU", "ITS"),
 }
 
-def taxonomy_markers(config: dict) -> List[str]:
-    """
-    Convert taxonomy.module into the marker branches that should run.
+def taxonomy_module(config: dict) -> str:
+    """Return the selected taxonomy approach."""
+    module = config.get("taxonomy", {}).get("module", "read_based")
 
-    SSU        -> SSU only
-    ITS        -> ITS only
-    both/all   -> SSU and ITS
-    """
-
-    module = config.get("taxonomy", {}).get("module", "SSU")
-
-    if module not in VALID_TAXONOMY_MODULES:
+    if not isinstance(module, str) or module not in VALID_TAXONOMY_MODULES:
         raise ValueError(
-            f"Unsupported taxonomy.module '{module}'. "
-            f"Choose from: {', '.join(sorted(VALID_TAXONOMY_MODULES))}"
+            f"Unsupported taxonomy.module {module!r}. "
+            "Choose read_based, assembly_based, or both. "
+            "Set SSU, ITS, or all under taxonomy.read_based.refinement."
         )
 
-    if module == "SSU":
-        return ["SSU"]
+    return module
 
-    if module == "ITS":
-        return ["ITS"]
+def read_based_taxonomy_markers(config: dict) -> List[str]:
+    """Return the markers requested for read-based taxonomy."""
+    if taxonomy_module(config) == "assembly_based":
+        return []
 
-    return ["SSU", "ITS"]
+    settings = config.get("taxonomy", {}).get("read_based", {})
+    if not isinstance(settings, dict):
+        raise ValueError("taxonomy.read_based must be a mapping.")
 
+    refinement = settings.get("refinement", "SSU")
+    if (
+        not isinstance(refinement, str)
+        or refinement not in READ_BASED_TAXONOMY_MARKERS
+    ):
+        raise ValueError(
+            f"Unsupported taxonomy.read_based.refinement {refinement!r}. "
+            "Choose SSU, ITS, or all."
+        )
+
+    return list(READ_BASED_TAXONOMY_MARKERS[refinement])
+
+def taxonomy_markers(config: dict) -> List[str]:
+    """Return read-based markers for existing callers."""
+    return read_based_taxonomy_markers(config)
 
 def taxonomy_marker_selected(marker: str, config: dict) -> bool:
-    return marker in taxonomy_markers(config)
-
+    return marker in read_based_taxonomy_markers(config)
 
 def validate_taxonomy_config(config: dict) -> None:
     """
     Validate dependencies between taxonomy and upstream modules.
     """
 
-    markers = taxonomy_markers(config)
+    module = taxonomy_module(config)
+
+    markers = read_based_taxonomy_markers(config)
 
     for marker in markers:
         if marker not in config["taxonomy"]:
             raise ValueError(
-                f"taxonomy.module requests '{marker}', but taxonomy.{marker} is not configured"
+                f"taxonomy.read_based.refinement requests {marker!r}, but taxonomy.{marker} is missing."
             )
 
     if "ITS" in markers:
@@ -223,6 +238,7 @@ def taxonomy_report(
     return str(
         results_dir
         / "Taxonomy_Profiling"
+        / "read_based"
         / sample
         / marker
         / database
@@ -296,6 +312,7 @@ def grouped_ssu_read(
     return str(
         results_dir
         / "Taxonomy_Profiling"
+        / "read_based"
         / sample
         / "SSU"
         / "silva"
@@ -303,6 +320,19 @@ def grouped_ssu_read(
         / f"{sample}.{group}_R{mate}.fastq.gz"
     )
 
+def assembly_taxonomy_read(
+    wildcards: Any,
+    mate: int,
+    *,
+    results_dir: Path,
+) -> str:
+    """Return the per-sample reads for alignment to the marker co-assembly."""
+    if wildcards.marker == "SSU":
+        return original_ssu_read(wildcards, mate, results_dir=results_dir)
+
+    raise ValueError(
+        f"No co-assembly read input configured for {wildcards.marker!r}."
+    )
 
 def taxonomy_read(
     wildcards: Any,
@@ -411,3 +441,16 @@ def its_summary_rank(config: dict) -> str:
         )
 
     return rank
+
+# =========================================================
+# ASSEMBLY BASED TAXONOMY
+# =========================================================
+def assembly_based_taxonomy_enabled(config: dict) -> bool:
+    """Return whether assembly-based taxonomy is requested."""
+    return taxonomy_module(config) in {"assembly_based", "both"}
+
+def bwamem_threads(wildcards: Any, *, config: dict) -> int:
+    """Return the requested BWA-MEM2 thread count."""
+    return config["taxonomy"][wildcards.marker]["bwamem2"].get(
+        "threads", 2
+    )

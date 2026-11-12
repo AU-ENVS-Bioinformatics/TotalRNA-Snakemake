@@ -6,21 +6,15 @@ rule kraken2:
     message:
         "[Kraken2] Classifying {wildcards.marker} reads from {wildcards.sample} against {wildcards.database}"
     input:
-        read_1=lambda wc: taxonomy_read_1(
-            wc,
-            results_dir=RESULTS_DIR,
-        ),
-        read_2=lambda wc: taxonomy_read_2(
-            wc,
-            results_dir=RESULTS_DIR,
-        ),
+        read_1=lambda wc: taxonomy_read_1(wc,results_dir=RESULTS_DIR,),
+        read_2=lambda wc: taxonomy_read_2(wc,results_dir=RESULTS_DIR,),
     output:
-        report=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.k2report",
-        kraken=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.kraken",
+        report=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.k2report",
+        kraken=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.kraken",
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/logs/{{sample}}.{{database}}.kraken2.log",
+        stdout=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/logs/{{sample}}.{{database}}.kraken2.log",
     benchmark:
-        f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.kraken2.txt",
+        f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.kraken2.txt",
     params:
         db=lambda wc: kraken_db(wc, config=config),
         options=lambda wc: kraken_options(wc, config=config),
@@ -67,18 +61,18 @@ rule kraken2_group_reads:
     input:
         read_1=lambda wc: original_ssu_read(wc, 1, results_dir=RESULTS_DIR),
         read_2=lambda wc: original_ssu_read(wc, 2, results_dir=RESULTS_DIR),
-        report=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.k2report",
-        kraken=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.kraken"
+        report=f"{TAXONOMY_READ_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.k2report",
+        kraken=f"{TAXONOMY_READ_DIR}/{{sample}}/SSU/silva/kraken/{{sample}}.silva.kraken"
     output:
         prokaryotes_1=grouped_ssu_read("{sample}", "prokaryotes", 1, results_dir=RESULTS_DIR),
         prokaryotes_2=grouped_ssu_read("{sample}", "prokaryotes", 2, results_dir=RESULTS_DIR),
         eukaryotes_1=grouped_ssu_read("{sample}", "eukaryotes", 1, results_dir=RESULTS_DIR),
         eukaryotes_2=grouped_ssu_read("{sample}", "eukaryotes", 2, results_dir=RESULTS_DIR)
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/SSU/silva/logs/{{sample}}.group_reads.log"
+        stdout=f"{TAXONOMY_READ_DIR}/{{sample}}/SSU/silva/logs/{{sample}}.group_reads.log"
     params:
-        prokaryote_taxids=" ".join(map(str, config["taxonomy"]["SSU"]["domain_split"]["prokaryotes"])),
-        eukaryote_taxids=" ".join(map(str, config["taxonomy"]["SSU"]["domain_split"]["eukaryotes"]))
+        prokaryote_taxids=lambda wc: " ".join(map(str, config["taxonomy"]["SSU"]["domain_split"]["prokaryotes"])),
+        eukaryote_taxids=lambda wc: " ".join(map(str, config["taxonomy"]["SSU"]["domain_split"]["eukaryotes"])),
     shell:
         r"""
         set -euo pipefail

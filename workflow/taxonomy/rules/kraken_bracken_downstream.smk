@@ -16,11 +16,11 @@ rule kraken_biom:
             samples=SAMPLES,
         ),
     output:
-        biom=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
+        biom=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
     log:
-        stdout=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/logs/kraken_biom.log"
+        stdout=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/logs/kraken_biom.log"
     benchmark:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/benchmarks/kraken_biom.txt"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/benchmarks/kraken_biom.txt"
     params:
         options=lambda wc: biom_options(wc, config=config),
         level=lambda wc: biom_level(wc, config=config),
@@ -42,13 +42,13 @@ rule biom_table_stats_qualitative:
     message:
         "[biom summarize-table] Creating qualitative {wildcards.marker} summary for against {wildcards.database}"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
+        biom=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
     output:
-        biom_qual=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/statistics/taxonomy_qualitative.txt"
+        biom_qual=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/statistics/taxonomy_qualitative.txt"
     log:
-        stdout=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/logs/biom_summary_qualitative.log"
+        stdout=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/logs/biom_summary_qualitative.log"
     benchmark:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_summary_qualitative.txt"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_summary_qualitative.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.biom_qual})
@@ -65,13 +65,13 @@ rule biom_table_stats_observations:
     message:
         "[biom summarize-table] Creating {wildcards.marker} observation summary for {wildcards.database}"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
+        biom=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
     output:
-        biom_obs=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/statistics/taxonomy_observations.txt"
+        biom_obs=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/statistics/taxonomy_observations.txt"
     log:
-        stdout=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/logs/biom_summary_observations.log"
+        stdout=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/logs/biom_summary_observations.log"
     benchmark:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_summary_observations.txt"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_summary_observations.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.biom_obs})
@@ -88,13 +88,13 @@ rule kraken_biom_convert:
     message:
         "[biom convert] converting {wildcards.database} {wildcards.marker} BIOM to TSV"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
+        biom=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
     output:
-        biom_tsv=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.tsv"
+        biom_tsv=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.tsv"
     log:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/logs/biom_convert.log"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/logs/biom_convert.log"
     benchmark:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_convert.txt"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_convert.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.biom_tsv})
@@ -108,13 +108,13 @@ rule biom_to_phyloseq_raw:
     message:
         "[phyloseq] Creating raw {wildcards.marker} phyloseq object from {wildcards.database}"
     input:
-        biom=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
+        biom=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/taxonomy/taxonomy.biom"
     output:
-        rds=f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/phyloseq/phyloseq.rds"
+        rds=f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/phyloseq/phyloseq.rds"
     log:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/logs/biom_to_phyloseq.log"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/logs/biom_to_phyloseq.log"
     benchmark:
-        f"{TAXONOMY_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_to_phyloseq.txt"
+        f"{TAXONOMY_READ_DIR}/summary/{{marker}}/{{database}}/benchmarks/biom_to_phyloseq.txt"
     shell:
         r"""
         mkdir -p $(dirname {output.rds})

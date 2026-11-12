@@ -16,22 +16,22 @@ rule postprocess_its_blast:
     message:
         "[ITS taxonomy] Filtering {wildcards.region} UNITE hits for {wildcards.sample}"
     input:
-        blast=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv",
+        blast=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/blastn/{{sample}}.{{region}}.UNITE.blastn.tsv",
         query=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/ITSx/filtered/{{sample}}_ITSx.{{region}}.full_and_partial.fasta"
     output:
-        assignments=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/{{sample}}.{{region}}.UNITE.assignments.tsv"
+        assignments=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/{{sample}}.{{region}}.UNITE.assignments.tsv"
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/logs/{{sample}}.{{region}}.UNITE.postprocessing.log"
+        stdout=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/logs/{{sample}}.{{region}}.UNITE.postprocessing.log"
     benchmark:
-        f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/benchmarks/{{sample}}.{{region}}.UNITE.postprocessing.txt"
+        f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/benchmarks/{{sample}}.{{region}}.UNITE.postprocessing.txt"
     params:
         script=workflow.source_path("../scripts/postprocess_unite_blast.py"),
         min_identity=config["taxonomy"]["ITS"]["postprocessing"].get("min_identity", 80),
         min_query_coverage=config["taxonomy"]["ITS"]["postprocessing"].get("min_query_coverage", 80),
         top_bitscore_fraction=config["taxonomy"]["ITS"]["postprocessing"].get("top_bitscore_fraction", 0.99),
-        outdir=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy",
-        logdir=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/logs",
-        benchmarkdir=f"{TAXONOMY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/benchmarks"
+        outdir=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/taxonomy",
+        logdir=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/logs",
+        benchmarkdir=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/{{region}}/taxonomy/benchmarks"
     shell:
         r"""
         set -euo pipefail
@@ -62,17 +62,17 @@ rule combine_its_assignments:
     input:
         assembly=f"{ASSEMBLY_DIR}/cross_assembly/{{sample}}/ITS_candidates/rnaspades/transcripts.fasta",
         assignments=lambda wc: [
-            f"{TAXONOMY_DIR}/{wc.sample}/ITS/{region}/taxonomy/{wc.sample}.{region}.UNITE.assignments.tsv"
+            f"{TAXONOMY_ASSEMBLY_DIR}/{wc.sample}/ITS/{region}/taxonomy/{wc.sample}.{region}.UNITE.assignments.tsv"
             for region in its_blast_regions(config)
         ]
     output:
-        assigned=f"{TAXONOMY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.assignments.tsv",
-        unassigned=f"{TAXONOMY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.unassignments.tsv",
-        all_assignments=f"{TAXONOMY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.allasignments.tsv"
+        assigned=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.assignments.tsv",
+        unassigned=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.unassignments.tsv",
+        all_assignments=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.allasignments.tsv"
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/ITS/combined/logs/{{sample}}.ITS.combine.log"
+        stdout=f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/combined/logs/{{sample}}.ITS.combine.log"
     benchmark:
-        f"{TAXONOMY_DIR}/{{sample}}/ITS/combined/benchmarks/{{sample}}.ITS.combine.txt"
+        f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/combined/benchmarks/{{sample}}.ITS.combine.txt"
     shell:
         r"""
         set -euo pipefail
@@ -100,24 +100,24 @@ rule create_its_summary_matrices:
         "[ITS taxonomy] Creating cross-sample ITS count matrices"
     input:
         tables=expand(
-            f"{TAXONOMY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.allasignments.tsv",
+            f"{TAXONOMY_ASSEMBLY_DIR}/{{sample}}/ITS/combined/{{sample}}.ITS.allasignments.tsv",
             sample=SAMPLES,
         )
     output:
-        assigned=f"{TAXONOMY_DIR}/summary/ITS/matrices/ITS.assignments.{ITS_SUMMARY_RANK}.counts.tsv",
-        unassigned=f"{TAXONOMY_DIR}/summary/ITS/matrices/ITS.unassignments.reasons.counts.tsv",
-        statuses=f"{TAXONOMY_DIR}/summary/ITS/matrices/ITS.allassignments.status.counts.tsv"
+        assigned=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/ITS.assignments.{ITS_SUMMARY_RANK}.counts.tsv",
+        unassigned=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/ITS.unassignments.reasons.counts.tsv",
+        statuses=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/ITS.allassignments.status.counts.tsv"
     log:
-        stdout=f"{TAXONOMY_DIR}/summary/ITS/matrices/logs/ITS.summary_matrices.log"
+        stdout=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/logs/ITS.summary_matrices.log"
     benchmark:
-        f"{TAXONOMY_DIR}/summary/ITS/matrices/benchmarks/ITS.summary_matrices.txt"
+        f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/benchmarks/ITS.summary_matrices.txt"
     params:
         script=workflow.source_path("../scripts/create_its_matrices.py"),
         samples=SAMPLES,
         rank=ITS_SUMMARY_RANK,
-        outdir=f"{TAXONOMY_DIR}/summary/ITS/matrices",
-        logdir=f"{TAXONOMY_DIR}/summary/ITS/matrices/logs",
-        benchmarkdir=f"{TAXONOMY_DIR}/summary/ITS/matrices/benchmarks"
+        outdir=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices",
+        logdir=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/logs",
+        benchmarkdir=f"{TAXONOMY_ASSEMBLY_DIR}/summary/ITS/matrices/benchmarks"
     shell:
         r"""
         set -euo pipefail

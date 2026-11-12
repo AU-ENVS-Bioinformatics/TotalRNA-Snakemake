@@ -6,14 +6,14 @@ rule bracken:
     message:
         "[Bracken] Re-estimating {wildcards.marker} abundance for {wildcards.sample} against {wildcards.database}"
     input:
-        kraken_report=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.k2report"
+        kraken_report=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/kraken/{{sample}}.{{database}}.k2report"
     output:
-        bracken_output=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
-        bracken_kreport_output=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report",
+        bracken_output=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.tsv",
+        bracken_kreport_output=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/bracken/{{sample}}.{{database}}.bracken.k2report",
     log:
-        stdout=f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/logs/{{sample}}.{{database}}.bracken.log",
+        stdout=f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/logs/{{sample}}.{{database}}.bracken.log",
     benchmark:
-        f"{TAXONOMY_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt",
+        f"{TAXONOMY_READ_DIR}/{{sample}}/{{marker}}/{{database}}/benchmarks/{{sample}}.{{database}}.bracken.txt",
     params:
         database=lambda wc: kraken_db(wc, config=config),
         level=lambda wc: bracken_level(wc, config=config),
