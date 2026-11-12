@@ -467,7 +467,9 @@ if MODULES.get("taxonomy", False):
         )
 
         include: "taxonomy/rules/bwamem2.smk"
-        
+        include: "taxonomy/rules/idxstats.smk"
+        include: "taxonomy/rules/crest4.smk"
+
     # Module completion target
 
     rule taxonomy_done:

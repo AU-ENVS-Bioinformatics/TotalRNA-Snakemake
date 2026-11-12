@@ -29,6 +29,8 @@ taxonomy:
         level: "--min S"
     bwamem2:
       threads: 16
+    crest4:
+      threads: 16
   ITS:
     blastn:
       database: /data_2/Databases/UNITE/UNITE_BLAST/UNITE_dynamic_19.02.2025 #/data_2/Databases/UNITE/blast/UNITE_dynamic_19.02.2025

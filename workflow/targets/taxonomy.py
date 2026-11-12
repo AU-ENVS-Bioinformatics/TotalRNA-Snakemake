@@ -225,4 +225,13 @@ def taxonomy_outputs(
             f"{results_dir}/Taxonomy_Profiling/assembly_based/{{sample}}/SSU/alignment/{{sample}}.bam",
             sample=samples,
         )
+
+        outputs.append(
+            f"{results_dir}/Taxonomy_Profiling/assembly_based/summary/SSU/matrices/contig_counts.tsv"
+        )
+        
+        outputs.append(
+            f"{results_dir}/Taxonomy_Profiling/assembly_based/summary/SSU/crest4/otus_by_rank.tsv"
+        )
+
     return outputs
