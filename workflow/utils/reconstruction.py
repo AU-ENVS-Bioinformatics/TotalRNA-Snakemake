@@ -97,16 +97,15 @@ def coassembly_fasta(
     config: dict,
     target: str,
 ) -> str:
-    """Return the selected assembler's final co-assembly FASTA."""
-    method = coassembly_method(config, target)
+    """Return the shared FASTA published by the selected co-assembler."""
+    coassembly_method(config, target)
 
     return str(
         results_dir
         / "Assembly"
         / "coassembly"
         / target
-        / method
-        / "transcripts.fasta"
+        / f"{target}_transcripts.fasta"
     )
 
 
