@@ -10,6 +10,7 @@ rule taxonomy_crest4:
         matrix=rules.taxonomy_contig_count_matrix.output.matrix
     output:
         otus_by_rank=f"{TAXONOMY_ASSEMBLY_DIR}/summary/{{marker}}/crest4/otus_by_rank.tsv",
+        assignments=f"{TAXONOMY_ASSEMBLY_DIR}/summary/{{marker}}/crest4/assignments.txt",
     log:
         stdout=f"{TAXONOMY_ASSEMBLY_DIR}/summary/{{marker}}/logs/crest4.log"
     benchmark:
