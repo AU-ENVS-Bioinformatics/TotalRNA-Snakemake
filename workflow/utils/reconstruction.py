@@ -24,7 +24,7 @@ from typing import Any, List
 
 # Add methods here only once their rule files are implemented.
 IMPLEMENTED_COASSEMBLY_METHODS = {
-    "non_rRNA": {"rnaspades"},
+    "non_rRNA": {"rnaspades","trinity"},
     "SSU": {"rnaspades", "metarib"},
 }
 

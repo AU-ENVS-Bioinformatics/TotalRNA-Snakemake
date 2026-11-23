@@ -1,4 +1,4 @@
-name: spades
+name: rnaspades
 channels:
   - conda-forge
   - bioconda

@@ -257,6 +257,12 @@ from targets.reconstruction import reconstruction_outputs
 # Validate configuration
 # --------------------------
 
+non_rrna_method = config["reconstruction"].get("non_rRNA_method", "rnaspades")
+if non_rrna_method not in ("rnaspades", "trinity"):
+    raise ValueError(
+        f"reconstruction.non_rRNA_method must be 'rnaspades' or 'trinity'. Got {non_rrna_method!r}."
+    )
+
 validate_reconstruction_config(config)
 
 # --------------------------
@@ -336,6 +342,9 @@ include: "reconstruction/rules/preprocessing.smk"
 if COASSEMBLY_ENABLED:
     if "rnaspades" in COASSEMBLY_TARGETS_BY_METHOD:
         include: "reconstruction/rules/rnaspades.smk"
+
+    if "trinity" in COASSEMBLY_TARGETS_BY_METHOD:
+        include: "reconstruction/rules/trinity.smk"
 
     if "metarib" in COASSEMBLY_TARGETS_BY_METHOD:
         include: "reconstruction/rules/metarib.smk"
