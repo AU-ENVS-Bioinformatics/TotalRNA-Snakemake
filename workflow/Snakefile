@@ -11,7 +11,72 @@ from typing import Any, List
 ### Configuration files ###
 ###########################
 
-configfile: "config/config.yaml"
+from snakemake.common.configfile import load_configfile
+from snakemake.utils import update_config
+
+CLI_CONFIGFILES = [Path(path).expanduser().resolve() for path in workflow.configfiles]
+
+if len(CLI_CONFIGFILES) > 1:
+    raise ValueError(
+        "Pass exactly one main configuration file with --configfile."
+    )
+
+if CLI_CONFIGFILES:
+    # Snakemake has already loaded this file from --configfile.
+    MAIN_CONFIG_PATH = CLI_CONFIGFILES[0]
+    print(f"[CONFIG] Main config from --configfile: {MAIN_CONFIG_PATH}")
+else:
+    # With no --configfile, keep the default relative to the command's cwd.
+    MAIN_CONFIG_PATH = (Path.cwd() / "config/config.yaml").resolve()
+    configfile: "config/config.yaml"
+    print(f"[CONFIG] Default main config: {MAIN_CONFIG_PATH}")
+
+MODULE_CONFIG_FILES = config.get("module_config_files", {})
+
+if not isinstance(MODULE_CONFIG_FILES, dict):
+    raise ValueError("module_config_files in the main config must be a mapping.")
+
+DEFAULT_MODULE_CONFIGS = {
+    "qc": "qc_config.yaml",
+    "rna_classification": "rna_classification_config.yaml",
+    "reconstruction": "reconstruction.yaml",
+    "taxonomy": "taxonomy.yaml",
+    "phylogeny": "phylogeny.yaml",
+    "habitat_refinement": "habitat_refinement.yaml",
+    "functional_profiling": "functional_profiling.yaml",
+    "viral_sequence_analysis": "viral_sequence_analysis.yaml",
+}
+
+unknown_config_paths = set(MODULE_CONFIG_FILES) - set(DEFAULT_MODULE_CONFIGS)
+if unknown_config_paths:
+    raise ValueError(
+        f"Unknown module_config_files entries: {sorted(unknown_config_paths)}"
+    )
+
+
+def load_module_config(module_name: str) -> None:
+    """Load one module config beside the main config unless overridden there."""
+    configured_path = MODULE_CONFIG_FILES.get(
+        module_name,
+        DEFAULT_MODULE_CONFIGS[module_name],
+    )
+    if not isinstance(configured_path, str) or not configured_path.strip():
+        raise ValueError(
+            f"module_config_files.{module_name} must be a non-empty path string."
+        )
+
+    path = Path(configured_path).expanduser()
+    if not path.is_absolute():
+        path = MAIN_CONFIG_PATH.parent / path
+    path = path.resolve()
+
+    module_config = load_configfile(path)
+    update_config(config, module_config)
+
+    if path not in workflow.configfiles:
+        workflow.configfiles.append(path)
+
+    print(f"[CONFIG] Loaded {module_name} config: {path}")
 
 print("Samplesheet:", config["samples_file"])
 print("Results directory:", config["shared_results_dir"])
@@ -34,13 +99,13 @@ if not isinstance(MODULES, dict):
         "modules must contain module names and true/false values."
     )
 
-for module, enabled in MODULES.items():
-    if module not in MODULE_NAMES:
-        raise ValueError(f"Unknown module: {module}")
+for module_name, enabled in MODULES.items():
+    if module_name not in MODULE_NAMES:
+        raise ValueError(f"Unknown module: {module_name}")
 
     if not isinstance(enabled, bool):
         raise ValueError(
-            f"modules.{module} must be true or false, without quotation marks."
+            f"modules.{module_name} must be true or false, without quotation marks."
         )
 
 ##########################
@@ -106,7 +171,7 @@ print(f"{len(SAMPLES)} samples loaded")
 #############################################
 
 # Configuration
-configfile: "config/qc_config.yaml"
+load_module_config("qc")
 
 # Directories
 QC_DIR: Path = RESULTS_DIR / "Quality_Control"
@@ -143,7 +208,7 @@ rule Quality_Control_done:
 ###############################
 
 # Configuration
-configfile: "config/rna_classification_config.yaml"
+load_module_config("rna_classification")
 
 # Directories
 RNA_DIR: Path = RESULTS_DIR / "RNA_Classification"
@@ -232,7 +297,7 @@ rule RNA_seperation_done:
 ###############################
 
 # Configuration
-configfile: "config/reconstruction.yaml"
+load_module_config("reconstruction")
 
 # Directories
 ASSEMBLY_DIR: Path = RESULTS_DIR / "Assembly"
@@ -390,7 +455,7 @@ rule reconstruction_done:
 
 if MODULES.get("taxonomy", False):
     # Configuration
-    configfile: "config/taxonomy.yaml"
+    load_module_config("taxonomy")
 
     # Directories
     TAXONOMY_DIR: Path = RESULTS_DIR / "Taxonomy_Profiling"
@@ -508,8 +573,7 @@ if MODULES.get("phylogeny", False):
         raise ValueError(
             "Phylogeny requires reconstruction.refinement to be samples, both, or all."
         )
-
-    configfile: "config/phylogeny.yaml"
+    load_module_config("phylogeny")
 
     PHYLOGENY_DIR: Path = RESULTS_DIR / "Phylogeny"
     PHYLOGENY_SCRIPTS_DIR = Path(workflow.basedir) / "phylogeny" / "scripts"
@@ -572,7 +636,7 @@ if MODULES.get("habitat_refinement", False):
         )
 
     # Configuration
-    configfile: "config/habitat_refinement.yaml"
+    load_module_config("habitat_refinement")
 
     # Directories
     HABITAT_ANALYSIS_DIR: Path = RESULTS_DIR / "Habitat_refinement"
@@ -656,7 +720,7 @@ if MODULES.get("habitat_refinement", False):
 
 if MODULES.get("functional_profiling", False):
     # Configuration
-    configfile: "config/functional_profiling.yaml"
+    load_module_config("functional_profiling")
 
     # Directories
     FUNCTION_DIR: Path = RESULTS_DIR / "Functional_Profiling"
@@ -770,7 +834,7 @@ if MODULES.get("functional_profiling", False):
 if MODULES.get("viral_sequence_analysis", False):
 
     # Configuration
-    configfile: "config/viral_sequence_analysis.yaml"
+    load_module_config("viral_sequence_analysis")
 
     # Directories
     VIRAL_ANALYSIS_DIR: Path = RESULTS_DIR / "Viral_Sequence_Analysis"
@@ -863,13 +927,13 @@ MODULES = config.get("modules", {})
 if not isinstance(MODULES, dict):
     raise ValueError("modules must contain module names and true/false values.")
 
-for module, enabled in MODULES.items():
-    if module not in OPTIONAL_TARGETS:
-        raise ValueError(f"Unknown module: {module}")
+for module_name, enabled in MODULES.items():
+    if module_name not in OPTIONAL_TARGETS:
+        raise ValueError(f"Unknown module: {module_name}")
 
     if not isinstance(enabled, bool):
         raise ValueError(
-            f"modules.{module} must be true or false, without quotation marks."
+            f"modules.{module_name} must be true or false, without quotation marks."
         )
 
 if MODULES.get("habitat_refinement", False) and SELECTED_HABITAT is None:
@@ -877,8 +941,8 @@ if MODULES.get("habitat_refinement", False) and SELECTED_HABITAT is None:
         "Habitat refinement is requested, but Habitat_refinement.habitat is 'none'."
     )
 
-for module, target in OPTIONAL_TARGETS.items():
-    if MODULES.get(module, False):
+for module_name, target in OPTIONAL_TARGETS.items():
+    if MODULES.get(module_name, False):
         FINAL_TARGETS.append(target)
 
 rule all:
